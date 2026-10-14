@@ -14,15 +14,15 @@ The agent-config format is MIT-licensed.
 AGENTS.md                    required
 README.md                    optional, ignored by the AI
 website-actions.yaml         optional
-skills/<name>/SKILL.md       tasks
-tools/<name>.yaml            actions (.yml works too)
+tasks/<name>.md              tasks
+actions/<name>.yaml          actions (.yml works too)
 widgets/<name>.widget        widgets
-evals/<name>.yaml            tests (.yml works too)
+tests/<name>.yaml            tests (.yml works too)
 ```
 
 | Rule | Value |
 |---|---|
-| Task folder names | lowercase letters and digits, words joined by `-` (`refund`, `change-plan`) |
+| Task file names | lowercase letters and digits, words joined by `-` (`refund`, `change-plan`) |
 | Action file names | start with a letter; lowercase letters, digits, `_` (`lookup_order`) |
 | Widget file names | start with a letter; lowercase letters, digits, `_`, `-` |
 | Test file names | letters, digits, `_`, `-` |
@@ -30,7 +30,11 @@ evals/<name>.yaml            tests (.yml works too)
 | Actions | at most 20 |
 | Widgets | at most 20 |
 
-Any other path is an error: `Unknown file. Allowed: AGENTS.md, README.md, website-actions.yaml, skills/<name>/SKILL.md, tools/<name>.yaml, evals/<name>.yaml, widgets/<name>.widget (lowercase names).`
+Any other path is an error: `Unknown file. Allowed: AGENTS.md, README.md, website-actions.yaml, tasks/<name>.md, actions/<name>.yaml, tests/<name>.yaml, widgets/<name>.widget (lowercase names).`
+
+<Note>
+  Configs from before October 2026 used `skills/<name>/SKILL.md`, `tools/` and `evals/`. The desk still accepts those paths from `jun push` and stores them in the layout above; `jun pull` moves your local files.
+</Note>
 
 ## AGENTS.md
 
@@ -59,13 +63,12 @@ handoffTopics:           # always hand these to a person
 
 No other frontmatter key is allowed. The frontmatter itself is optional. In the body, `@lookup_order` refers to the action of that name. See [Instructions](/ai/instructions).
 
-## skills/&lt;name&gt;/SKILL.md
+## tasks/&lt;name&gt;.md
 
-A task: a procedure in the [Agent Skills](https://agentskills.io) format. The frontmatter says when it applies; the body is the steps.
+A task: a procedure in Markdown. The file name is the task's name. The frontmatter says when it applies; the body is the steps.
 
-```markdown skills/refund/SKILL.md
+```markdown tasks/refund.md
 ---
-name: refund
 description: The customer asks for a refund, their money back, or to cancel a charge.
 ---
 1. Ask for the order or invoice number if they haven't given it.
@@ -73,22 +76,21 @@ description: The customer asks for a refund, their money back, or to cancel a ch
 3. Hand off to a person with the order number in the reason.
 ```
 
-<ParamField path="name" type="string" required>
-  Must equal the folder name.
-</ParamField>
 <ParamField path="description" type="string" required>
   When this procedure applies. At most 1,024 characters. The AI reads it to choose the task.
 </ParamField>
+<ParamField path="name" type="string">
+  Optional. If present, it must equal the file name.
+</ParamField>
 
-The body must not be empty. Other Agent Skills fields (`license`, `metadata`, …) are allowed and ignored.
+The body must not be empty. Other fields (`license`, `metadata`, …) are allowed and ignored.
 
 ### Intent keys
 
 A task can define an **intent**: your app opens a chat for that purpose with `JunDesk.open({ intent, onExit })`, and the chat starts with the task's opening line and quick replies. See [Intents](/widget/intents).
 
-```markdown skills/cancellation/SKILL.md
+```markdown tasks/cancellation.md
 ---
-name: cancellation
 description: The customer wants to cancel their subscription or close their account.
 intent: cancel
 opening: "Sorry to see you go. What's the main reason?"
@@ -115,11 +117,11 @@ exit: Cancel anyway       # always on screen, one click: closes the chat and cal
 
 `opening`, `replies` and `exit` are errors without `intent`.
 
-## tools/&lt;name&gt;.yaml
+## actions/&lt;name&gt;.yaml
 
-An action: one HTTP request the AI may make. The file name is the action's name. This is the starter, `tools/lookup_order.yaml.example`:
+An action: one HTTP request the AI may make. The file name is the action's name. This is the starter, `actions/lookup_order.yaml.example`:
 
-```yaml tools/lookup_order.yaml
+```yaml actions/lookup_order.yaml
 description: Look up an order by its number. Returns status, order date and total.
 status: Checking your order                      # what the customer sees while it runs (default "Looking that up")
 method: GET
@@ -276,7 +278,7 @@ A button's `onClickAction` (or a form's, list item's or card's confirm) has a `t
 
 | `type` | What happens |
 |---|---|
-| `tool:<name>` | Runs the action `tools/<name>.yaml` at once with the payload and the card's fields. The action must exist |
+| `tool:<name>` | Runs the action `actions/<name>.yaml` at once with the payload and the card's fields. The action must exist |
 | `page:<name>` | Offers the website action `<name>` with the payload and the card's fields |
 | `open_url` | Opens `payload.url` (https only) in the browser. Never sent to the desk |
 | `dismiss` | Folds the card. Never sent |
@@ -315,11 +317,11 @@ set_pickup: { run: auto, status: "Setting your pickup" }
 
 Actions not listed keep the risk your page gave them (`confirm` by default). See [Page actions](/widget/page-actions).
 
-## evals/&lt;name&gt;.yaml
+## tests/&lt;name&gt;.yaml
 
 Tests: a YAML list of cases. Each has the customer's message (or several) and what a good reply does.
 
-```yaml evals/basics.yaml
+```yaml tests/basics.yaml
 - name: greeting
   message: hi there
   expect:
@@ -331,7 +333,7 @@ Tests: a YAML list of cases. Each has the customer's message (or several) and wh
     outcome: handoff
 ```
 
-```yaml evals/cancellation.yaml
+```yaml tests/cancellation.yaml
 - name: cancel, insists
   intent: cancel
   messages: [Switching to another tool, No thanks, I just want to cancel]
@@ -383,7 +385,7 @@ Tests: a YAML list of cases. Each has the customer's message (or several) and wh
 
 A website-action case:
 
-```yaml evals/cart.yaml
+```yaml tests/cart.yaml
 - name: adds the right size
   page: /products/mug
   actions:

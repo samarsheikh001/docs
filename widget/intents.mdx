@@ -10,11 +10,10 @@ It takes two pieces: a call in your app, and a task on the desk that defines the
 
 ## 1. Define the intent in a task
 
-An intent lives in a task's frontmatter (`skills/<name>/SKILL.md` in your [agent config](/code/files)). Here is the cancellation starter that `jun init` creates:
+An intent lives in a task's frontmatter (`tasks/<name>.md` in your [agent config](/code/files)). Here is the cancellation starter that `jun init` creates:
 
-```markdown skills/cancellation/SKILL.md
+```markdown tasks/cancellation.md
 ---
-name: cancellation
 description: The customer wants to cancel their subscription or close their account.
 # Intent (AI-20): your app opens this chat with JunDesk.open({ intent: "cancel", onExit }).
 intent: cancel
@@ -48,7 +47,7 @@ exit: Cancel anyway       # always on screen, one click: closes the chat and cal
 
 The task's body is the procedure. The AI is told the chat was opened with this intent, to follow the procedure step by step, to make at most one offer and only one the procedure (or an action) defines, and to wait for a clear yes before calling anything that changes the customer's account. With an `exit`, it's also told never to discourage, delay, argue against or obstruct that button, and to point to it when the customer still wants to go ahead.
 
-The starter also includes `tools/apply_save_offer.yaml.example`. Copy it to `tools/apply_save_offer.yaml` and point it at your billing API to let the AI apply an accepted offer. It acts on the signed-in customer through `{user.id}`, so it needs [identified users](/widget/identify-users).
+The starter also includes `actions/apply_save_offer.yaml.example`. Copy it to `actions/apply_save_offer.yaml` and point it at your billing API to let the AI apply an accepted offer. It acts on the signed-in customer through `{user.id}`, so it needs [identified users](/widget/identify-users).
 
 You can also create and edit tasks on the desk under **Agent → Tasks** ([Tasks](/ai/tasks)).
 
@@ -115,7 +114,7 @@ Intent chats show an **Intent: cancel** tag in the inbox, with "· exited" once 
 
 Eval cases take `intent:`, so `jun eval` runs a case as a chat opened with that intent:
 
-```yaml evals/cancellation.yaml
+```yaml tests/cancellation.yaml
 - name: too expensive gets the discount offer
   intent: cancel
   message: Too expensive

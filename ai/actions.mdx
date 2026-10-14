@@ -6,7 +6,7 @@ icon: "bolt"
 
 An action is a request to your own systems that the AI can make while it answers: look up an order, check a customer's plan, apply an offer they accepted. The AI decides when to call one from its description, fills in the details from the chat, and uses what comes back in its answer.
 
-Actions are under **Agent → Actions** (`/agent/actions`). Each is a file, `tools/<name>.yaml`. See [Agent files](/code/files) for every key.
+Actions are under **Agent → Actions** (`/agent/actions`). Each is a file, `actions/<name>.yaml`. See [Agent files](/code/files) for every key.
 
 <Note>
 This page is about actions your server calls. Actions that run **in the customer's browser**, registered by your website's code, are [page actions](/widget/page-actions). The desk lists the ones it has seen under [On your website](#on-your-website), at the bottom of the Actions page.
@@ -120,7 +120,7 @@ Some settings are only in **Code**, and the form keeps them as they are: `body` 
 
 The `lookup_order` example from `jun init`:
 
-```yaml tools/lookup_order.yaml
+```yaml actions/lookup_order.yaml
 description: Look up an order by its number. Returns status, order date and total.
 status: Checking your order                      # what the customer sees while it runs (default "Looking that up")
 method: GET
@@ -157,7 +157,7 @@ Key names are `UPPER_SNAKE_CASE`. Secrets in the address or query are refused, b
 
 For a POST without `body`, the details the AI filled in are sent as a JSON object. With `body`, its values are filled in; a value that is exactly `"{param}"` keeps the input's type, so numbers stay numbers. The apply-offer example:
 
-```yaml tools/apply_save_offer.yaml
+```yaml actions/apply_save_offer.yaml
 description: Apply a retention offer the customer accepted to their own subscription. Only after a clear yes.
 status: Applying your offer                       # what the customer sees while it runs
 method: POST

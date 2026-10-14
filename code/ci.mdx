@@ -132,7 +132,7 @@ npm run -s jun -- eval support-agent --json > eval.ndjson
   One replayed conversation: `conversationId`, `question` (the customer's first message), `verdict` (`same` or `changed`), `why`, and the `live` and `candidate` replies.
 </ResponseField>
 <ResponseField name="error" type="object">
-  `{ "type": "error", "scope": "evals/basics.yaml: greeting", "message": "…" }`. Any error makes the exit code 1.
+  `{ "type": "error", "scope": "tests/basics.yaml: greeting", "message": "…" }`. Any error makes the exit code 1.
 </ResponseField>
 <ResponseField name="done" type="object">
   `{ "type": "done", "cases": { "passed": 4, "failed": 1 }, "replay": { "same": 19, "changed": 1, "errors": 0 } }`.

@@ -182,7 +182,7 @@ A required action input that no field or payload key fills is sent empty. **Conn
 
 When a widget's button runs one of your actions, the action can answer the press itself, so the customer doesn't wait for the AI. Set them on the action's page (**When a widget's button runs it, the widget says** and **If it fails, the widget says**) or in its file:
 
-```yaml tools/request_callback.yaml
+```yaml actions/request_callback.yaml
 widget_done: "Thanks {{ name }}, we'll call you today."
 widget_failed: That didn't go through. Please try again.
 ```

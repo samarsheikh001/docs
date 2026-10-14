@@ -17,23 +17,23 @@ support-agent/
 ├── AGENTS.md                      # instructions: tone, rules, guardrails
 ├── README.md                      # optional, for your team
 ├── website-actions.yaml           # optional: how each action on your website runs
-├── skills/
-│   └── refund/SKILL.md            # a task (procedure)
-├── tools/
+├── tasks/
+│   └── refund.md                  # a task (procedure)
+├── actions/
 │   └── lookup_order.yaml          # an action (HTTP call the AI may make)
 ├── widgets/
 │   └── order.widget               # a card an action's result is shown as
-└── evals/
+└── tests/
     └── basics.yaml                # tests
 ```
 
 | File | Called on the desk | What it holds |
 |---|---|---|
 | `AGENTS.md` | **Instructions** | How the AI talks to customers, plus `maxReplies` and `handoffTopics` in the frontmatter |
-| `skills/<name>/SKILL.md` | **Tasks** | A procedure in plain language: when it applies and the steps. Can open a chat for a purpose with `intent:` |
-| `tools/<name>.yaml` | **Actions** | An HTTP request the AI may make: address, inputs, headers, which fields it reads |
+| `tasks/<name>.md` | **Tasks** | A procedure in plain language: when it applies and the steps. Can open a chat for a purpose with `intent:` |
+| `actions/<name>.yaml` | **Actions** | An HTTP request the AI may make: address, inputs, headers, which fields it reads |
 | `widgets/<name>.widget` | **Widgets** | A card in OpenAI's ChatKit widget format, filled with an action's result |
-| `evals/<name>.yaml` | **Tests** | Customer messages and what a good reply does |
+| `tests/<name>.yaml` | **Tests** | Customer messages and what a good reply does |
 | `website-actions.yaml` | **Actions → On your website** | Whether each action on your website runs on its own, after the customer confirms, or by a person |
 
 Every key of every file is in the [file format reference](/code/files). For what each part does from the desk's side, see [Instructions](/ai/instructions), [Tasks](/ai/tasks), [Actions](/ai/actions), [Widgets](/ai/widgets) and [Tests](/ai/tests).
@@ -87,7 +87,7 @@ Once the folder is in git, a change looks like any other code change.
 
 <Steps>
   <Step title="Edit">
-    Change files in a branch. For example, add a rule to `AGENTS.md` or a step to `skills/refund/SKILL.md`.
+    Change files in a branch. For example, add a rule to `AGENTS.md` or a step to `tasks/refund.md`.
   </Step>
   <Step title="Test">
     ```sh

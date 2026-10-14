@@ -6,7 +6,7 @@ icon: "list-check"
 
 A task is one thing the AI does for customers from start to finish: a refund request, a plan change, an order lookup. It says when it applies, the steps in plain words, and which [actions](/ai/actions) the steps use.
 
-Tasks are under **Agent → Tasks** (`/agent/tasks`). Each task is a file, `skills/<name>/SKILL.md`, in the [Agent Skills](https://agentskills.io) format; the files call them procedures. See [Agent files](/code/files) for the format.
+Tasks are under **Agent → Tasks** (`/agent/tasks`). Each task is a Markdown file, `tasks/<name>.md`; the files call them procedures. See [Agent files](/code/files) for the format.
 
 ## When to use a task
 
@@ -22,9 +22,8 @@ The AI reads each task's **When** line to pick the right one, then follows its s
 
 Here is the refund task a new `jun init` folder starts with:
 
-```markdown skills/refund/SKILL.md
+```markdown tasks/refund.md
 ---
-name: refund
 description: The customer asks for a refund, their money back, or to cancel a charge.
 ---
 1. Ask for the order or invoice number if they haven't given it.
@@ -43,7 +42,7 @@ On the desk, the same task is a form:
 </ParamField>
 
 <ParamField path="Name" type="string">
-  The folder name, set when you create the task: lowercase letters, digits and dashes, like `order-status`. It must match `name` in the file.
+  The file name, set when you create the task: lowercase letters, digits and dashes, like `order-status` for `tasks/order-status.md`.
 </ParamField>
 
 ### Name actions with @
@@ -93,7 +92,7 @@ A task's page has tabs on the left and the form on the right:
 
 - **AI**: change the task by describing what you want.
 - **Test**: chat with it as a customer, using your unsaved draft.
-- **Code**: the `SKILL.md` file as text.
+- **Code**: the task's file as text.
 
 The trash icon at the top removes the task when you save.
 
@@ -143,7 +142,7 @@ Website actions the desk has seen your site register are offered as they would b
 
 If the AI hands off, the chat ends with "In a real chat a person takes over here." **Reset** starts again.
 
-**Save as a test** turns the chat into a [test case](/ai/tests): your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed, the website action it chose). It goes into `evals/tests.yaml` (or your first test file) and goes live when you save.
+**Save as a test** turns the chat into a [test case](/ai/tests): your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed, the website action it chose). It goes into `tests/tests.yaml` (or your first test file) and goes live when you save.
 
 Test chats use the **Replies to visitors** model, and their tokens count toward the month's usage (not toward the reply cap).
 
@@ -151,9 +150,8 @@ Test chats use the **Replies to visitors** model, and their tokens count toward 
 
 The cancellation task from `jun init` uses an intent, an offer per reason, and an action that only runs after a clear yes:
 
-```markdown skills/cancellation/SKILL.md
+```markdown tasks/cancellation.md
 ---
-name: cancellation
 description: The customer wants to cancel their subscription or close their account.
 intent: cancel
 opening: "Sorry to see you go. What's the main reason?"

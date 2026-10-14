@@ -84,13 +84,13 @@ npm run jun -- init support-agent
 Created support-agent/ with 9 files:
   README.md
   AGENTS.md
-  skills/refund/SKILL.md
-  skills/cancellation/SKILL.md
-  tools/apply_save_offer.yaml.example
-  tools/lookup_order.yaml.example
+  tasks/refund.md
+  tasks/cancellation.md
+  actions/apply_save_offer.yaml.example
+  actions/lookup_order.yaml.example
   widgets/order.widget.example
-  evals/basics.yaml
-  evals/cancellation.yaml
+  tests/basics.yaml
+  tests/cancellation.yaml
 ```
 
 The `.example` files aren't part of the config until you rename them (drop `.example`); `push` and `eval` skip them. `init` refuses a folder that isn't empty. It doesn't contact the desk, so it works before `login`.
@@ -136,7 +136,7 @@ If the config has errors, nothing changes and each problem is listed:
 
 ```text
 Not pushed: the config has errors.
-  ✘ tools/lookup_order.yaml: {order} isn't an input. Add it under input:, {user.id} (signed-in customer), or {secrets.NAME}.
+  ✘ actions/lookup_order.yaml: {order} isn't an input. Add it under input:, {user.id} (signed-in customer), or {secrets.NAME}.
 ```
 
 If someone saved on the desk since your `.jun-version`, the push stops and tells you to `pull`, merge with git, and push again (or use `--force`). See [Agent as code](/code/overview#when-someone-edited-on-the-desk).
@@ -151,7 +151,7 @@ npm run jun -- eval support-agent
 
 It sends the folder's files to the desk, which runs two checks with your workspace's AI provider and model:
 
-1. **Test cases**: every case in `evals/*.yaml`, run against your files. Each passes or fails on its `expect`.
+1. **Test cases**: every case in `tests/*.yaml`, run against your files. Each passes or fails on its `expect`.
 2. **Replay**: the first customer message of recent conversations the AI took part in, answered by the live config and by yours. A judge model compares the two and reports which answers would change in substance.
 
 <ParamField path="--sample" type="number" default="20">
@@ -161,7 +161,7 @@ It sends the folder's files to the desk, which runs two checks with your workspa
   Actions return their `mock:` response instead of calling your API. An action without `mock:` returns an error to the AI.
 </ParamField>
 <ParamField path="--no-cases" type="boolean">
-  Skip `evals/*.yaml`, replay only.
+  Skip `tests/*.yaml`, replay only.
 </ParamField>
 <ParamField path="--json" type="boolean">
   Print one JSON event per line instead of the readable report. See [Run evals in CI](/code/ci#json-output) for the events. With `npm run`, add `-s` (`npm run -s jun -- eval … --json`) so npm's own banner lines don't end up in the output.
@@ -176,8 +176,8 @@ A readable run looks like this:
 Evaluating support-agent/ against Acme (live: version 12)
 5 test cases, 20 recent conversations to replay
 
-✔ evals/basics.yaml › greeting
-✘ evals/basics.yaml › refund goes to a person
+✔ tests/basics.yaml › greeting
+✘ tests/basics.yaml › refund goes to a person
     expected outcome handoff, got answer
     reply (answer): Refunds are reviewed by our billing team within one business day…
 = How do I add a teammate?

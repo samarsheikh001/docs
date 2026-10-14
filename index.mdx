@@ -31,7 +31,7 @@ Jun is a v1 release candidate. Everything on these pages is built and tested end
 - **A chat widget** with live replies, typing indicators, read receipts, file uploads, screenshots, your colour and logo, and business hours. You pick a launcher: a button, a greeting card, an "Ask anything…" bar or the island. When nobody's around it asks for an email, and when a conversation is resolved it asks for a quick rating.
 - **An AI agent** that answers from your docs with citations and hands off to a person when it can't help or when the customer asks. It runs on Workers AI out of the box, so you need no API key. It can use OpenAI instead.
 - **Debug context.** JavaScript errors, failed requests (method, URL and status, never bodies), pages visited, rage clicks and errors your app reports with `JunDesk.reportError()`. When something breaks, the widget can offer help on its own.
-- **Actions, tasks and widgets.** The AI can call your API (`tools/*.yaml`), follow step-by-step tasks, run actions your page registers in the visitor's browser, and show results as interactive cards.
+- **Actions, tasks and widgets.** The AI can call your API (`actions/*.yaml`), follow step-by-step tasks, run actions your page registers in the visitor's browser, and show results as interactive cards.
 - **A real-time inbox** with assignment, takeover from the AI, internal notes with @mentions, saved replies, tags, a contact sidebar and keyboard shortcuts (Ctrl+K or ⌘K opens the command palette).
 - **Visitors**: a live list and globe of who's on your site right now. You can start a chat with any of them.
 - **Issues from a conversation.** "Create issue" drafts a GitHub or Linear issue from the chat and the masked browser details. A teammate edits and files it. The AI never files issues on its own.
@@ -70,6 +70,6 @@ Jun is open source. The source is at [github.com/samarsheikh001/jun](https://git
 | Server and dashboard (`worker/`, `web/`, `packages/llm`, `packages/cli`) | [AGPL-3.0-only](https://github.com/samarsheikh001/jun/blob/main/LICENSE) |
 | Widget loader (`public/widget.js`) | MIT |
 | React hook `@jun/widget-react` (`packages/widget-react`) | MIT |
-| Agent config format (`AGENTS.md`, `skills/`, `tools/`, `evals/` files and the `jun init` templates) | MIT |
+| Agent config format (`AGENTS.md`, `tasks/`, `actions/`, `tests/` files and the `jun init` templates) | MIT |
 
 The loader and the config format are MIT, so putting Jun on your site never triggers a licence review. Outside contributions will need a contributor licence agreement (CLA), which isn't set up yet. Until it is, open an issue before starting a large change. See [CONTRIBUTING.md](https://github.com/samarsheikh001/jun/blob/main/CONTRIBUTING.md).

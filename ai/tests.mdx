@@ -6,7 +6,7 @@ icon: "flask"
 
 Tests check that the AI still gets your key questions right after you change its instructions, tasks, actions or knowledge. Each test is a customer message (or a few) and what a good reply does. Run them on your unsaved draft, before you save.
 
-Tests are under **Agent → Tests** (`/agent/tests`). They're stored as YAML lists in `evals/*.yaml`, the same files `jun eval` runs from git. See [Agent files](/code/files) for the format.
+Tests are under **Agent → Tests** (`/agent/tests`). They're stored as YAML lists in `tests/*.yaml`, the same files `jun eval` runs from git. See [Agent files](/code/files) for the format.
 
 ## Write a test
 
@@ -57,7 +57,7 @@ Some settings are only in **Code**, and the card says so when a test has them:
 
 The starter tests from `jun init`:
 
-```yaml evals/basics.yaml
+```yaml tests/basics.yaml
 - name: greeting
   message: hi there
   expect:
@@ -74,7 +74,7 @@ The starter tests from `jun init`:
     outcome: handoff
 ```
 
-```yaml evals/cancellation.yaml
+```yaml tests/cancellation.yaml
 - name: cancel, too expensive gets the matching offer only
   intent: cancel
   message: Too expensive
@@ -91,7 +91,7 @@ The starter tests from `jun init`:
 
 A test with website actions on the page, written in Code:
 
-```yaml evals/pickup.yaml
+```yaml tests/pickup.yaml
 - name: sets the pickup after finding the place
   page: /book
   actions:
@@ -111,7 +111,7 @@ When the AI proposes a website action in a test, the test assumes the customer c
 
 ### Save a test from a test chat
 
-On a [task's Test tab](/ai/tasks#test-it), **Save as a test** turns the chat into a test: your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed). It goes into `evals/tests.yaml`, or your first test file.
+On a [task's Test tab](/ai/tasks#test-it), **Save as a test** turns the chat into a test: your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed). It goes into `tests/tests.yaml`, or your first test file.
 
 ## Run tests
 
