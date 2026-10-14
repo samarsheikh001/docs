@@ -84,6 +84,25 @@ The AI gets a guide to the agent's files when it connects, and these tools. Tool
 
 It can also read these resources: the [file format](/code/files) (`jun://guide/files`), ChatKit's widget authoring guide (`jun://guide/chatkit-widgets`), the Jinja filters widget templates can use (`jun://guide/jinja`) and every file of the live agent (`jun://file/<path>`).
 
+### Knowledge
+
+The websites and documents the AI answers from (the desk's Knowledge page) have their own tools. They do exactly what the Knowledge page does, with the same limits.
+
+| Tool | What it does |
+|---|---|
+| `list_knowledge` | Every source: type (website, page, file, text), URL or name, state (queued, crawling, indexing, ready, failed), pages and chunks, last sync, errors |
+| `add_website` | Crawls a site, or one page with `maxPages: 1`. Answers at once; the crawl runs in the background |
+| `add_document` | Adds a document: `name` plus `text` (plain text or Markdown), or `base64` and `filename` for a PDF, DOCX, Markdown or text file up to 10 MB. Indexed in the background |
+| `resync_source` | Re-crawls a website or re-indexes a file, like the sync button |
+| `remove_source` | Deletes a source and everything indexed from it. Needs `confirm: true` |
+| `search_knowledge` | Runs a question through the same search the support AI uses and shows what it would find |
+
+Anyone's token can list and search; adding, re-syncing and removing need an owner's or admin's.
+
+<Warning>
+Knowledge isn't versioned: there's no History or `restore` for it, and **a removed source can't be brought back**. `remove_source` refuses until it's called with `confirm: true`, and the AI is told to ask you first.
+</Warning>
+
 ### Some things to ask
 
 - *"What does our agent do today? Anything broken?"*
@@ -92,6 +111,7 @@ It can also read these resources: the [file format](/code/files) (`jun://guide/f
 - *"Start from the ride status template for our delivery tracker and show me what its buttons do."*
 - *"Change the chat widget's greeting to 'Hi! Ask us anything.' and close on Sundays."*
 - *"Run the tests. Fix what fails, but show me the change with a dry run first."*
+- *"Can the AI answer 'do you have an EU data center?' from our docs? If not, add our security page."*
 
 ## Safety
 
@@ -99,7 +119,7 @@ It can also read these resources: the [file format](/code/files) (`jun://guide/f
 - **Nothing broken is saved.** Each change is checked like a save on the desk; when the files have problems, nothing is saved and the AI gets the problems file by file.
 - **Every change is a version.** History on the Agent page shows the AI's changes as *Changed by an AI (MCP)*, with who owns the token. `restore` (or History on the desk) brings any version back.
 - **Look before it's live.** `dryRun: true` shows the resulting file without saving; `test_chat` answers changes (POST actions) without making them unless you ask for `real: true`; `run_tests` with `mockTools: true` doesn't call your APIs. `try_action` does make a real call.
-- **Only the agent.** A token reaches the agent's config and its tests, nothing else: not the inbox, conversations, contacts or knowledge. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token in Settings → Developer at any time.
+- **Only the agent and its knowledge.** A token reaches the agent's config, its tests and the knowledge tools, nothing else: not the inbox, conversations or contacts. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token in Settings → Developer at any time.
 
 Your AI client usually asks before it calls a tool; keep that on for tools that change things.
 

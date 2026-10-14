@@ -8,7 +8,7 @@ You change how the widget looks on the desk, not in your snippet. Go to **Chat w
 
 ## The live preview
 
-The right side of the Look tab is the real widget, running in a frame with your unsaved changes. It isn't a mock-up, so it can't drift from what visitors get. Use **Chat** and **Closed** above the settings to switch between the open chat and the closed launcher.
+The right side of the Look tab is the real widget, running in a frame with your unsaved changes. It isn't a mock-up, so it can't drift from what visitors get. Use **Chat** and **Closed** above the settings to switch between the open chat and the closed widget.
 
 <Warning>
   Messages you send in the preview start real conversations in your inbox.
@@ -30,7 +30,7 @@ The **Form / Code** switch at the top of the Look tab works like the Agent pages
 | **Logo** | In the chat header, on the greeting card, and on the round button | None (the Jun mark in the chat, a chat bubble on the button) |
 | **Logo on dark backgrounds** | Used on dark surfaces instead of the logo above | Optional |
 | **Theme** | **Auto** follows each visitor's light or dark system setting; **Light** and **Dark** force one | Auto |
-| **Brand colour** | The launcher, the card's buttons and the send button | `#2f5bea`. Must be a six-digit hex colour |
+| **Brand colour** | The button or island, the card's buttons and the send button | `#2f5bea`. Must be a six-digit hex colour |
 
 ### Logos
 
@@ -40,7 +40,6 @@ The **Logo on dark backgrounds** is used wherever the widget draws on a dark sur
 
 - the island on its dark surface;
 - the chat in the dark theme (or Auto on a visitor's dark system);
-- the "Ask anything" bar's dark glass;
 - the round button, when your brand colour is dark enough to get white text.
 
 Leave it empty and the main logo is used everywhere.
@@ -51,19 +50,20 @@ The widget picks readable text on your colour by itself: dark text (`#1c1c1a`) o
 
 To use a different colour on one site, add `data-color="#0f766e"` to that site's snippet. It overrides the desk's colour there only.
 
-## Shape and placement
+## Mode and shape
 
 | Option | What it does | Default and limits |
 |---|---|---|
-| **Corner rounding** | The chat window, message bubbles and buttons | 16px. Whole numbers from 0 to 24 |
-| **Side of the page** | Right or left corner, for the button, the greeting card and the bar | Right |
-| **Closed state** | **Chat button only**, **Greeting card**, **Ask bar** or **Island** | Greeting card |
-| **Button shows** | Only with **Chat button only**: **Company logo** or **"Chat with us"** | Company logo |
+| **Mode** | **Island** (a pill at the bottom centre) or **Chat window** (a button in the corner that opens a chat window) | Chat window |
 | **Island colour** | Only with **Island**: **Dark (like Dynamic Island)** or **Match the page theme** | Dark |
 | **Neon border** | Only with **Island**: a slowly turning multi-colour glow | On |
+| **Show a greeting card** | Only with **Chat window**: a welcome card over the button; off shows just the round button | On |
+| **Button shows** | Only with **Chat window** and the greeting card off: **Company logo** or **"Chat with us"** on the round button | Company logo |
+| **Side of the page** | Only with **Chat window**: right or left corner | Right |
+| **Corner rounding** | The chat window, the island, message bubbles and buttons | 16px. Whole numbers from 0 to 24 |
 | **Play a sound for new replies** | A soft chime for new replies (see below) | On |
 
-[Launchers](/widget/launchers) explains each closed state and how to choose. The bar has one fixed look, so **Theme** and **Corner rounding** don't apply to it, and the island sits at the bottom centre, so **Side of the page** doesn't apply to it.
+[Modes](/widget/launchers) explains each mode and how to choose. The island always sits at the bottom centre, so it has no side to set.
 
 ### Sound
 
@@ -82,12 +82,12 @@ Leave a field empty to use the default shown in it.
 |---|---|---|
 | **Greeting** | The greeting card, and the top of a new chat | "Hi! How can we help?" Up to 200 characters |
 | **Reply time** | Under the name in the header | "We usually reply in a few minutes". Up to 80 characters |
-| **Message box placeholder** | The message box, and the bar or island at rest | "Write a message…". Up to 60 characters |
+| **Message box placeholder** | The message box, and the island at rest | "Write a message…". Up to 60 characters |
 | **Suggested questions** | See below | None. Up to 4, each up to 80 characters |
 
 ### Suggested questions
 
-Type one question per line, up to four. They show under the greeting in a new chat, as chips over the bar or island, and typed out one by one in the closed "Ask anything" bar. Tapping one sends it as the visitor's first message.
+Type one question per line, up to four. They show under the greeting in a new chat, as chips over the island's question box, and typed out one by one in the island's resting pill. Tapping one sends it as the visitor's first message.
 
 **Draft from your knowledge** asks the AI to write the questions for you. It reads a small sample of your [knowledge](/ai/knowledge) (source and page titles, the opening of a few documents, and your most common topics) and replaces the questions in the field. Nothing changes for visitors until you **Save**, so edit them first.
 
@@ -112,7 +112,7 @@ Some of what visitors see isn't on the Look tab.
 Set hours under **Settings → Inbox → Business hours** ([Business hours](/inbox/business-hours)). Outside them:
 
 - the greeting card's and chat header's reply-time line says "We're away · back *when*", adding "The assistant can still help." while the AI is on;
-- the bar's header shows "back *when*";
+- the island's header shows "back *when*";
 - the AI keeps answering, and visitors whose chat is with your team get your away message once.
 
 ### Email capture
@@ -127,11 +127,11 @@ It's never shown to [identified customers](/widget/identify-users) (their email 
 
 ### Proactive help and page openers
 
-**Chat widget → Install → Proactive help** controls when the widget reaches out first: after something breaks on the page ([Debug context](/widget/debug-context#proactive-nudges)), or after a visitor spends time on a page (page openers). Their line replaces the greeting on the greeting card and shows as a nudge on the other launchers.
+**Chat widget → Install → Proactive help** controls when the widget reaches out first: after something breaks on the page ([Debug context](/widget/debug-context#proactive-nudges)), or after a visitor spends time on a page (page openers). Their line replaces the greeting on the greeting card and shows as a nudge on the round button and the island.
 
 <CardGroup cols={2}>
-  <Card title="Launchers" icon="window-maximize" href="/widget/launchers">
-    How each closed state behaves.
+  <Card title="Modes" icon="window-maximize" href="/widget/launchers">
+    The island and the chat window.
   </Card>
   <Card title="Business hours" icon="clock" href="/inbox/business-hours">
     Opening times and the away message.

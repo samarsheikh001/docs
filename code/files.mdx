@@ -248,7 +248,7 @@ A card in OpenAI's ChatKit widget format: the file you get from **Download** in 
   The widget's title on the desk. Defaults to the file name.
 </ParamField>
 <ParamField path="summary" type="string">
-  One line of plain text for the chat's folded launcher, from the same data: a Jinja template of at most 200 characters. The line is cut at 80 characters. If it fails to render, the card still shows without it.
+  One line of plain text for the chat's folded island, from the same data: a Jinja template of at most 200 characters. The line is cut at 80 characters. If it fails to render, the card still shows without it.
 </ParamField>
 <ParamField path="sample" type="object">
   Example data, for previews and checks. When present, the template (and `summary`) must render with it, or the file is refused.
@@ -422,12 +422,13 @@ ai:
 chat:                       # the chat widget (the Chat widget page)
   name: Acme                # "" = your workspace's name
   color: "#5b4cff"
-  launcher: island          # island | bar | card | button
-  island: { surface: dark, glow: true }
-  button: logo              # logo | text
+  mode: window              # island (a pill at the bottom centre) | window (a button in the corner that opens a chat window)
+  greetingCard: true        # window: a greeting card over the button
+  button: logo              # window: the round button shows your logo or text
+  position: right           # window: left | right
+  island: { surface: dark, glow: true }   # island only
   theme: auto               # auto | light | dark
   rounding: 16              # 0 to 24
-  position: right
   sound: true
   greeting: Hi! How can we help?
   replyTime: Usually replies in a few minutes
@@ -456,7 +457,7 @@ How it works:
 - **The settings pages write it too.** Saving on the Chat widget page, **Settings → AI**, **Business hours** or **Assignment** saves a new version with the changed keys edited in place: your comments and key order stay. A key the file doesn't have is added when its setting changes.
 - **Every desk has one.** Until it's saved, the desk writes it from the current settings when you open the Agent page's **Code** view or run `jun pull`.
 
-Keys are checked like every other file: an unknown key or a value out of range is an error that names the key, like `chat.launcher: Launcher must be button, card, bar or island.`
+Keys are checked like every other file: an unknown key or a value out of range is an error that names the key, like `chat.mode: Mode must be island or window.`
 
 ### `ai`
 
@@ -483,17 +484,22 @@ The chat widget, as on the [Appearance](/widget/appearance) page and the **Insta
 <ParamField path="chat.color" type="string">
   The brand colour, a six-digit hex colour like `"#5b4cff"` (quote it: `#` starts a comment in YAML).
 </ParamField>
-<ParamField path="chat.launcher" type="island | bar | card | button">
-  The closed state. See [Launchers](/widget/launchers).
+<ParamField path="chat.mode" type="island | window">
+  `island`: a pill at the bottom centre. `window`: a button in the corner that opens a chat window. See [Modes](/widget/launchers).
+
+  The old `launcher` key is still read: `island` and `bar` mean `mode: island`, `card` means `mode: window` with `greetingCard: true`, and `button` means `mode: window` with `greetingCard: false`. The desk never writes it: the next time it writes the mode, `launcher:` is replaced by `mode` and `greetingCard`.
 </ParamField>
-<ParamField path="chat.island.surface" type="dark | page">
-  The island's colour: near-black on every page, or following the theme.
-</ParamField>
-<ParamField path="chat.island.glow" type="boolean">
-  The island's turning multi-colour border.
+<ParamField path="chat.greetingCard" type="boolean">
+  Window only. `true`: a greeting card over the button. `false`: just the round button.
 </ParamField>
 <ParamField path="chat.button" type="logo | text">
-  What the round button shows: your logo (a chat bubble until you upload one) or "Chat with us".
+  Window only, with the greeting card off. What the round button shows: your logo (a chat bubble until you upload one) or "Chat with us".
+</ParamField>
+<ParamField path="chat.island.surface" type="dark | page">
+  Island only. The island's colour: near-black on every page, or following the theme.
+</ParamField>
+<ParamField path="chat.island.glow" type="boolean">
+  Island only. The island's turning multi-colour border.
 </ParamField>
 <ParamField path="chat.theme" type="auto | light | dark">
   `auto` follows each visitor's system setting.
@@ -502,7 +508,7 @@ The chat widget, as on the [Appearance](/widget/appearance) page and the **Insta
   Corner rounding, from 0 to 24.
 </ParamField>
 <ParamField path="chat.position" type="left | right">
-  The side of the page.
+  Window only. The side of the page.
 </ParamField>
 <ParamField path="chat.sound" type="boolean">
   A soft chime for new replies.

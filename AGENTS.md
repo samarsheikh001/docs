@@ -11,7 +11,7 @@ People who run a B2B SaaS and want a support desk on their own Cloudflare accoun
 ## Terminology
 
 - **Jun** (the product), **the desk** (one deployed install), **workspace** (one desk's data).
-- **Widget** = the chat on the customer's site; **loader** = `widget.js`; **launcher** = the bubble, bar or island.
+- **Widget** = the chat on the customer's site; **loader** = `widget.js`; **mode** = island (the pill at the bottom centre) or chat window (a button or greeting card in the corner that opens a chat window).
 - **Visitor** before they're known, **contact** once identified, **customer** in general prose.
 - **Teammate** / **agent** for people answering in the inbox; **the AI** for the AI agent.
 - In the desk, procedures are called **Tasks** (`tasks/*.md`), tools are **Actions** (`actions/*.yaml`), cards are **Widgets** (`widgets/*.widget`), evals are **Tests**.

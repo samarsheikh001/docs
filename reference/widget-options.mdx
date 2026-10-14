@@ -4,7 +4,7 @@ description: Every attribute of the widget's script tag, what it changes, and wh
 icon: sliders
 ---
 
-The widget is configured in two places. The `<script>` tag on your site carries a few per-site options, listed here. Everything about the widget's look and behaviour (colour, logo, launcher, side, theme, greeting, business hours, page openers, allowed websites) is set on the desk and reaches your site within a minute, with no change to the tag. See [Appearance](/widget/appearance).
+The widget is configured in two places. The `<script>` tag on your site carries a few per-site options, listed here. Everything about the widget's look and behaviour (colour, logo, mode, side, theme, greeting, business hours, page openers, allowed websites) is set on the desk and reaches your site within a minute, with no change to the tag. See [Appearance](/widget/appearance).
 
 ```html
 <script
@@ -57,7 +57,7 @@ These aren't attributes. Change them on the desk and every site with the snippet
 | Setting | Where |
 |---|---|
 | Colour, logo (and a logo for dark surfaces), corner rounding, light/dark theme, button style | **Chat widget → Look** |
-| Launcher: button, bar, card or island; left or right side | **Chat widget → Look** |
+| Mode: island or chat window (greeting card, button, left or right side) | **Chat widget → Look** |
 | Greeting and suggested questions | **Chat widget → Look** |
 | Allowed websites, identity secret, page openers | **Chat widget → Install** |
 | Business hours and away message | **Settings → Inbox** |
@@ -73,11 +73,11 @@ Useful when your site sends a Content Security Policy, or when you check the net
 | Request | When | CSP directive |
 |---|---|---|
 | `GET /widget.js` | The tag itself | `script-src` |
-| `GET /api/widget/<key>/config` | On load: colour, launcher, side, theme | `connect-src` |
+| `GET /api/widget/<key>/config` | On load: colour, mode, side, theme | `connect-src` |
 | `wss://…/api/widget/<key>/live` | On load (after consent): the live visitor connection | `connect-src` |
-| `/widget?key=<key>` in an iframe | When the chat opens; at once for the bar, card and island launchers | `frame-src` |
+| `/widget?key=<key>` in an iframe | When the chat opens; at once for the greeting card and the island | `frame-src` |
 | `GET /widget-actions.js` | The first time your page registers an action | `script-src` |
-| Your logo | When the launcher button shows it | `img-src` |
+| Your logo | When the round button, greeting card or chat shows it | `img-src` |
 | `POST /api/widget/<key>/nudge` | When something fails on the page and the widget may offer help | `connect-src` |
 
 If your site has a CSP, allow your desk's origin for these directives (for example `script-src https://support.acme.com`, `connect-src https://support.acme.com wss://support.acme.com`, `frame-src https://support.acme.com`, `img-src https://support.acme.com`).

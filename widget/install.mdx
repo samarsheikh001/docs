@@ -4,7 +4,7 @@ description: Add the one-line loader to your site, check that it works, and limi
 icon: code
 ---
 
-The widget is one `<script>` tag. It loads a small loader (`widget.js`) from your desk, draws the launcher, and loads the chat itself only when it's needed. Everything about its look comes from the desk, so you paste the snippet once and change colours, wording and launcher later without touching your site.
+The widget is one `<script>` tag. It loads a small loader (`widget.js`) from your desk, draws the button or island, and loads the chat itself only when it's needed. Everything about its look comes from the desk, so you paste the snippet once and change colours, wording and mode later without touching your site.
 
 ## Copy the snippet
 
@@ -24,7 +24,7 @@ The widget is one `<script>` tag. It loads a small loader (`widget.js`) from you
     `data-key` is your widget key. It is public by design: anyone can read it from your page source. Use [Allowed websites](#limit-which-websites-can-use-the-widget) to stop other sites reusing it.
   </Step>
   <Step title="Deploy your site and open a page">
-    The launcher appears within a second or so (the loader waits up to 1.5 seconds for your colour and launcher settings, so it never flashes in the default colour).
+    The widget appears within a second or so (the loader waits up to 1.5 seconds for your colour and mode settings, so it never flashes in the default colour).
   </Step>
 </Steps>
 
@@ -99,7 +99,7 @@ For React, `useJunAction` from `packages/widget-react` registers page actions wh
     **Chat widget → Install** has an **Open demo page** button. It opens `/demo.html?key=wk_…` on your desk: a fake customer site with buttons that fail on purpose (a 500 on "Pay invoice", a JavaScript error on "Show usage chart", a dead "Export CSV"), a cancel intent and three page actions. Use it to see the whole loop before touching your own site.
   </Step>
   <Step title="Send a message from your site">
-    Open your site, open the launcher, and write something. Open the desk's **Inbox** in another window. The message arrives live, with a **Browser** section in the side panel showing the page and recent events.
+    Open your site, open the chat, and write something. Open the desk's **Inbox** in another window. The message arrives live, with a **Browser** section in the side panel showing the page and recent events.
   </Step>
   <Step title="Look for yourself on the visitor list">
     **Visitors** shows everyone on your site right now. Your own tab should be there (unless you use `data-consent="required"` and haven't consented yet).
@@ -136,8 +136,8 @@ With a list in place, the chat frame refuses to load on other sites (through the
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Pick a launcher" icon="window-maximize" href="/widget/launchers">
-    Button, greeting card, "Ask anything" bar or island.
+  <Card title="Pick a mode" icon="window-maximize" href="/widget/launchers">
+    The island, or a chat window with or without a greeting card.
   </Card>
   <Card title="Set the look" icon="palette" href="/widget/appearance">
     Colour, logos, greeting and suggested questions.

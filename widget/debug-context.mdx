@@ -105,7 +105,7 @@ How it behaves:
 - The loader waits about a second for a burst of errors to settle, then sends the one masked event and the page to the desk.
 - The AI words a single line from it. The same failure on the same page gets the same line for a day, so it's one AI call per day, not per visitor. If the AI is off, over its monthly cap or slow, the visitor sees "Looks like something went wrong on this page. Want a hand?"
 - A visitor sees at most one nudge per page load, never while the chat is open, and none before consent.
-- With the round-button launcher it's a small card above the button; the greeting card, bar and island show it themselves. Clicking it opens a chat that starts with that line.
+- With the round button (chat window, greeting card off) it's a small card above the button; the greeting card and the island show it themselves. Clicking it opens a chat that starts with that line.
 - Nudges are only offered on [allowed websites](/widget/install#limit-which-websites-can-use-the-widget), and `data-capture="off"` turns them off.
 
 Page openers (offering a chat after time on a page, like 30 seconds on `/pricing`) live in the same **Proactive help** card. They don't depend on debug capture.
