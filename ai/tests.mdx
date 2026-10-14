@@ -1,0 +1,179 @@
+---
+title: "Tests"
+description: "Write what a customer might say and what a good reply does, then run the tests on your unsaved changes before they go live."
+icon: "flask"
+---
+
+Tests check that the AI still gets your key questions right after you change its instructions, tasks, actions or knowledge. Each test is a customer message (or a few) and what a good reply does. Run them on your unsaved draft, before you save.
+
+Tests are under **Agent → Tests** (`/agent/tests`). They're stored as YAML lists in `evals/*.yaml`, the same files `jun eval` runs from git. See [Agent files](/code/files) for the format.
+
+## Write a test
+
+Press **New test**. Each test is a card:
+
+<ParamField path="Name" type="string">
+  At the top of the card, like "refund goes to a person". Results are matched to tests by name, so keep names unique.
+</ParamField>
+
+<ParamField path="The customer says" type="text" required>
+  The customer's first message. **Add a follow-up message** adds more (**Then says**): the AI replies to each in turn, and the last reply is what's checked.
+</ParamField>
+
+<ParamField path="The AI should" type="select">
+  The outcome the last reply must have:
+
+  | Choice | Outcome | Means |
+  |---|---|---|
+  | **Anything** | (none) | Not checked. |
+  | **Answers** | `answer` | Replies in words (or with a widget) and keeps the chat. |
+  | **Hands over to a person** | `handoff` | Hands the chat to your team. |
+  | **Flags a problem for the team** | `escalate` | Answers and flags a bug from the customer's browser errors (in a live chat, this also hands it to your team). |
+  | **Offers an action on the page** | `action` | Proposes a [website action](/widget/page-actions). |
+</ParamField>
+
+<ParamField path="And show this widget" type="select">
+  The [widget](/ai/widgets) the reply must show. Only listed when you have widgets.
+</ParamField>
+
+<ParamField path="A good reply…" type="text">
+  What a good reply does, in plain words, like "Explains Settings → Export and says it's emailed as a CSV." A second AI checks the reply against it, so write it plainly and specifically.
+</ParamField>
+
+<ParamField path="Uses these actions" type="checkboxes">
+  Actions the reply must call. Only listed when you have actions.
+</ParamField>
+
+A test passes when every expectation you set holds.
+
+Some settings are only in **Code**, and the card says so when a test has them:
+
+- `actions`: page actions to put on the customer's page for every turn.
+- `page`: the page path the customer is on, for actions with `pages`.
+- `intent`: run it as a chat your app opened with an [intent](/widget/intents).
+- `expect.action`: the website action the reply must propose, and optionally its inputs.
+
+### Examples
+
+The starter tests from `jun init`:
+
+```yaml evals/basics.yaml
+- name: greeting
+  message: hi there
+  expect:
+    outcome: answer
+
+- name: refund goes to a person
+  message: I want my money back for order A-1042
+  expect:
+    outcome: handoff
+
+- name: asks for a human
+  message: can I talk to a real person please
+  expect:
+    outcome: handoff
+```
+
+```yaml evals/cancellation.yaml
+- name: cancel, too expensive gets the matching offer only
+  intent: cancel
+  message: Too expensive
+  expect:
+    outcome: answer
+    criteria: Offers at most the 50% off for 3 months, invents no other discount, and doesn't apply anything without a yes.
+
+- name: cancel, insists
+  intent: cancel
+  messages: [Switching to another tool, No thanks, I just want to cancel]
+  expect:
+    criteria: Accepts it without arguing and points to the "Cancel anyway" button.
+```
+
+A test with website actions on the page, written in Code:
+
+```yaml evals/pickup.yaml
+- name: sets the pickup after finding the place
+  page: /book
+  actions:
+    - name: search_places
+      description: Finds places matching a query; returns placeIds for set_pickup
+      inputSchema: { type: object, properties: { query: { type: string } }, required: [query] }
+      mock: '[{"placeId": "changi_t3", "label": "Changi Airport Terminal 3"}]'
+    - name: set_pickup
+      description: Sets the pickup location from a placeId returned by search_places
+      inputSchema: { type: object, properties: { placeId: { type: string } }, required: [placeId] }
+  message: Set my pickup to Changi Airport.
+  expect:
+    action: { name: search_places, input: { query: Changi Airport } }
+```
+
+When the AI proposes a website action in a test, the test assumes the customer confirmed it and the page ran it; the action's `mock` (or "done") is its result for the next turn.
+
+### Save a test from a test chat
+
+On a [task's Test tab](/ai/tasks#test-it), **Save as a test** turns the chat into a test: your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed). It goes into `evals/tests.yaml`, or your first test file.
+
+## Run tests
+
+Press **Run tests**. It tests your unsaved draft, so you can check a change before customers see it. Fix any problems in the draft first; the button is off until there are none.
+
+Results stream in as each test finishes, four at a time:
+
+- A **passed** / **failed** count at the top.
+- Each card marked **Passed** or **Failed**, with "The AI replied:" and what failed, for example:
+  - `expected outcome handoff, got answer`
+  - `expected a call to lookup_order (no tools called)`
+  - `expected the order card (no card shown)`
+  - `expected the page action set_pickup, got search_places`
+  - `criteria not met: … (the judge's reason)`
+
+In **Code**, the results are listed under the file.
+
+Tests use the same code that answers your website, with your knowledge, tasks, actions and widgets, at temperature 0 so a difference comes from your change rather than chance. A message that plainly asks for a person ("can I talk to a real person please") hands off straight away, as on the website, without asking the model.
+
+Any teammate can run tests. They use the **Replies to visitors** model, and the grading uses **Eval grading** (see [Model per job](/ai/models#model-per-job)). Test runs don't count toward the monthly reply cap.
+
+<Warning>
+**Run tests** on the desk calls your actions for real, including actions that make changes (POST). Keep tests that would trigger a change on a test account, or run them from the CLI with `jun eval --mock-tools`, which answers each action with its `mock:` response instead.
+</Warning>
+
+<Note>
+Test cases carry no browser details, so the AI has no captured errors to flag. **Flags a problem for the team** is mostly seen in replays of real conversations.
+</Note>
+
+## The judge
+
+Criteria, and replay comparisons, are graded by a second AI call, the `judge` job. It's told to be strict and literal, and answers YES or NO with one sentence explaining why. A NO fails the test with that sentence.
+
+Write criteria the judge can check from the reply alone: what it must say, offer, or avoid.
+
+## Replay real conversations
+
+From the command line, `jun eval` also replays recent real conversations against your changes:
+
+```sh
+npm run jun -- eval support-agent
+```
+
+For each of the most recent conversations the AI handled (20 by default, up to 50 with `--sample`), it takes the customer's first message and the browser details captured with it, and answers it twice: with the live agent and with your files. Each comes back **same** or **changed**:
+
+- A different outcome (say, answer → handoff) is **changed**.
+- Both handing off is **same**.
+- Otherwise the judge decides whether both replies tell the customer the same thing in substance (facts, decision, next step), ignoring wording, tone and length.
+
+The desk's **Run tests** button runs only your test cases. Replays, `--mock-tools` and `--fail-on-change` for CI are covered in the [CLI](/code/cli) and [CI](/code/ci) pages.
+
+<CardGroup cols={2}>
+  <Card title="Run tests in CI" icon="code-branch" href="/code/ci">
+    `jun eval --fail-on-change` on every pull request.
+  </Card>
+  <Card title="Tasks" icon="list-check" href="/ai/tasks">
+    Test a task by chatting with it.
+  </Card>
+  <Card title="Instructions" icon="pen-to-square" href="/ai/instructions">
+    Save and go live once tests pass.
+  </Card>
+  <Card title="CLI" icon="terminal" href="/code/cli">
+    `jun pull`, `eval` and `push`.
+  </Card>
+</CardGroup>

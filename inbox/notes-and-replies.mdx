@@ -1,0 +1,119 @@
+---
+title: Notes and replies
+description: Write internal notes and @mention teammates, answer faster with saved replies, and organise conversations with tags.
+icon: note-sticky
+---
+
+The composer at the bottom of every conversation has two modes: **Reply**, which the customer sees, and **Note**, which only your team sees. This page covers notes, @mentions, saved replies and tags.
+
+## Internal notes
+
+Switch the composer to **Note** (or press `n` in the inbox) and write. The box turns into **Note for your team… (@ to mention)**. Send it like a reply.
+
+A note:
+
+- is shown to your team only, marked **Note** in the thread,
+- never reaches the customer or the AI (it isn't part of what the AI reads),
+- doesn't take the conversation from the AI, so you can leave a comment while the AI keeps answering,
+- doesn't show the customer that you're typing,
+- doesn't count as a reply in the [Dashboard](/inbox/reports) numbers or for the [away message](/inbox/business-hours).
+
+Notes can carry files, like replies.
+
+<Note>
+Notes do go into a GitHub or Linear issue draft (as "Team note"), because the draft is for your own engineers and a teammate reviews it before filing. See [Issues](/inbox/issues#what-goes-in-the-draft).
+</Note>
+
+## @mentions
+
+In a note, type `@` and the start of a teammate's name. A list of matching teammates opens; pick one with the arrow keys and `Enter` (or the mouse) and the composer writes `@Name`. Mentions are highlighted in the sent note.
+
+When you send the note, each teammate you mentioned:
+
+- gets a toast while they're on the Inbox page: **\<your name\> mentioned you: \<the note\>**, with **Open**,
+- gets a [notification](/inbox/notifications) if they've turned on **Someone @mentions you in a note** (push to their devices when the desk isn't in front of them),
+- sees the conversation under **Mentions me** in the inbox's assignee filter.
+
+You can't mention yourself. Mentions match a teammate's full name, case-insensitively, and a longer name wins: `@Ann Lee` is Ann Lee, not Ann. An `@` inside a word, such as an email address, is never a mention.
+
+### Unread mentions
+
+The inbox's assignee filter reads **Mentions me (N new)** while you have conversations with mentions you haven't looked at. Opening the conversation marks your mentions in it as read.
+
+## Saved replies
+
+Saved replies are answers your team sends often. Any teammate can add, edit and delete them; they're shared across the workspace.
+
+### Create a saved reply
+
+<Steps>
+  <Step title="Open Settings → Inbox">
+    Open **Settings** from the account menu at the bottom of the sidebar (or press `g` then `s`), then **Inbox**. Scroll to **Saved replies**.
+  </Step>
+  <Step title="Add one">
+    Press **New saved reply**. Give it a title (up to 80 characters, for example `Refund policy`) and the text (up to 5,000 characters). Press **Save**.
+  </Step>
+</Steps>
+
+Each saved reply in the list has **Edit** and **Delete**.
+
+### Placeholders
+
+Two placeholders are filled in when you insert a saved reply:
+
+| Placeholder | Becomes |
+|---|---|
+| `{first_name}` | The customer's first name, or `there` when the desk doesn't know their name |
+| `{agent_name}` | Your name |
+
+```text
+Hi {first_name}, thanks for waiting. Refunds go back to the original card within 5 to 10 business days. {agent_name}
+```
+
+### Use a saved reply
+
+- In the composer, type `/` at the start of an empty box. A list of saved replies opens; keep typing to filter by title (or by text, after three characters). Pick one with the arrow keys and `Enter`. It replaces the `/…` you typed, with the placeholders filled in.
+- Or, with a conversation open, press `Ctrl` `K` and choose **Insert saved reply…**. If you've already typed something, the reply goes on a new line after it.
+
+The text lands in the composer for you to edit; nothing is sent until you press `Enter`.
+
+## Tags
+
+Tags are labels your team puts on conversations to find and count them later: `billing`, `bug`, `vip`. Customers never see tags, and neither does the AI.
+
+### Add and remove tags
+
+In a conversation, press **+ Tag** under the header (or press `t`). Type a name and press `Enter`; the field suggests tags that already exist. A new name creates the tag. Press the **×** on a tag to remove it from the conversation.
+
+From the command palette (`Ctrl` `K`), **Add tag…** lists existing tags and offers **Create tag "…"** for a new one.
+
+Rules:
+
+- Tag names are 1 to 40 characters. Extra spaces and a leading `#` are dropped.
+- Names compare case-insensitively: `Billing` and `billing` are the same tag.
+- A conversation can have up to 20 tags.
+
+Any teammate can add tags to a conversation, including new ones.
+
+### Filter by tag
+
+Once your workspace has tags, the inbox shows a tag filter (**Any tag**). Pick a tag to see only those conversations. The tag also shows in the list's **Tags** column and the command palette searches it.
+
+### Rename or delete tags
+
+Owners and admins manage tags in **Settings → Inbox → Tags**. Each tag shows how many conversations have it, with **Rename** and **Delete**. Renaming changes it everywhere. Deleting removes the tag from every conversation. You can't rename a tag to a name another tag already has.
+
+<Tip>
+Tags are yours to set by hand. For labels the AI sets on its own, see [Topics](/inbox/reports#topics).
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Assignment" icon="user-check" href="/inbox/assignment">
+    Who gets which conversation.
+  </Card>
+  <Card title="Notifications" icon="bell" href="/inbox/notifications">
+    Mentions, assignments and replies on your devices.
+  </Card>
+</CardGroup>

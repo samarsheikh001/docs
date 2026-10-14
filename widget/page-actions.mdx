@@ -1,0 +1,302 @@
+---
+title: Page actions
+description: Let the AI do things on your page for the visitor, through WebMCP tools your page registers, with confirmation, undo and step-by-step runs.
+icon: wand-magic-sparkles
+---
+
+Your page tells the AI what can be done right here: add to cart, change plan, export a CSV, book a slot. When a visitor asks for one, the AI picks it, the chat asks for anything it couldn't fill in, confirms, runs your function **in the visitor's browser with their own login**, and shows the result.
+
+- The AI can only pick from the list your page registered. It never reads the page or fills in forms itself.
+- Your functions never leave the page. Only the name, description, input schema and the extras below are sent to the desk.
+- Each run is recorded in the conversation's AI actions, so agents see what happened.
+
+## The standard: WebMCP
+
+Page actions use [WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api), the browser API for exposing a page's tools to AI agents, rather than a Jun-only format. Tools you register for Chrome's own agent work with Jun Desk with no extra code, and actions you register with Jun Desk are visible to other WebMCP agents too.
+
+<Warning>
+  WebMCP is a W3C draft in a Chrome origin trial, and it changes every few releases. Between Chrome 153 and 156, for example, it moved from `navigator` to `document`, deprecated JSON-string inputs, and dropped `window.ontool*`. Check Chrome's [imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api) and [declarative API](https://developer.chrome.com/docs/ai/webmcp/declarative-api) docs before relying on a detail. This page describes the loader as of October 2026.
+</Warning>
+
+Where the browser has no native `document.modelContext`, the loader installs a small stand-in so the same code works everywhere. Where the browser has it, the loader uses the native one.
+
+<Note>
+  Put the [snippet](/widget/install) in `<head>` with `defer`, before your own scripts. Code that checks for `document.modelContext` once on load must find it there.
+</Note>
+
+## Register an action
+
+There are three ways in. All three end up in the same list the AI picks from.
+
+<Tabs>
+  <Tab title="JunDesk.registerAction">
+    The WebMCP tool shape plus Jun's extras (pages, instances, highlighting, context, availability, undo, risk, status line, result card). Returns a function that removes the action.
+
+    ```js
+    const remove = JunDesk.registerAction({
+      name: "add_to_cart",
+      description: `Add ${product.name} to the cart`,
+      inputSchema: {
+        type: "object",
+        properties: {
+          size: { enum: product.sizes },
+          quantity: { type: "integer", minimum: 1, maximum: 5 },
+        },
+        required: ["size"],
+      },
+      key: product.id,
+      element: cardEl,
+      context: { price: product.price },
+      available: () => product.stock > 0,
+      execute: async ({ size, quantity = 1 }) => {
+        const line = await cart.add(product.id, size, quantity);
+        return { summary: `Added ${quantity} × ${size}`, lineId: line.id };
+      },
+      undo: (result) => cart.remove(result.lineId),
+    });
+    ```
+
+    `JunDesk.registerAction` exists as soon as the loader has run. Registrations made before the actions code has loaded are queued and replayed.
+  </Tab>
+  <Tab title="document.modelContext.registerTool">
+    Plain WebMCP. Use this if you already expose tools to Chrome's agent.
+
+    ```js
+    document.modelContext.registerTool({
+      name: "show_usage",
+      description: "Scroll to the usage section and show this month's numbers",
+      inputSchema: { type: "object", properties: {} },
+      annotations: { readOnlyHint: true },
+      execute: () => {
+        document.getElementById("usage").scrollIntoView({ block: "center" });
+        return "Usage: 4,210 events this month";
+      },
+    }, { signal: controller.signal }); // controller.abort() unregisters it
+    ```
+
+    Tool names must be unique; registering the same name twice throws. The loader's stand-in also has `getTools()`, `executeTool()` and a `toolchange` event.
+  </Tab>
+  <Tab title="Declarative forms">
+    WebMCP's declarative API turns a `<form>` into a tool with attributes like `toolname`, `tooldescription`, `toolparamdescription` and `toolautosubmit`:
+
+    ```html
+    <form toolname="subscribe_newsletter" tooldescription="Subscribe the visitor to the newsletter">
+      <input name="email" type="email" toolparamdescription="The email to subscribe" />
+      <button>Subscribe</button>
+    </form>
+    ```
+
+    The loader reads tools from `document.modelContext.getTools()`, so forms work where the browser itself supports declarative WebMCP. The loader's stand-in covers the imperative API only.
+  </Tab>
+</Tabs>
+
+## What `execute` gets and returns
+
+`execute(input, signal)` runs in the visitor's browser.
+
+- `input` holds the values the AI filled and the visitor confirmed, already checked against your schema (numbers are numbers, enums match exactly).
+- The second argument is an `AbortSignal` that also has a `signal` property pointing at itself, so both `fetch(url, { signal: opts })` and `opts.signal` work.
+- It may be async. A thrown error or rejected promise shows as **Didn't work** with the error's message, and the AI hears about it.
+
+What you return is what the AI reads next (up to 2,000 characters):
+
+| Return | The AI reads | The chat shows |
+|---|---|---|
+| A string | The string | The string |
+| An object with `summary` | The summary | The summary |
+| Any other object or list | Its JSON | Nothing extra (JSON is for the AI only) |
+
+Return JSON when the AI needs data for its next step (search results, a list of slots). Return a sentence when the customer should see what happened.
+
+## Fields
+
+Standard WebMCP fields:
+
+<ParamField path="name" type="string" required>
+  The action's name, like `add_to_cart`. Up to 64 characters. The AI sees it as `pa_<name>`.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  What it does, in one line (up to 200 characters). The AI chooses by this, and the confirm card shows it.
+</ParamField>
+
+<ParamField path="inputSchema" type="object">
+  A JSON Schema object. Each property can be `string`, `number`, `integer` or `boolean`, with `description`, `enum` (up to 24 values), `minimum`, `maximum` and `format` (`email`, `date` and `url` get matching fields). Up to 12 properties. Properties listed in `required` that the AI couldn't fill are asked for in the chat.
+</ParamField>
+
+<ParamField path="execute" type="function" required>
+  Runs the action. See above.
+</ParamField>
+
+<ParamField path="annotations" type="object">
+  WebMCP hints. Without `risk`, `consequentialHint: true` means **confirm** and `readOnlyHint: true` means **auto**.
+</ParamField>
+
+Jun extras (only through `JunDesk.registerAction` or `useJunAction`):
+
+<ParamField path="pages" type="string[]">
+  Offer the action only on matching paths. An exact path (`"/pricing"`) or a prefix ending in `*` (`"/plans/*"` matches `/plans/pro` and `/plans/`). Left out, it's offered everywhere it's registered.
+</ParamField>
+
+<ParamField path="key" type="string | number">
+  One instance per item on screen, like one per product card. `name` plus `key` must be unique; registering the same pair again replaces the older one. Keyed instances aren't mirrored into `document.modelContext` (WebMCP names must be unique there).
+</ParamField>
+
+<ParamField path="element" type="Element | RefObject">
+  Highlighted with an outline and scrolled into view while the action runs. Also tells the loader whether the action is on screen, which helps it rank.
+</ParamField>
+
+<ParamField path="context" type="object | function">
+  Small facts for the AI, like `{ price: 89, inStock: true }`, or a function returning them. Up to 8 entries; strings up to 80 characters, numbers and booleans.
+</ParamField>
+
+<ParamField path="available" type="() => boolean">
+  Checked before the action is offered and again before it runs. When it returns `false` (sold out, already on this plan), the action isn't offered, and a run in flight shows **No longer on this page**.
+</ParamField>
+
+<ParamField path="undo" type="(result) => void | Promise">
+  Gives the run an **Undo** button. Receives what `execute` returned.
+</ParamField>
+
+<ParamField path="risk" type='"auto" | "confirm" | "human"' default="confirm">
+  How it runs. See [Risk levels](#risk-levels). Overrides `annotations`.
+</ParamField>
+
+<ParamField path="status" type="string">
+  The line the chat shows while it runs, like `"Checking fares"`. Up to 60 characters. Without it, one is made from the name: `set_pickup` becomes "Setting pickup", `export_csv` "Exporting CSV".
+</ParamField>
+
+<ParamField path="widget" type="string">
+  A card made on the desk, by its widget name (like `"cart_summary"`). When `execute` returns an object, the chat shows it as that card (up to 32 KB of JSON). See [Widgets](/ai/widgets).
+</ParamField>
+
+## Risk levels
+
+| Risk | What happens |
+|---|---|
+| `confirm` (default) | The chat shows what will happen, with the inputs, and **Confirm** / **Cancel**. Nothing runs until the visitor confirms. |
+| `auto` | Runs as soon as the AI picks it, once all required inputs are known. Use it for things that are safe and easy to reverse: searching, scrolling, showing. |
+| `human` | Nothing runs on the page. The conversation goes to your team with "The customer wants to: *description*". |
+
+When required inputs are missing, the chat asks for them first ("A couple of details first"): a short list of choices (up to 6) becomes buttons, a longer one a select, a yes/no two buttons, a `date` a date picker, an `email` an email field. Then the visitor presses **Continue**.
+
+### Override risk on the desk
+
+Your site sets a default, but the desk decides. Add `website-actions.yaml` to your [agent config](/code/files): a map of action name to `auto`, `confirm` or `human`, or to `run:` and `status:`.
+
+```yaml website-actions.yaml
+upgrade_plan: confirm
+export_csv: auto
+cancel_subscription: human
+set_pickup:
+  run: auto
+  status: Setting your pickup
+```
+
+Actions it doesn't name keep the site's own setting. You can set the same thing without YAML: **Agent → Actions** has an **On your website** section listing every website action the desk has seen, with a picker on each card. The override applies wherever actions are offered: live chats, the Agent page's test chat and `jun eval`.
+
+## After it runs
+
+Once a run starts, it shows as a step under the AI's answer: a state icon, a title made from the name ("Add to cart"), and a short chip with the result (or the readable inputs). Opening a step shows the description, inputs, and result or error. Several steps fold under one "N steps" header. **Undo** sits on the step when you registered `undo`.
+
+| Status | Means |
+|---|---|
+| Waiting for you | Needs a confirm or missing details |
+| Done | `execute` returned |
+| Didn't work | `execute` threw |
+| Cancelled | The visitor pressed Cancel; it didn't run |
+| No longer on this page | The visitor navigated away, the action was removed, or `available` returned false |
+| Undone | The visitor pressed Undo |
+
+## Multi-step requests
+
+Some requests take several actions: "find a flight to Lisbon on Friday and add it to my cart" might be a search, then a selection, then an add. After each result, the AI gets one more turn, and in that turn it must decide: call the next action, or finish. So requests chain one action per turn:
+
+1. The visitor asks.
+2. The AI calls `search_flights` (auto). It runs and returns JSON.
+3. The AI reads the result and calls `add_to_cart` (confirm). The visitor confirms. It runs.
+4. The AI writes a short reply, or ends the chain.
+
+Limits that keep chains safe:
+
+- At most 12 AI messages in a row after the visitor's message.
+- Calling the same action with the same inputs again ends the chain instead of repeating it.
+- Each `confirm` step still waits for the visitor.
+
+With the [island launcher](/widget/launchers#island), the whole run stays one live line ("Checking fares… · step 2") and only grows when the visitor has to confirm or fill something in.
+
+## Many actions on one page
+
+The loader sends up to 60 actions with each message: actions on screen first, then the rest in registration order, then other WebMCP tools. The desk picks up to 30 for each reply: words from the visitor's question that match an action's name, description or context count most, being on screen counts too, and registration order breaks ties.
+
+[Actions](/ai/actions) defined on the desk (`tools/*.yaml`) can be limited to pages the same way, with `pages: ["/orders/*"]`.
+
+## React
+
+`useJunAction` from `packages/widget-react` (MIT, React 18+ as a peer, no other dependencies) registers an action while the component is mounted and removes it on unmount. If the loader hasn't loaded yet, it waits for the `jundesk:ready` event.
+
+```tsx
+import { useRef } from "react";
+import { useJunAction } from "@jun/widget-react";
+
+function ProductCard({ product }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useJunAction(
+    {
+      name: "add_to_cart",
+      key: product.id,
+      description: `Add ${product.name} to the cart`,
+      inputSchema: { type: "object", properties: { size: { enum: product.sizes } }, required: ["size"] },
+      element: ref,
+      context: { price: product.price },
+      execute: async ({ size }) => {
+        await cart.add(product.id, size);
+        return `Added ${product.name} (${size})`;
+      },
+    },
+    [product.id],
+  );
+  return <div ref={ref}>…</div>;
+}
+```
+
+The second argument works like `useEffect`'s dependency list: the action is registered again when it changes.
+
+<Note>
+  The package lives in the repo at `packages/widget-react` and isn't published to npm. Copy `src/index.ts` into your app, or install it from the repo. Its types don't list `status` yet; the loader accepts it anyway.
+</Note>
+
+## Card buttons that run page actions
+
+A [widget](/ai/widgets) card's button can run one of your page actions: give it the action type `page:<name>`, for example `{"type": "page:remove_from_cart", "payload": {"id": "mug"}}`. The press counts as the visitor's yes, so the action runs at once with the payload and the card's fields, unless a required input is still missing. A `human` action still goes to your team. There's no AI turn for the press.
+
+## Test page actions
+
+Eval cases in `evals/*.yaml` take an `actions:` list and a `page:` path, and can expect an action:
+
+```yaml evals/plans.yaml
+- name: upgrade asks for the plan
+  message: upgrade me to the growth plan
+  page: /billing
+  actions:
+    - name: upgrade_plan
+      description: Change this account's plan
+      inputSchema:
+        type: object
+        properties:
+          plan: { type: string, enum: [starter, team, growth] }
+        required: [plan]
+  expect:
+    action: { name: upgrade_plan, input: { plan: growth } }
+```
+
+See [Tests](/ai/tests). To try it by hand, open **Chat widget → Install → Open demo page**: it registers `upgrade_plan` (confirm, with undo), `export_csv` (auto) and a plain WebMCP `show_usage`.
+
+<CardGroup cols={2}>
+  <Card title="Actions" icon="bolt" href="/ai/actions">
+    Server-side actions that call your API.
+  </Card>
+  <Card title="JavaScript API" icon="brackets-curly" href="/widget/javascript-api">
+    `registerAction` and everything else on `JunDesk`.
+  </Card>
+</CardGroup>

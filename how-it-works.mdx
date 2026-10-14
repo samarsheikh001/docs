@@ -1,0 +1,117 @@
+---
+title: "How it works"
+description: "The Cloudflare pieces behind one desk, and how a visitor's message becomes an AI reply or a handoff."
+icon: "diagram-project"
+---
+
+A Jun Desk install is one Cloudflare Worker and the resources it binds to. Nothing runs outside your Cloudflare account unless you choose an outside AI provider or an issue tracker.
+
+## The pieces
+
+| Piece | What it does in Jun Desk |
+|---|---|
+| **Worker** (`worker/index.ts`) | Serves the dashboard and the widget frame as static assets, and the JSON API under `/api` (built with [Hono](https://hono.dev)). It authenticates every request and socket upgrade. |
+| **Durable Object `Conversation`** | One per conversation. Holds the live sockets, gives each message its sequence number, writes through to D1 and runs the AI's turns. |
+| **Durable Object `WorkspaceHub`** | One per workspace. Fans out inbox events to teammates, tracks who's online, keeps the live visitor list and sends notifications. Its storage holds secrets that never go in the database. |
+| **Durable Object `KnowledgeIndex`** | One per workspace. Stores the knowledge base's vectors (int8-quantized) and searches them in memory. |
+| **D1** (`jun-desk`) | The source of truth: workspaces, people, passkeys, conversations, messages, contacts, knowledge text, agent config versions, reports data. |
+| **R2** (`jun-desk-files`) | Files: chat attachments, screenshots, logos and the originals of knowledge files you upload. |
+| **Queue** (`jun-desk-crawl`) | Background jobs for the knowledge base: one message per page to crawl, and one per uploaded file to index. |
+| **Workers AI** | Embeddings (`@cf/baai/bge-m3`), reranking (`@cf/baai/bge-reranker-base`) and the default chat model (`@cf/mistralai/mistral-small-3.1-24b-instruct`). |
+| **Cron trigger** | Every 15 minutes: topic labels for quiet chats. The 03:15 UTC run also re-syncs knowledge websites. |
+
+All of these are created by the Deploy button or by `wrangler deploy`. See [Deploy to Cloudflare](/deploy/cloudflare).
+
+```text
+ Your site                         Your Cloudflare account
+┌──────────────┐   widget.js    ┌──────────────────────────────────────────┐
+│ <script      │ ─────────────▶ │ Worker  (static assets + /api, Hono)     │
+│  widget.js>  │   iframe       │   │                                      │
+│  ┌────────┐  │ ◀────────────▶ │   ├─▶ Conversation DO  (one per chat)    │
+│  │ chat   │  │   WebSocket    │   ├─▶ WorkspaceHub DO  (inbox, presence) │
+│  └────────┘  │                │   ├─▶ KnowledgeIndex DO (vectors)        │
+└──────────────┘                │   ├─▶ D1  (source of truth)              │
+                                │   ├─▶ R2  (files)                        │
+ Your team                      │   ├─▶ Queue (crawl and file jobs)        │
+┌──────────────┐   WebSocket    │   └─▶ Workers AI (models, embeddings)    │
+│ Dashboard    │ ◀────────────▶ │                                          │
+└──────────────┘                └──────────────────────────────────────────┘
+```
+
+## From a visitor's message to an AI reply
+
+<Steps>
+  <Step title="The loader starts on your page">
+    `widget.js` loads from your desk with `data-key`. It starts capturing debug context in memory, opens a small live connection so you see the visitor on the **Visitors** page, and adds the chat frame (`/widget?key=…`). The Worker serves that frame with a `frame-ancestors` policy built from your **Allowed websites**, so other sites can't embed your chat.
+  </Step>
+  <Step title="The visitor gets a token">
+    The frame asks the Worker for a visitor token. It identifies this browser's anonymous contact. If your page passes a signed identity token, the contact becomes a verified customer instead. See [Identify users](/widget/identify-users).
+  </Step>
+  <Step title="The first message creates the conversation">
+    The first message goes over HTTP, which creates the conversation in D1 and hands the message to its `Conversation` Durable Object. The frame then opens a WebSocket to that object. Messages typed before the conversation exists are held and sent into it once its socket opens.
+  </Step>
+  <Step title="The Conversation object records and broadcasts">
+    The object gives the message the next sequence number, writes it to D1 and sends it to every socket on the conversation: the visitor's and any teammate who has it open. It also tells the `WorkspaceHub`, which updates every teammate's inbox. Messages are idempotent per client message id, so a retry never duplicates one.
+  </Step>
+  <Step title="An AI turn runs from an alarm">
+    If the conversation is handled by the AI, the object sets an alarm for now. The alarm runs one AI turn. It first checks whether the AI should answer at all:
+
+    - the AI is turned on,
+    - the visitor didn't ask for a person,
+    - the AI hasn't reached `maxReplies` in this conversation (8 by default, set in `AGENTS.md`),
+    - the workspace hasn't reached its monthly reply cap (2,000 by default, in **Settings → AI**).
+
+    If any check fails, it hands off instead (next section).
+  </Step>
+  <Step title="Search, then answer">
+    The turn searches your knowledge with hybrid search: vectors in the `KnowledgeIndex` object and keywords in D1's full-text index, merged and reranked. It then runs the model with your `AGENTS.md`, tasks, actions, the masked debug context, the verified customer (if any) and the page's actions. The model may call up to 5 tools in a turn.
+
+    The reply streams to the visitor word by word, with citations already resolved to source chips. The finished reply is saved with the id `ai:<seq>`, so a retried alarm can never answer the same message twice.
+  </Step>
+  <Step title="Follow-ups and labels come later">
+    A separate fast job adds suggested follow-up questions under answers that came from your knowledge. Once a chat goes quiet, the 15-minute cron gives it a topic label for the **Dashboard**.
+  </Step>
+</Steps>
+
+### Handoff to a person
+
+The AI only answers while a conversation's handling is `ai`. These switch it to `human`:
+
+- a teammate replies (an internal note doesn't count),
+- the visitor presses "Talk to a person" or asks for one,
+- the model calls its `handoff` tool, for example when the customer needs something only staff can do, or a topic in `handoffTopics` comes up,
+- the reply limit or the monthly cap is reached,
+- the AI is off or its provider fails.
+
+On a handoff the visitor sees a short notice, and the team gets an internal brief with what was asked and what failed. The conversation is then auto-assigned if you use round robin, and the right teammates are notified. Outside business hours, a chat waiting for a person gets your away message. See [Handoff](/ai/handoff).
+
+## Realtime
+
+- Teammates, visitors and the loader talk to Durable Objects over WebSockets. The Worker authenticates every upgrade first: a teammate by their session cookie, a visitor by their token sent as the WebSocket's second subprotocol. It then forwards the socket to the object.
+- Clients ping every 30 seconds. Durable Objects answer pings automatically, even while hibernated, so idle chats cost almost nothing.
+- A socket with no ping for 75 seconds counts as gone. It disappears from the visitor list, presence and auto-assignment, and a sweep closes it. Tabs closed without a goodbye and connections cut by a deploy don't linger.
+- Internal notes, tags and topics only go to sockets tagged as teammates. They never reach a visitor or the AI.
+
+## What's stored where
+
+| Data | Where |
+|---|---|
+| Conversations, messages, contacts, teammates, passkeys (public keys only), sessions (hashed), invites (hashed), settings, knowledge text and keyword index, agent config versions, AI action logs, CSAT, topics | D1 |
+| Attachments, screenshots, logos, uploaded knowledge files | R2 |
+| Knowledge vectors | `KnowledgeIndex` Durable Object storage |
+| Issue tracker credentials and action keys pasted on the desk, customers' own API keys from identity tokens (until they expire), the Web Push signing key | `WorkspaceHub` Durable Object storage, never D1 and never returned by the API |
+| The page actions a visitor's page offers right now | That conversation's `Conversation` Durable Object storage |
+| `SETUP_TOKEN`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `LINEAR_API_KEY`, `JUN_SECRET_<NAME>` | Worker secrets, which you set. See [Secrets](/reference/secrets) |
+
+Tokens and secrets the desk issues itself (sessions, invites, API tokens) are stored only as SHA-256 hashes.
+
+## No external services
+
+A working desk needs nothing outside Cloudflare:
+
+- **Sign-in** uses passkeys, so there's no email service or OAuth provider. The owner is created with `SETUP_TOKEN`; teammates join through invite links.
+- **The AI** runs on Workers AI by default, so there's no API key to get.
+- **Search** runs on D1 and a Durable Object, so it works in local development and with one-click deploy.
+- **Notifications** use standard Web Push with a key the desk creates on first use.
+
+Optional integrations reach outside when you turn them on: OpenAI or ChatGPT sign-in for replies, GitHub or Linear for issues, and your own APIs through actions.

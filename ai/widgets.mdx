@@ -1,0 +1,224 @@
+---
+title: "Widgets"
+description: "Show an action's result to the customer as a card, in OpenAI's ChatKit widget format, with buttons that run your actions."
+icon: "table-cells-large"
+---
+
+A widget shows a result to the customer as a card instead of text: an order's status, their plan, a list of invoices, a form to book a call. Its buttons can run your [actions](/ai/actions), run an action on your website, open a link, or tell the AI what was picked.
+
+Widgets are under **Agent → Widgets** (`/agent/widgets`). Each is a file, `widgets/<name>.widget`, in OpenAI's [ChatKit](https://widgets.chatkit.studio) widget format: you can design one in ChatKit Studio, download it and upload it here, or build it on the desk with the widget editor's AI. The desk draws widgets with its own renderer, in your widget's look.
+
+## When a widget shows
+
+A widget appears in the chat when:
+
+- **An action shows its result.** Set **Show the result as a widget** on the action (`widget: order`). When the action succeeds, its whole JSON response fills the widget. See [Actions](/ai/actions).
+- **A website action shows its result.** Pick the widget for it under [On your website](/ai/actions#on-your-website), or your site's code names it when it registers the action.
+- **The AI fills it in itself.** For widgets with **The AI can fill this widget itself** switched on. See [Let the AI fill a widget](#let-the-ai-fill-a-widget).
+- **An action only shows it.** An action with no address calls nothing: it draws the widget from its example data plus the details the AI filled in.
+
+When a widget shows, the AI is told the customer already sees the result as a card, so its answer doesn't repeat the details. If a result doesn't fit the widget (it isn't JSON, or the template fails), the customer gets the AI's words only and the [audit log](/ai/actions#audit-log) says why.
+
+## The gallery
+
+**Agent → Widgets** shows every widget as a live preview, with a search box.
+
+- **My widgets**: your widgets. Each tile says what shows it ("Shown by Lookup order"), or "Nothing shows it yet".
+- **Templates**: ChatKit Studio's gallery widgets. Open one, give it a name and it's copied into your draft.
+- **New widget** starts from a simple plan card you can change.
+- The upload button takes a `.widget` file downloaded from ChatKit Studio.
+
+New widgets, like every Agent change, go live only when you [save](/ai/instructions#save-and-go-live). An agent can hold up to 20 widgets.
+
+## The widget editor
+
+A widget's page has **AI**, **Code** and **Details** tabs on the left, and a large preview on the right. The preview follows every change. Switch it between light and dark, and pick which example to draw it with when the widget has [states](#example-data-schema-and-states).
+
+### AI
+
+Describe the change in your words: "Make it more compact", "Add a status badge in the corner", "Use a dark theme", "Add a button that opens the invoice". The reply streams in, the preview updates, and the change goes into your draft. Each change has **Undo** and **Redo**.
+
+The AI follows ChatKit's own widget-authoring guide and knows exactly which template filters and tests the desk supports. It also sees your actions (their inputs, method and whether they show a widget) and the website actions the desk has seen, so it can wire buttons to them. Its answer is checked like an upload; if it doesn't draw, the AI gets one more try with the error.
+
+The editor uses the **Agent page editing** model, and needs the AI turned on and under its monthly cap (see [Models](/ai/models)).
+
+### Code
+
+- **Template**: the Jinja template that draws the widget.
+- **Default**: the example data the preview uses (`sample`). Write it in the shape your action returns.
+- **States** (after Default, and **+** to add one): more named examples to preview and check, up to 10. Rename or remove a state from its tab.
+- **Schema**: the widget's parameters as JSON Schema (`jsonSchema`). Without one, it's worked out from the example data; edit it to make it the widget's own, with descriptions and optional fields.
+- **Summary**: one plain-text line from the same data, like `{{ plan }} plan · {{ status }}`. The chat shows it when it folds the widget away.
+- **Whole file**: the `.widget` file as text.
+
+### Details
+
+- **Connected**: which actions show this widget, which actions its buttons run, and warnings, for example a required input of an action that no field of the widget fills.
+- **The AI can fill this widget itself**: see [below](#let-the-ai-fill-a-widget).
+- **Website actions**: actions on your website whose result shows as this widget. Add or remove them here.
+- **Parameters**: the data the widget draws, from its schema. Mark a field needed or optional, and describe a field when its name doesn't say enough: the AI reads the descriptions when it fills the card.
+- **Folded**: the summary line, as the chat would show it.
+- **ChatKit Studio**: **Open ChatKit Studio** to design there, and **Replace with a file** to upload the result over this widget.
+
+## The file
+
+The order card from `jun init`:
+
+```json widgets/order.widget
+{
+  "version": "1.0",
+  "name": "Order",
+  "template": "{\"type\":\"Card\",\"size\":\"sm\",\"children\":[{\"type\":\"Row\",\"children\":[{\"type\":\"Title\",\"value\":{{ (\"Order \" ~ number) | tojson }},\"size\":\"sm\"},{\"type\":\"Spacer\"},{\"type\":\"Badge\",\"label\":{{ (status) | tojson }},\"color\":{% if status == \"delivered\" %}\"success\"{% else %}\"info\"{% endif %}}]},{\"type\":\"Divider\",\"flush\":true},{\"type\":\"Row\",\"children\":[{\"type\":\"Caption\",\"value\":\"Ordered\"},{\"type\":\"Spacer\"},{\"type\":\"Text\",\"value\":{{ (orderedOn) | tojson }},\"size\":\"sm\"}]},{\"type\":\"Row\",\"children\":[{\"type\":\"Caption\",\"value\":\"Total\"},{\"type\":\"Spacer\"},{\"type\":\"Text\",\"value\":{{ (total) | tojson }},\"size\":\"sm\",\"weight\":\"semibold\"}]}]}",
+  "summary": "Order {{ number }} · {{ status }}",
+  "sample": {
+    "number": "A-1042",
+    "status": "delivered",
+    "orderedOn": "2026-09-02",
+    "total": "$49.00"
+  }
+}
+```
+
+| Key | What it is |
+|---|---|
+| `version` | Always `"1.0"`. |
+| `name` | The widget's title, shown on the desk. |
+| `template` | A Jinja template that renders the widget's JSON. |
+| `sample` | Example data for the preview and checks. Without it, ChatKit Studio's default state is used. |
+| `jsonSchema` | The data's parameters (ChatKit Studio's Schema tab). Optional. |
+| `states` | More named examples: `[{ "name": "Late", "data": { … } }]`. Studio's own states are read too. |
+| `summary` | One line for the folded chat, up to 200 characters of template. |
+| `aiFill` | `true` lets the AI fill this widget itself. Needs `sample`. |
+| `pageActions` | Website actions whose result this widget shows, like `["get_cart"]`. Up to 10. |
+
+### Data
+
+The action's whole JSON response is the template's data. An object is used as is; a list becomes `items`; anything else becomes `value`. The AI gets only the `pick`ed, shortened response, but the widget gets all of it.
+
+### What a widget can contain
+
+The root must be a `Card`, `ListView` or `Basic`. The components the desk draws:
+
+`Basic`, `Card`, `ListView`, `ListViewItem`, `Box`, `Row`, `Col`, `Form`, `Spacer`, `Divider`, `Transition`, `Table`, `Table.Row`, `Table.Cell`, `Text`, `Title`, `Caption`, `Markdown`, `Label`, `Badge`, `Icon`, `Image`, `Chart`, `Button`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`.
+
+An unknown component makes the widget invalid. Props follow ChatKit's. Images must be `https`. A `ListView` shows 4 rows unless its `limit` says otherwise.
+
+| Limit | Value |
+|---|---|
+| Components per widget | 400 |
+| Nesting depth | 24 |
+| Rendered size | 48 KB |
+| Widgets per agent | 20 |
+
+Every example (the default data and each state) must fit the schema and draw, or the file shows a problem and you can't save.
+
+## Templates
+
+The template language is a safe subset of Jinja that ChatKit Studio's exports use. It's lenient on purpose: a field missing from your API's response is empty rather than an error.
+
+Readable, the order card's template is:
+
+```jinja
+{"type":"Card","size":"sm","children":[
+  {"type":"Row","children":[
+    {"type":"Title","value":{{ ("Order " ~ number) | tojson }},"size":"sm"},
+    {"type":"Spacer"},
+    {"type":"Badge","label":{{ (status) | tojson }},
+     "color":{% if status == "delivered" %}"success"{% else %}"info"{% endif %}}
+  ]},
+  {"type":"Divider","flush":true},
+  {"type":"Row","children":[{"type":"Caption","value":"Ordered"},{"type":"Spacer"},
+    {"type":"Text","value":{{ (orderedOn) | tojson }},"size":"sm"}]}
+]}
+```
+
+<Tip>
+Put every value through `| tojson`. It quotes and escapes text and writes `null` for a missing field, so the result is always valid JSON. "The template didn't render valid JSON (a value without | tojson?)" usually means one is missing.
+</Tip>
+
+Supported:
+
+- `{{ … }}` output, `{% if %}` / `{% elif %}` / `{% else %}`, `{% for %}` with `loop` and `{% else %}`, `{% set %}` (also as a block), `{# comments #}` and `-` whitespace control.
+- Expressions: attribute and index access, slices, lists and dicts, `~` (join as text), arithmetic, comparisons, `and` / `or` / `not`, `in`, inline `x if y else z`, and `is` tests.
+- Filters: `abs`, `attr`, `batch`, `capitalize`, `center`, `count`, `d`, `default`, `dictsort`, `e`, `escape`, `first`, `float`, `indent`, `int`, `items`, `join`, `last`, `length`, `list`, `lower`, `map`, `max`, `min`, `reject`, `rejectattr`, `replace`, `reverse`, `round`, `safe`, `select`, `selectattr`, `sort`, `string`, `sum`, `title`, `tojson`, `trim`, `truncate`, `unique`, `upper`, `wordcount`.
+- Tests: `boolean`, `defined`, `divisibleby`, `eq`, `equalto`, `even`, `false`, `float`, `ge`, `gt`, `in`, `integer`, `iterable`, `le`, `lower`, `lt`, `mapping`, `ne`, `none`, `number`, `odd`, `sameas`, `sequence`, `string`, `true`, `undefined`, `upper`.
+
+Templates run with step and size limits (50,000 steps, 256 KB of output).
+
+## Example data, schema and states
+
+- **Example data** (`sample`) draws the preview and checks the widget. Use [Try it](/ai/actions#try-it) on the action to make a real response the example data in one click.
+- **Schema** (`jsonSchema`) says what data the widget expects. Actions and the AI fill the widget in this shape, and every example must fit it.
+- **States** are more examples, like "Late" or "Empty", so you can check the widget draws in each case.
+
+## Buttons
+
+A button's `onClickAction` (or a form's or list row's action) says what pressing it does. The `type` decides:
+
+| Action `type` | What happens |
+|---|---|
+| Any other name, like `choose_plan` | Sent to the AI as the customer's message: the button's label, with its payload and the fields they filled in. The AI answers. |
+| `tool:<name>` | Runs your action `<name>` at once: the press is the customer's yes. The button's `payload` and the card's fields fill the action's inputs (only the names it takes). Uses the verified customer for `{user.*}` and is recorded in the audit log. The AI then answers with the result, unless a [done line](#done-and-failed-lines) answers instead. |
+| `page:<name>` | Runs the [website action](/widget/page-actions) `<name>` with the payload and fields. The press is the yes, so it runs at once unless a required input is missing; set to **A person does it**, it hands off instead. If the customer's page doesn't offer that action, the card opens again and says so. |
+| `open_url` | Opens `payload.url` (an `https` link), like a checkout or an invoice. Never sent to the desk. |
+| `dismiss` | Folds the card away on the customer's side. Never sent. |
+| Any type with `"handler": "client"` | Goes to your page's own code, never the desk: the `jundesk:widget-action` window event, or `JunDesk.onWidgetAction`. See the [JavaScript API](/widget/javascript-api). |
+
+```json
+{"type":"Button","label":"Remove","onClickAction":{"type":"page:remove_from_cart","payload":{"id":"mug"}}}
+```
+
+A customer can use a card's own buttons once; the card then shows their choice. Buttons in a list are used row by row, so the other rows still work.
+
+A field's `onChangeAction` with `tool:<name>` runs the action quietly as the customer changes the field, and the action's card replaces this one.
+
+The desk only accepts presses the card really offers, and keeps only the fields that card has.
+
+<Note>
+A required action input that no field or payload key fills is sent empty. **Connected** in Details warns about it, and suggests a field with a close name.
+</Note>
+
+## Done and failed lines
+
+When a widget's button runs one of your actions, the action can answer the press itself, so the customer doesn't wait for the AI. Set them on the action's page (**When a widget's button runs it, the widget says** and **If it fails, the widget says**) or in its file:
+
+```yaml tools/request_callback.yaml
+widget_done: "Thanks {{ name }}, we'll call you today."
+widget_failed: That didn't go through. Please try again.
+```
+
+- **`widget_done`**: on success, the card folds to this line and the AI takes no turn (unless the action also shows a widget, then the AI answers with it).
+- **`widget_failed`**: on an error, the card stays open with this line and nothing is sent, so the customer can fix a field and press again.
+
+Each is one Jinja line, up to 200 characters, over what the customer entered (`{{ name }}` for the field called `name`) and, for a done line, the action's JSON result. The shown line is cut at 140 characters. Leave them empty to let the AI answer. They're never used when the AI calls the action itself.
+
+## Let the AI fill a widget
+
+Some cards are better filled by the AI from what it knows: a summary, a comparison, a contact card. Switch on **The AI can fill this widget itself** in the widget's Details (`"aiFill": true`). The widget needs example data, because the AI fills it in that shape.
+
+The AI then has a built-in tool, `show_widget`, for those widgets. It may show one whenever it fits, filled only with what it knows from the chat, your knowledge and action results. The data must fit the widget's schema and draw, or the AI gets the error and tries again or answers in text. While it works, the customer sees "Putting that together".
+
+Name it in a task's steps with `@show_widget` to make the AI use it at that step.
+
+<Warning>
+Leave it off for account data, such as invoices, plans or payment status. Those should come from an action, so the AI can't make them up.
+</Warning>
+
+## Summary line
+
+A widget's `summary` is one plain-text line rendered from the same data, like `Order {{ number }} · {{ status }}`. The chat shows it when the widget is folded away (for example, on the island launcher's folded pill). It's cut at 80 characters. If it fails to render, it's left out; the card still shows.
+
+<CardGroup cols={2}>
+  <Card title="Actions" icon="bolt" href="/ai/actions">
+    The results widgets show, and the actions their buttons run.
+  </Card>
+  <Card title="Page actions" icon="hand-pointer" href="/widget/page-actions">
+    `page:` buttons and website action results.
+  </Card>
+  <Card title="Launchers" icon="message" href="/widget/launchers">
+    How the island folds cards away.
+  </Card>
+  <Card title="Agent files" icon="file-code" href="/code/files">
+    The `.widget` format for git.
+  </Card>
+</CardGroup>

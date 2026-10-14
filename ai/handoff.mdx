@@ -1,0 +1,110 @@
+---
+title: "When the AI hands off"
+description: "Every reason a chat moves from the AI to your team, what the customer and your team see, and how to hand a chat back."
+icon: "headset"
+---
+
+Each conversation is handled either by the AI or by your team. The AI only ever answers while the conversation is the AI's. The moment anything below happens, the chat becomes your team's, the customer is told a teammate will reply, and the AI stops answering until someone hands it back.
+
+## Who starts with a chat
+
+- A new chat from the widget starts with the AI when [the AI is on](/ai/models#turn-the-ai-on).
+- With the AI off, it starts with your team, and round robin can assign it straight away (see [Assignment](/inbox/assignment)).
+- A chat a teammate started from the visitor list starts with your team.
+
+While the AI has a chat, the widget always shows a **Talk to a person** link, and the inbox shows "The AI assistant is answering this conversation. Replying yourself takes it over."
+
+## Reasons the AI hands off
+
+| What happens | The customer sees | Your team's note says |
+|---|---|---|
+| A teammate replies in the chat | Nothing extra: the reply itself | "Ana took over from the AI." |
+| A teammate presses **Take over** | Nothing | (no note) |
+| The customer presses **Talk to a person** | "I'll get a teammate to help with this. They'll reply right here." | The customer asked for a person. |
+| The customer writes a plain request for a person, like "can I talk to a real person please" | The same. The model isn't asked at all. | The customer asked for a person. |
+| The AI decides to hand off | The same, after any words it wrote first | The AI's own reason, plus a brief |
+| The AI answers but explains a bug it found in the customer's browser | Its answer, then "I've passed this to the team with the technical details. They'll follow up right here." | "Bug flagged by the AI: …", plus a brief |
+| The AI can't write any answer | "I'll get a teammate to help with this. They'll reply right here." | The AI couldn't answer from the knowledge base, plus a brief |
+| A [website action](/widget/page-actions) set to **A person does it** | The same | "The customer wants to: …", plus a brief |
+| The AI has replied **After this many AI replies** times | The same | "The AI has answered 8 times without resolving it." |
+| The month's [reply cap](/ai/models#monthly-reply-cap) is reached | "Our assistant isn't available right now, but a teammate will reply right here." | Monthly AI reply cap (2000) reached. |
+| The AI errors (the provider is down, a key is missing, a timeout) | "I couldn't answer that just now, so I've asked a teammate to help. They'll reply right here." | "AI error: …" or "AI unavailable: …" |
+| The AI was turned off since the chat started | "I'll get a teammate to help with this. They'll reply right here." | AI replies are turned off. |
+
+The AI never goes silent: if it can't answer for any reason, the chat goes to your team.
+
+### When the AI decides to hand off
+
+The AI hands off by calling its built-in `handoff` tool with a short reason for your team. It's told to do so when:
+
+- the customer asks for a person;
+- they need something only staff can do (refunds, account, email or billing changes, cancellations, data deletion) and no task, action or website action covers it;
+- it already asked a clarifying question and still can't help;
+- they're frustrated;
+- the request is about one of your **Always for these topics** (see [Instructions](/ai/instructions#when-the-ai-hands-over));
+- a [task's](/ai/tasks) steps say to hand off.
+
+The decision is a tool call, never a phrase in the text, so the customer sees every word the AI writes and nothing is held back. If the AI wrote something before handing off, that stays in the chat as its message, then the notice.
+
+### The turn limit
+
+**After this many AI replies** (8 by default, set on [Instructions](/ai/instructions#when-the-ai-hands-over)) counts the AI's answers in the conversation. Follow-up turns after a website action runs don't count. Once the limit is reached, the customer's next message goes to your team instead of the AI.
+
+## What your team gets
+
+Every handoff adds an internal note to the conversation, visible to your team only: "Handed off to the team. Reason: …".
+
+When the AI itself decided (it called `handoff`, flagged a bug, couldn't answer, or a website action needs a person), the note also has a **brief**, written by the `brief` job from the transcript and any browser details:
+
+```text
+Issue: what the customer needs.
+Tried: what the AI actually answered, or "Nothing yet".
+Next: the most useful next step, quoting any failed request exactly (method, path, status, time).
+```
+
+The brief uses only facts from the transcript. If writing it fails or takes over 20 seconds, the note has just the reason. Pick a fast model for it under [Model per job](/ai/models#model-per-job) (**Handoff briefs**).
+
+Then the chat is assigned by round robin if you use it, and your team is [notified](/inbox/notifications): the assignee, or everyone who asked to hear about chats that need a person.
+
+[Reports](/inbox/reports) count handoffs and their reasons. A chat that went to the team only because the AI was off doesn't count as the AI handing off.
+
+## Taking over
+
+Replying to a customer in a chat the AI is answering takes it over: the AI stops, and the note "Ana took over from the AI." is added. If the AI was in the middle of writing, its answer is dropped.
+
+**Take over** in the conversation's banner (or **Take over from the AI** in the command palette) does the same without replying.
+
+An internal note doesn't take over. Notes stay between your team, never reach the customer or the AI, and don't show typing to the customer. See [Notes and replies](/inbox/notes-and-replies).
+
+## Hand a chat back to the AI
+
+In a chat your team is handling that the AI answered before, the banner says "A teammate is handling this conversation." with **Hand back to AI** (or **Hand back to the AI** in the command palette).
+
+After you hand back:
+
+- If the customer's latest message is still unanswered by a teammate, the AI answers it now.
+- If a teammate already answered it, the AI waits for the customer's next message.
+- The same rules apply as before: the AI hands off again if the customer asks for a person, the reply cap is reached, or its replies in this conversation have already hit the turn limit.
+
+## Business hours
+
+The AI answers around the clock: business hours don't change what it does.
+
+They matter for chats with your team. When a chat is handled by your team and your inbox is closed, the customer gets one automatic away message per closed period. The default reads "Thanks for your message! Our team is away right now and will reply here on Monday at 09:00." It's skipped if a teammate replied in the last 15 minutes. This covers chats the AI just handed off and new chats while the AI is off.
+
+Set your hours and away message (with `{when}` for the next opening) in [Business hours](/inbox/business-hours).
+
+<CardGroup cols={2}>
+  <Card title="Instructions" icon="pen-to-square" href="/ai/instructions">
+    Turn limit and topics that always go to a person.
+  </Card>
+  <Card title="Assignment" icon="users" href="/inbox/assignment">
+    Who gets a chat once it's handed off.
+  </Card>
+  <Card title="Notifications" icon="bell" href="/inbox/notifications">
+    Hear about chats that need a person.
+  </Card>
+  <Card title="Debug context" icon="bug" href="/widget/debug-context">
+    How the AI sees and flags browser errors.
+  </Card>
+</CardGroup>

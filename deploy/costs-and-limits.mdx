@@ -1,0 +1,93 @@
+---
+title: "Costs and limits"
+description: "What Jun Desk costs to run on Cloudflare, which plan limits matter, and the limits the desk sets itself."
+icon: "coins"
+---
+
+Jun Desk runs on your Cloudflare account, so you pay Cloudflare directly for what it uses. There is no Jun Desk fee. If you choose OpenAI for replies, you pay OpenAI for those tokens too.
+
+<Note>
+Cloudflare's prices and limits below are as of October 2026 and change from time to time. Check the linked Cloudflare pages for current numbers.
+</Note>
+
+## Free or Paid
+
+| | Workers Free | Workers Paid |
+|---|---|---|
+| Price | $0 | From $5/month per account |
+| CPU time per request | 10 ms | 30 s by default, up to 5 min |
+| AI replies | Fail now and then (error 1102) | Work |
+| Inbox, widget, visitors, notifications | Work | Work |
+
+Sources: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
+
+**Use Workers Paid if you want the AI.** On Free, a Worker gets 10 ms of CPU per request. Reading a model's streamed answer takes far more: one widget edit through the Agent page's AI chat measured 0.3–1 s of CPU, almost all of it handling the streamed events. Free lets some overruns through, so on Free the AI works sometimes and fails sometimes. That affects every streamed AI call: replies to visitors, handoff briefs and the Agent page's AI chats.
+
+### Error 1102
+
+When a request goes over its CPU limit, Cloudflare stops it and answers with its own page, **error 1102 "Worker exceeded resource limits"** (seen as HTTP 503), not the desk's JSON error. If AI replies or the Agent page's AI chats fail with this now and then, you're on the Free plan. Upgrade the account to Workers Paid in the Cloudflare dashboard.
+
+To see it happen, run `npx wrangler tail` while you send a chat: the failing request shows `exceededCpu`.
+
+## Workers AI
+
+Workers AI is the default AI provider. It also does the knowledge base's embeddings and reranking, even when replies come from OpenAI or ChatGPT.
+
+- Every account gets a daily free allocation of Neurons (Workers AI's usage unit), on both plans. On Workers Paid, use beyond it is billed per 1,000 Neurons. See [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+- If the free allocation runs out (on Free), embeddings fail. The desk keeps working: new knowledge chunks are still found by keyword search, the AI's searches fall back to keywords, and the next re-index (or the daily re-sync) adds the missing vectors.
+- The default chat model is Mistral Small 3.1 (`@cf/mistralai/mistral-small-3.1-24b-instruct`).
+
+## Cloudflare limits that matter
+
+| Product | What to know | Source |
+|---|---|---|
+| **D1** | One database per desk. A database can hold up to 500 MB on Free and 10 GB on Paid; Free also has daily row read and write limits. A single company's conversations fit comfortably. | [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) |
+| **R2** | Holds attachments, screenshots, logos and knowledge files. Has a monthly free tier for storage and operations, and no egress fees. | [R2 pricing](https://developers.cloudflare.com/r2/pricing/) |
+| **Queues** | Each crawled page and each uploaded knowledge file is a queue message. Free includes 10,000 operations a day; Paid includes 1 million a month. Large crawls on Free can hit the daily limit. | [Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/) |
+| **Durable Objects** | Jun uses SQLite-backed Durable Objects, which are available on both plans, with usage-based limits. Idle chat sockets hibernate, so open widgets cost little. | [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/) |
+| **Cron triggers** | Jun uses one schedule (every 15 minutes). The Free plan allows 5 per account. | [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) |
+
+## Limits the desk sets
+
+These keep the AI from running away with your bill and the desk inside Cloudflare's limits.
+
+### AI reply limits
+
+<ParamField path="Monthly reply cap" type="number" default="2000">
+  How many AI replies the workspace sends per calendar month (UTC). Set it in **Settings → AI**, from 0 to 1,000,000; the panel shows "N / cap replies this month". When it's reached, new chats go straight to your team with a notice: the AI never just goes silent. Topic labels, drafted suggested questions and the Agent page's AI chats also pause until the next month. They don't use up replies, but their tokens are counted.
+</ParamField>
+
+<ParamField path="maxReplies" type="number" default="8">
+  How many times the AI answers in one conversation before it hands off to a person. Set it in the frontmatter of `AGENTS.md` (or on the **Agent** page), from 1 to 50. Follow-up turns after a page action don't count. See [Instructions](/ai/instructions).
+</ParamField>
+
+<ParamField path="Tool steps per reply" type="number" default="5">
+  The most tool calls the AI makes in one reply. Fixed.
+</ParamField>
+
+### Knowledge
+
+| Limit | Value |
+|---|---|
+| Pages per website | 200 by default, up to 2,000 per source |
+| Link depth, when the crawler follows links | 3 |
+| Largest page read | 2 MB (bigger pages are skipped) |
+| Files per workspace | 200 |
+| File size (knowledge files and chat attachments) | 10 MB |
+
+### Chat
+
+| Limit | Value |
+|---|---|
+| Message length | 10,000 characters |
+| Attachments per message | 10 |
+| Page actions offered per reply | 30 (the loader sends up to 60) |
+
+<CardGroup cols={2}>
+  <Card title="Models" icon="sparkles" href="/ai/models">
+    Choose a provider and model, per task if you like.
+  </Card>
+  <Card title="Knowledge" icon="book-open" href="/ai/knowledge">
+    Websites, files and snippets the AI answers from.
+  </Card>
+</CardGroup>

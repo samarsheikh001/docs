@@ -1,0 +1,98 @@
+---
+title: Widget options
+description: Every attribute of the widget's script tag, what it changes, and what the loader loads from your desk.
+icon: sliders
+---
+
+The widget is configured in two places. The `<script>` tag on your site carries a few per-site options, listed here. Everything about the widget's look and behaviour (colour, logo, launcher, side, theme, greeting, business hours, page openers, allowed websites) is set on the desk and reaches your site within a minute, with no change to the tag. See [Appearance](/widget/appearance).
+
+```html
+<script
+  src="https://your-desk.example.com/widget.js"
+  data-key="wk_…"
+  data-consent="required"
+  data-capture="off"
+  data-color="#0f766e"
+  data-user-token="eyJhbGciOiJIUzI1NiIs…"
+  defer
+></script>
+```
+
+## Attributes
+
+<ParamField path="src" type="URL" required>
+  `https://<your desk>/widget.js`. The loader takes your desk's address from this URL: the chat frame, its API calls and its live connection all go to the same origin.
+</ParamField>
+
+<ParamField path="data-key" type="string" required>
+  Your widget key, `wk_…`, from **Chat widget → Install**. It's public by design. Without it, the loader logs `Jun Desk: no data-key` to the console and does nothing. Limit which sites may use it with **Allowed websites**: see [Install the widget](/widget/install).
+</ParamField>
+
+<ParamField path="data-consent" type='"required"'>
+  Waits for the visitor's consent. Until your page calls `JunDesk.consent(true)`, the widget stores nothing in the browser, doesn't connect its live socket (so the visitor isn't on your visitor list), and `JunDesk.reportError()` does nothing. The chat can still be opened; it just isn't remembered across pages. `JunDesk.consent(false)` turns it back off. Any other value, or no attribute, means consent isn't needed. See [Consent and privacy](/widget/consent-and-privacy).
+</ParamField>
+
+<ParamField path="data-capture" type='"off"'>
+  Turns off debug capture: no JavaScript errors, failed requests, page visits, rage clicks or "stuck" detection, no "Want a hand?" nudges after something fails, and `JunDesk.reportError()` does nothing. Messages still carry the page address, browser, viewport, language and time zone. Any other value keeps capture on. See [Debug context](/widget/debug-context).
+</ParamField>
+
+<ParamField path="data-color" type="#rrggbb">
+  Overrides the brand colour from the desk, on this site only. Must be a six-digit hex colour; anything else is ignored. The desk works out a readable text colour for it, as it does for the colour set on the desk.
+</ParamField>
+
+<ParamField path="data-user-token" type="JWT">
+  Says who the signed-in customer is: a short-lived HS256 token your backend signs with the desk's identity secret. Same as calling `JunDesk.identify(token)` once the loader has run. See [Identify users](/widget/identify-users).
+</ParamField>
+
+<ParamField path="defer" type="boolean" required>
+  Put the tag in `<head>`, before your own scripts, with `defer`. Then the loader runs before your app's code: it sees errors from the start, and `document.modelContext` exists when your code registers page actions. Don't use `async`. See [Install the widget](/widget/install).
+</ParamField>
+
+The loader runs once per page. A second copy of the tag is ignored, since `window.JunDesk` already exists.
+
+## Set on the desk instead
+
+These aren't attributes. Change them on the desk and every site with the snippet follows:
+
+| Setting | Where |
+|---|---|
+| Colour, logo (and a logo for dark surfaces), corner rounding, light/dark theme, button style | **Chat widget → Look** |
+| Launcher: button, bar, card or island; left or right side | **Chat widget → Look** |
+| Greeting and suggested questions | **Chat widget → Look** |
+| Allowed websites, identity secret, page openers | **Chat widget → Install** |
+| Business hours and away message | **Settings → Inbox** |
+
+## The JavaScript API
+
+Once the loader has run, `window.JunDesk` has `open()`, `close()`, `toggle()`, `identify(jwt)`, `logout()`, `consent(bool)`, `reportError({ message, code? })`, `registerAction({ … })` and `onWidgetAction(fn)`. It dispatches a `jundesk:ready` event on `window` when the API is there. See the [JavaScript API](/widget/javascript-api).
+
+## What the loader loads
+
+Useful when your site sends a Content Security Policy, or when you check the network panel. Everything comes from your desk's origin:
+
+| Request | When | CSP directive |
+|---|---|---|
+| `GET /widget.js` | The tag itself | `script-src` |
+| `GET /api/widget/<key>/config` | On load: colour, launcher, side, theme | `connect-src` |
+| `wss://…/api/widget/<key>/live` | On load (after consent): the live visitor connection | `connect-src` |
+| `/widget?key=<key>` in an iframe | When the chat opens; at once for the bar, card and island launchers | `frame-src` |
+| `GET /widget-actions.js` | The first time your page registers an action | `script-src` |
+| Your logo | When the launcher button shows it | `img-src` |
+| `POST /api/widget/<key>/nudge` | When something fails on the page and the widget may offer help | `connect-src` |
+
+If your site has a CSP, allow your desk's origin for these directives (for example `script-src https://support.acme.com`, `connect-src https://support.acme.com wss://support.acme.com`, `frame-src https://support.acme.com`, `img-src https://support.acme.com`).
+
+The chat frame has its own policy, set by the desk: with **Allowed websites** filled in, only those sites (and the desk) may embed it.
+
+## Testing the "stuck" nudge locally
+
+On `localhost` or `127.0.0.1`, add `?jun_stuck_ms=<milliseconds>` to the page's address to shorten the 3 minutes after which a visitor counts as stuck on a page that failed. It has no effect on other hostnames.
+
+<CardGroup cols={2}>
+  <Card title="Install the widget" icon="code" href="/widget/install">
+    Placement, frameworks and allowed websites.
+  </Card>
+  <Card title="JavaScript API" icon="js" href="/widget/javascript-api">
+    Every `JunDesk` method.
+  </Card>
+</CardGroup>

@@ -1,0 +1,138 @@
+---
+title: Dashboard and topics
+description: What every number on the Dashboard means, how the AI labels conversations with topics, and how to manage them.
+icon: chart-column
+---
+
+The **Dashboard** (`/dashboard`, or `g` then `d`) reports on your conversations: how many came in, how many the AI resolved alone, how fast your team answers, what customers rate you, what they ask about and where they were when they asked. Every teammate can see it.
+
+## Periods and days
+
+Pick **7 days**, **30 days** or **90 days** at the top. A period is that many calendar days ending today, counted in your browser's time zone, so "today" starts at your midnight. Days are calculated correctly across daylight saving changes.
+
+A conversation belongs to the period it **started** in. Ratings belong to the day they were given, replies to the day they were sent.
+
+If a period has more than 20,000 conversations, the report covers the newest 20,000 and says so at the top.
+
+## Conversations
+
+The first card shows conversations per day as a stacked chart:
+
+| Band | Meaning |
+|---|---|
+| **Resolved by the AI** | Conversations the AI handled alone |
+| **AI, then the team** | The AI's other conversations: handed off, or a teammate replied |
+| **Team only** | Conversations the AI never answered or handed off |
+
+Hover a day to see its count in the card's header. When the AI is off and had no conversations in the period, the chart shows one band, **Conversations**.
+
+Under the chart are the headline numbers.
+
+### Conversations
+
+The number of conversations that started in the period, with how many of them are resolved now. The arrow compares the total with the same number of days just before (for example, the 7 days before this week), as a percentage up or down. The note at the bottom of the card gives that earlier count.
+
+### AI resolved
+
+The share of the AI's conversations that the AI resolved alone, with the counts (**12 of 40 AI chats**).
+
+- **An AI conversation** is one the AI answered at least once, or one the AI handed off (even if it handed off before answering, for example when the customer asked for a person straight away).
+- **Resolved by the AI** means an AI conversation that was not handed off and where no teammate sent a public reply. It doesn't depend on the conversation's status: a chat the AI answered and the customer never came back to counts as resolved.
+
+### Handed off
+
+The share of the AI's conversations it handed to your team, with the counts. See [Handoff](/ai/handoff) for every reason the AI hands off.
+
+A conversation that reached the AI while AI replies were turned off went straight to the team. It's neither an AI conversation nor a handoff; the footnote says how many there were.
+
+When AI replies are off and the AI had no conversations in the period, these two numbers are replaced by **AI assistant: Off**, with **Turn it on**. When it's off now but had conversations earlier in the period, the numbers still show and the footnote says they're from earlier.
+
+### First response
+
+The median time from a customer's first message to your team's first public reply, across conversations a teammate answered. Under it, **90% within** is the time 90% of those first replies came within. Notes don't count, and a teammate's opening message from the [Visitors](/inbox/visitors#start-a-chat-with-a-visitor) page doesn't count either: replies count from the customer's first message on.
+
+The footnote also gives the AI's median first answer time, measured the same way.
+
+### CSAT
+
+The share of 👍 among the ratings given in the period: 👍 ÷ (👍 + 👎). Under it are both counts. It reads **No ratings** when there were none. See [Ratings](#ratings).
+
+## Top topics
+
+The topics customers asked about in the period, most first, with a donut chart. For each topic:
+
+- the number of conversations and its share of the labelled ones,
+- **AI N%**: of the topic's AI conversations, the share the AI resolved alone (when the AI was on).
+
+Click a topic to open the inbox filtered by it. **Manage** opens the topic settings. The footnote says how many chats aren't labelled yet. See [Topics](#topics) for how labels are made.
+
+With three or more topics, **Topics at a glance** shows your top six on a radar chart: how many chats each brought, and how many of those the AI resolved alone.
+
+## Pages where chats start
+
+The pages customers were on when they sent their first message, most first (up to eight), with each page's share. The widget sends the page with the first message; there's no extra tracking.
+
+Pages are grouped so the list stays readable: the query string and `#` part are dropped, and parts of the path that look like IDs become `:id`. So `/invoices/123` and `/invoices/456` are both `/invoices/:id`. The footnote counts chats on pages not listed and chats with no page (for example the widget opened outside your site).
+
+## Top handoff reasons
+
+The five most common reasons the AI handed off, with a donut chart. Reasons that differ only in detail are grouped: every AI error counts as **AI error**, every bug the AI flagged as **Bug flagged by the AI**, and the reply cap as **Monthly AI reply cap reached**. Shown while the AI has conversations in the period.
+
+## Ratings
+
+The 👍 / 👎 split for the period and the latest five 👎 ratings that came with a comment. Click a comment to open its conversation. Customers rate a conversation when it's resolved; see [The inbox](/inbox/overview#ratings-csat).
+
+## Team
+
+One row per teammate, including anyone who replied in the period and has since left (**Former teammate**):
+
+| Column | Meaning |
+|---|---|
+| **Replies** | Public replies the teammate sent in the period (not notes) |
+| **Conversations** | Conversations they replied in |
+| **First response** | Their median first response, in conversations where they were first on the team to reply |
+
+With two or more teammates who replied, a bar chart compares them.
+
+## Topics
+
+The AI gives each conversation a short topic, like `Billing`, `Login` or `CSV Export`, so you can see what customers come for without tagging anything by hand. Topics, like tags, are for your team only: customers never see them.
+
+### How labelling works
+
+- **When.** A conversation is labelled once it's resolved, or once it has had no new message for 10 minutes. Only conversations with a customer message, started in the last 90 days, are labelled.
+- **How often.** A labelling pass runs every 15 minutes in the background, again when someone opens the Dashboard (at most every 5 minutes), and when an admin presses **Label now**. A pass labels up to 100 conversations; the rest wait for the next one.
+- **What the AI reads.** The customer's first three messages, with up to two short replies from the AI or the team between them, and the page the chat started on. Internal notes never go to the model.
+- **What it writes.** One to three words, Title Case, at most 40 characters. It reuses an existing topic when one fits. A workspace has at most 40 topics; past that the AI must pick the closest one.
+- **Relabelling.** A labelled conversation is looked at again only when the customer wrote more after it was labelled and it had fewer than three customer messages at the time, so the label reflects why they came.
+- **Cost.** Labelling uses the `topics` AI job and its tokens count toward your usage, but a label isn't a reply, so it doesn't use up the monthly reply cap. Nothing is labelled while AI replies are off or the cap is reached.
+
+You see a conversation's topic in the inbox's **Topic** column and in the conversation's header.
+
+### Manage topics
+
+Owners and admins manage topics in **Settings → Inbox → Topics** (or **Manage** on the Dashboard). Each topic shows how many conversations have it.
+
+| Button | What it does |
+|---|---|
+| **Rename** | Changes the name everywhere. Names are 1 to 40 characters; you can't rename to a name another topic has (merge them instead). |
+| **Merge** | Pick a topic in **Merge into…**: this topic's conversations move to that one, and this topic is deleted. |
+| **Delete** | Removes the topic. Its conversations become unlabelled and get a topic again on a later pass. |
+| **Label now** | Runs a labelling pass right away and reports how many conversations it labelled. |
+
+**Label now** says **AI replies are off, so nothing was labelled.** or **The monthly AI cap is reached, so nothing was labelled.** when it can't run.
+
+### Filter the inbox by topic
+
+Once there are topics, the inbox has a topic filter (**Any topic**). Clicking a topic on the Dashboard opens the inbox with that filter set and the status on **All**, since most of a topic's conversations are already resolved. The command palette also finds conversations by topic name.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Handoff" icon="hand" href="/ai/handoff">
+    Why the AI hands conversations to your team.
+  </Card>
+  <Card title="Models" icon="microchip" href="/ai/models">
+    Pick the model for each AI job, including topics.
+  </Card>
+</CardGroup>

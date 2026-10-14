@@ -1,0 +1,147 @@
+---
+title: Security
+description: How Jun Desk signs people in, protects keys and tokens, keeps customer data in your account, and what it sends elsewhere.
+icon: shield
+---
+
+Jun Desk runs entirely in your own Cloudflare account. This page explains how it protects the desk, your keys and your customers' data, and lists everything that leaves your account.
+
+## Signing in
+
+### Passkeys only
+
+Teammates sign in with passkeys (fingerprint, face, device PIN or a security key). There are no passwords, no email codes and no third-party login service. Passkeys are phishing-resistant: each belongs to your desk's hostname, and the browser won't use it on any other site.
+
+- **Owner:** created on the first visit, with the `SETUP_TOKEN` secret. Setup runs once; afterwards the setup page refuses.
+- **Teammates:** join through an invite link from **Settings → Team**. Each link carries a role (admin or agent), works once and expires after 7 days. The desk stores only a hash of the link's token.
+- **More devices:** each person adds passkeys under **Settings → Passkeys** while signed in.
+- **Recovery:** if the owner loses every passkey, `/recover` with the setup token registers a new one for the owner's account. The setup token is compared in constant time.
+
+Because passkeys belong to a hostname, moving the desk to a new domain means new passkeys. See [Troubleshooting](/reference/troubleshooting).
+
+### Sessions
+
+Signing in sets a `jun_session` cookie: a random token, `HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS, valid for 30 days. The database keeps only its SHA-256 hash. Signing out deletes it. Removing a member from the team signs them out.
+
+### Roles
+
+| Role | Can |
+|---|---|
+| Owner | Everything, including managing admins |
+| Admin | Settings, the AI and the agent config, keys, integrations, inviting agents |
+| Agent | Answer conversations, write notes, file issues |
+
+Each role manages only lower roles. See [Team](/inbox/team).
+
+### API tokens
+
+Tokens for the `jun` CLI (`jun_…`) are created in **Settings → Developer → API tokens** and shown once. The desk stores only their SHA-256 hash. A token acts as the person who created it, works only for its own workspace, and only on the agent config and the CLI's login check: it can't read conversations, change settings, or read or change action keys. Revoking it takes effect at once. See [jun CLI](/code/cli#api-tokens).
+
+## Requests to the desk
+
+- **CSRF guard.** Every API request other than `GET` must be JSON (`Content-Type: application/json`) or a file upload with the desk's own `X-Jun-Upload` header. Neither can be sent by a form on another site. When the browser reports an `Origin`, it must be the desk's own. The one exception is the widget's "want a hand?" request, which comes from your website, carries no cookies or tokens, and only returns whether to show an offer.
+- **Errors** come back as `{ "error": { "code", "message" } }` without stack traces.
+- **Secrets and tokens are stored as hashes** wherever the desk only needs to check them: sessions, API tokens, invite links, visitor tokens.
+
+## The widget
+
+### Widget key and allowed websites
+
+The widget key (`wk_…`) is public: it's in your page source. On its own it lets anyone show your chat. List your sites under **Chat widget → Install → Allowed websites** to stop that:
+
+- The chat frame is served with a `frame-ancestors` policy naming only those sites (and the desk), so browsers refuse to show it anywhere else.
+- The live visitor connection and the "want a hand?" request check the browser's `Origin` header against the list.
+
+Browsers set `Origin` and enforce `frame-ancestors` themselves, so a page can't fake them. An empty list allows any site, which is handy while you try things out.
+
+### Visitor tokens
+
+Each browser that chats gets a random visitor token. The desk stores only its hash. A visitor can read and write only their own conversations, and their live connection receives only what's meant for them (a teammate's invite, the result of identifying), never inbox events.
+
+### Identified customers
+
+The widget knows who a customer is only from a token your backend signs: an HS256 JWT with the workspace's identity secret (**Chat widget → Install → Identify signed-in customers**). Never from JavaScript on the page.
+
+- Only `HS256` is accepted: never `none`, never a key named inside the token.
+- `exp` is required, `nbf` is honoured, with 60 seconds of clock skew. `sub` is the user's id.
+- Rotating the identity secret invalidates every token signed with the old one.
+- Two identified customers are never merged with each other. An anonymous visitor who signs in joins the identified contact.
+
+A token can carry the customer's own API keys in a `secrets` claim, for actions with `{user.secrets.NAME}`. They're kept only until the token's `exp` (or `JunDesk.logout()`), never stored on the contact, never shown to teammates and never put in the AI's prompt. See [Identify users](/widget/identify-users).
+
+### Consent
+
+With `data-consent="required"`, the widget stores nothing in the browser and doesn't connect its live socket until your page calls `JunDesk.consent(true)`. See [Consent and privacy](/widget/consent-and-privacy).
+
+## Debug context
+
+The widget records recent JavaScript errors, failed requests, page visits, rage clicks and "stuck on a page after an error", in memory, and sends them only when the visitor writes to you.
+
+It never captures:
+
+- request or response bodies, cookies or storage,
+- what visitors type, or page text (a rage click keeps only the element's tag, id, aria-label, name, role and a button or link label of at most 40 characters),
+- query values (only their names: `?token=…`).
+
+Before anything leaves the browser, emails, JWTs, bearer tokens, `sk_`/`pk_`/`rk_` keys, `password=`/`token=`/`api_key=`-style values and card-like numbers are masked. The desk applies the same masking again on the server, so a modified loader can't slip them through.
+
+The debug context reaches only your teammates (the conversation's timeline) and the AI's prompt. Other visitors never see it. The `code` your app passes to `JunDesk.reportError()` is shown to teammates and in issue drafts, never to the AI answering visitors. `data-capture="off"` turns capture off. See [Debug context](/widget/debug-context).
+
+## Internal notes
+
+Notes (messages marked internal) are for teammates only. They're never sent over the visitor's connection, never returned by the widget's API, and never included in the AI's conversation history. Tags and topics are teammate-only too.
+
+## The AI and your keys
+
+- **Action keys** go only in request headers (`{secrets.NAME}`, `{user.secrets.NAME}`); the config checker refuses them in URLs and query strings, which end up in logs.
+- A key comes from a Worker secret `JUN_SECRET_NAME`, or from one an admin pasted on the action's page. Pasted keys live in the workspace's Durable Object storage, never in the database, and are never returned; the desk shows only their last 4 characters. API tokens can't read or change them.
+- If your API echoes a key back (in a response or an error), the desk replaces every key the request carried with `••••` before the AI, the audit log or anyone sees it.
+- Every action call is logged next to the conversation, for teammates only. Customers see only the action's `status:` line, never its name, inputs or results.
+- The AI's decisions (hand off, flag a problem) are tool calls, not words it types, so a customer can't trigger them by writing a magic phrase.
+- An action that isn't fully set up (a missing key) is never offered to the AI.
+
+## Integrations
+
+- **GitHub and Linear.** Credentials come from the `GITHUB_TOKEN` / `LINEAR_API_KEY` secrets, or from what an admin pasted in **Settings → Issue trackers**, kept in Durable Object storage like action keys (last 4 characters shown). Issues are filed only when a teammate clicks; the AI never files one. The issue text is masked again on the server before it's sent.
+- **Notifications.** The Web Push signing key (VAPID) is generated on first use and kept in Durable Object storage; only its public key is ever returned. Push messages are encrypted for each device (RFC 8291). Device endpoints are shown only as hashes. A notification about internal note text goes only to the @mentioned teammate.
+
+## Where your data lives
+
+Everything is in your Cloudflare account:
+
+| What | Where |
+|---|---|
+| Conversations, contacts, settings, knowledge text, agent config versions, the identity secret, ChatGPT sign-in tokens | D1 database |
+| Attachments, screenshots, logos, knowledge files | R2 bucket |
+| Live state, pasted keys, tracker credentials, the VAPID key | Durable Objects |
+| Knowledge vectors | Durable Objects |
+
+There's no Jun Desk server and no telemetry. Nobody else, including the Jun Desk project, has access to your desk.
+
+## What leaves your account
+
+| To | What | When |
+|---|---|---|
+| Workers AI | Prompts and knowledge text | The default AI provider. It runs on Cloudflare's network, under your account |
+| OpenAI | Prompts: your instructions, relevant knowledge, the conversation, masked debug context, action results | Only if the provider is OpenAI or ChatGPT sign-in |
+| Your APIs | The requests your actions define | When the AI calls an action, or a widget's button runs one |
+| Your docs sites | Ordinary page requests (user agent `JunDeskBot`), respecting `robots.txt` | When a website source is crawled, and once a day to re-sync |
+| GitHub, Linear | The issue a teammate files | Only on **Create issue** |
+| Push services (Apple, Google, Mozilla…) | Encrypted notification payloads | When a teammate turned notifications on |
+
+<Note>
+  Sign in with ChatGPT spends the signed-in person's own ChatGPT plan. OpenAI's terms cover plan usage for your own use, not a desk answering the public.
+</Note>
+
+## Licences
+
+The desk is AGPL-3.0. The widget loader and the agent-config format are MIT. The source is on [GitHub](https://github.com/samarsheikh001/jun), so you can check every claim on this page against the code.
+
+<CardGroup cols={2}>
+  <Card title="Secrets and settings" icon="key" href="/reference/secrets">
+    Every secret and how to set it.
+  </Card>
+  <Card title="Consent and privacy" icon="user-shield" href="/widget/consent-and-privacy">
+    Running the widget behind a cookie banner.
+  </Card>
+</CardGroup>

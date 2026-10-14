@@ -1,0 +1,120 @@
+---
+title: Team and settings
+description: Invite teammates with single-use links, understand the owner, admin and agent roles, manage passkeys, and find your way around Settings.
+icon: user-plus
+---
+
+Everyone on your desk signs in with their own passkey. There are no passwords and no email service: you add people by sending them an invite link, and they create a passkey when they open it.
+
+## Roles
+
+Each person has one of three roles.
+
+| Role | Who | Can |
+|---|---|---|
+| **Owner** | The person who set up the desk with the setup token | Everything an admin can, plus invite admins, make agents admins and remove admins. Nobody can change or remove the owner. |
+| **Admin** | People the owner invites or promotes | Change the workspace's settings, the AI, knowledge and the chat widget; invite and remove agents |
+| **Agent** | People who answer chats | Work in the inbox and see the rest of the desk |
+
+In more detail:
+
+| | Owner | Admin | Agent |
+|---|:---:|:---:|:---:|
+| Read, reply, write notes, assign, resolve, take over from and hand back to the AI | ✓ | ✓ | ✓ |
+| Add tags to conversations, create and edit saved replies | ✓ | ✓ | ✓ |
+| File GitHub or Linear issues | ✓ | ✓ | ✓ |
+| Start chats from the Visitors page, edit an anonymous visitor's name and email | ✓ | ✓ | ✓ |
+| See the Dashboard | ✓ | ✓ | ✓ |
+| Their own notifications, passkeys and API tokens | ✓ | ✓ | ✓ |
+| Rename and delete tags, manage topics | ✓ | ✓ | |
+| Assignment, business hours, AI settings, issue trackers | ✓ | ✓ | |
+| Change the agent (Instructions, Tasks, Actions, Widgets, Tests), knowledge and the chat widget | ✓ | ✓ | |
+| Invite agents, change or remove agents | ✓ | ✓ | |
+| Invite admins, change or remove admins | ✓ | | |
+
+Agents see admin-only pages and settings read-only, without the buttons. The **Get started** checklist in the sidebar is for owners and admins only.
+
+Your own role shows in **Settings → General** ("Owners and admins change workspace settings; agents answer chats.").
+
+## Invite a teammate
+
+<Steps>
+  <Step title="Open Settings → Team">
+    Open **Settings** from the account menu at the bottom of the sidebar (or press `g` then `s`), then **Team**. Owners and admins see an **Invite people** card.
+  </Step>
+  <Step title="Pick a role and create the link">
+    Choose **Agent** or, if you're the owner, **Admin**. Press **Create invite link**.
+  </Step>
+  <Step title="Send the link">
+    The link appears once, with **Copy**: "Send this link to the person you're inviting. It's shown only once." Send it however you like (chat, email). The desk doesn't send it for you.
+  </Step>
+  <Step title="They join">
+    They open the link and see **Join \<your workspace\>**, "You've been invited as an agent." (or an admin). They enter their name and email and press **Create passkey and join**. Their browser or password manager creates a passkey, and they're signed in.
+  </Step>
+</Steps>
+
+Invite links work once and expire after 7 days. Pending invites are listed under **Pending invites** with who created them and when they expire; **Revoke** cancels one. Only a hash of each link is stored, so a lost link can't be shown again: create a new one.
+
+Someone opening a used, revoked or expired link sees **This invite link is invalid, used, or expired.** An email that already has an account on the desk can't join through an invite: they get **An account with that email already exists. Sign in instead.**
+
+<Tip>
+The invite link uses the address you created it from. If you use a [custom domain](/deploy/custom-domain), create invites from that address so passkeys are made for it: a passkey only works on the domain it was created for.
+</Tip>
+
+## Change a role or remove someone
+
+The **Members** card lists everyone with their email. For people below your role, it shows a role menu and **Remove**:
+
+- The owner can switch anyone between **agent** and **admin**, and remove admins and agents.
+- Admins can manage agents only.
+- Everyone else's role shows as a label.
+
+**Remove** asks for confirmation ("They'll be signed out and lose access."). Removing someone takes them out of the workspace and stops notifications to their devices. If it was their only workspace, their account is deleted with its passkeys and sessions, so they're signed out everywhere at once. Their past messages stay in your conversations, and the Dashboard lists them as **Former teammate**.
+
+## Passkeys
+
+Each person manages their own passkeys in **Settings → Passkeys** (**Your passkeys**).
+
+- **Add passkey** registers another one, for example on your phone or a second computer. Add at least one more so you can't get locked out.
+- Each passkey shows when it was added and last used. **synced** means your passkey provider backs it up and syncs it across your devices (iCloud Keychain, Google Password Manager, 1Password and similar).
+- **Remove** deletes a passkey. You can't remove your only passkey: add another one first.
+
+Signing in is **Sign in with passkey** on the desk's sign-in page. New people can't sign up there; the page tells them to ask an admin for an invite link.
+
+<Warning>
+If an agent or admin loses every passkey, they can't recover access themselves. Remove them and send a new invite. The owner can recover with the setup token: see [First sign-in](/deploy/first-sign-in).
+</Warning>
+
+## Settings overview
+
+Settings opens as a dialog over the page you were on. Each section has its own address (`/settings/<section>`), so you can link to it. The **Theme** switch at the bottom of its menu cycles between system, light and dark.
+
+| Section | What's there | Who can change it |
+|---|---|---|
+| **General** | Your name and email, the workspace name and your role (read-only) | Nobody: there's no rename yet |
+| **AI** | AI replies on or off, the provider and model, the monthly cap, and keeping the agent in git. See [Models](/ai/models). | Owners and admins |
+| **Inbox** | [Assignment](/inbox/assignment), [Business hours](/inbox/business-hours), [Saved replies](/inbox/notes-and-replies#saved-replies), [Tags](/inbox/notes-and-replies#tags) and [Topics](/inbox/reports#topics) | Saved replies: everyone. The rest: owners and admins |
+| **Team** | Members, invites and pending invites | Owners and admins |
+| **Notifications** | Your own events, devices and sound. See [Notifications](/inbox/notifications). | Each person, for themselves |
+| **Issue trackers** | GitHub and Linear. See [Issues](/inbox/issues). | Owners and admins |
+| **Developer** | Your API tokens for the `jun` CLI. See [CLI](/code/cli). | Each person, for themselves |
+| **Passkeys** | Your passkeys | Each person, for themselves |
+
+The chat widget's look and install snippet are on the **Chat widget** page, not in Settings. See [Appearance](/widget/appearance) and [Install](/widget/install).
+
+You can also jump to any settings section from the command palette (`Ctrl` `K`): type its name, for example **Settings: Team**.
+
+<Note>
+A desk shows one workspace. Its data model supports several workspaces, but the desk's interface works with the first one you're a member of.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="The inbox" icon="inbox" href="/inbox/overview">
+    Where your team answers chats.
+  </Card>
+  <Card title="First sign-in" icon="key" href="/deploy/first-sign-in">
+    The owner account, the setup token and recovery.
+  </Card>
+</CardGroup>

@@ -1,0 +1,146 @@
+---
+title: Agent as code
+description: The AI's rules, tasks, actions, widgets and tests are plain text files that you can edit on the desk or keep in git.
+icon: code-branch
+---
+
+Everything on the **Agent** pages is stored as a small set of text files: the instructions, every task, every action, every widget and every test. The desk's forms edit those files for you. Developers can also pull the same files into a git repository, review changes in pull requests, test them against real conversations with `jun eval`, and push them back.
+
+You don't have to choose one or the other. People who prefer forms keep using the Agent pages; developers work in git; both edit the same config, and the desk keeps every save as a version.
+
+## The files
+
+A config is a folder with these files. Only these paths count; anything else in the folder is ignored by the CLI and refused by the desk.
+
+```text
+support-agent/
+├── AGENTS.md                      # instructions: tone, rules, guardrails
+├── README.md                      # optional, for your team
+├── website-actions.yaml           # optional: how each action on your website runs
+├── skills/
+│   └── refund/SKILL.md            # a task (procedure)
+├── tools/
+│   └── lookup_order.yaml          # an action (HTTP call the AI may make)
+├── widgets/
+│   └── order.widget               # a card an action's result is shown as
+└── evals/
+    └── basics.yaml                # tests
+```
+
+| File | Called on the desk | What it holds |
+|---|---|---|
+| `AGENTS.md` | **Instructions** | How the AI talks to customers, plus `maxReplies` and `handoffTopics` in the frontmatter |
+| `skills/<name>/SKILL.md` | **Tasks** | A procedure in plain language: when it applies and the steps. Can open a chat for a purpose with `intent:` |
+| `tools/<name>.yaml` | **Actions** | An HTTP request the AI may make: address, inputs, headers, which fields it reads |
+| `widgets/<name>.widget` | **Widgets** | A card in OpenAI's ChatKit widget format, filled with an action's result |
+| `evals/<name>.yaml` | **Tests** | Customer messages and what a good reply does |
+| `website-actions.yaml` | **Actions → On your website** | Whether each action on your website runs on its own, after the customer confirms, or by a person |
+
+Every key of every file is in the [file format reference](/code/files). For what each part does from the desk's side, see [Instructions](/ai/instructions), [Tasks](/ai/tasks), [Actions](/ai/actions), [Widgets](/ai/widgets) and [Tests](/ai/tests).
+
+The whole config is checked every time it's saved or pushed. A file with an error is refused with a message that names the file and the problem, so a broken config never goes live. Limits: 200 files, 256 KB in total, 20 actions and 20 widgets.
+
+## See the files on the desk
+
+Each Agent page has a **Form / Code** switch (an item's page has **AI** and **Code** tabs). **Code** shows the same item as its file, in the exact text that `jun pull` downloads. The forms change single fields in place, so comments, key order and keys a form doesn't show survive an edit. A file that doesn't parse is left for you to fix in **Code**.
+
+## Versions and history
+
+Every save is a new version: a save on the Agent pages, and every `jun push`. Press **History** at the top of the Agent page to see the most recent 50, with:
+
+- the version number, and **Live** on the one the AI uses now,
+- the note it was saved with (`jun push -m "…"`, or the note in the save bar),
+- **Pushed from git** or **Saved**, who did it and when.
+
+**Restore** on an older version copies it into your draft. Nothing changes for customers until you save that draft, which makes a new version. Nothing is ever overwritten, so restoring can always be undone the same way.
+
+Until the first save, the AI uses the built-in default instructions, and **History** says so.
+
+## Keep it in git
+
+**Settings → AI** has a **Keep it in git** card with the commands for your desk. The `jun` CLI lives in the Jun Desk repository, so you run it from your checkout of that repo (the copy the Deploy button made in your GitHub account works).
+
+<Steps>
+  <Step title="Create an API token">
+    Go to **Settings → Developer → API tokens**, give the token a name (for example `laptop`) and press **Create token**. Copy it: it's shown only once. A token acts as you, for this workspace's agent config only.
+  </Step>
+  <Step title="Log in from your checkout">
+    ```sh
+    npm install
+    npm run jun -- login https://your-desk.example.com
+    ```
+    Paste the token when asked. The CLI checks it and saves the login in `~/.jun/desk.json`.
+  </Step>
+  <Step title="Pull the live config">
+    ```sh
+    npm run jun -- pull support-agent
+    ```
+    This writes the desk's files into `support-agent/` and records the version in `support-agent/.jun-version`. Commit both.
+
+    Starting from nothing? `npm run jun -- init support-agent` writes a starter set instead (instructions, two tasks, example actions and a widget, and tests).
+  </Step>
+</Steps>
+
+## The workflow
+
+Once the folder is in git, a change looks like any other code change.
+
+<Steps>
+  <Step title="Edit">
+    Change files in a branch. For example, add a rule to `AGENTS.md` or a step to `skills/refund/SKILL.md`.
+  </Step>
+  <Step title="Test">
+    ```sh
+    npm run jun -- eval support-agent
+    ```
+    The desk runs your test cases against the edited files, then replays the first message of up to 20 recent real conversations with both the live config and yours, and tells you which answers would change. Nothing is saved and no customer sees anything.
+  </Step>
+  <Step title="Review">
+    Open a pull request. Run the same command in CI so reviewers see the results (see [Run evals in CI](/code/ci)).
+  </Step>
+  <Step title="Push">
+    ```sh
+    npm run jun -- push support-agent -m "Refund window is now 30 days"
+    ```
+    The folder becomes the live config at once, as a new version. Only owners and admins can push.
+  </Step>
+</Steps>
+
+### When someone edited on the desk
+
+`jun push` refuses to overwrite edits made on the Agent pages since your last pull:
+
+```text
+Error: Someone edited the agent in the dashboard since your last pull (desk is at version 14). Run `jun pull support-agent`, merge with git, then push again — or `jun push --force` to overwrite.
+```
+
+Run `jun pull`, look at the diff with `git diff`, keep what you want, commit, and push again. Pushes from git never conflict with each other: git is where those changes are merged. Only saves made on the desk since your `.jun-version` count.
+
+<Warning>
+  A push replaces the whole config with what's in the folder. A file you deleted locally is deleted on the desk. `--force` skips the check above and discards the desk edits; they stay in **History** if you need them back.
+</Warning>
+
+Going the other way, a desk save always starts from the latest version. If someone had the Agent page open with unsaved edits while you pushed, their save bar says the config changed and offers **Load theirs (drops your edits)** or **Keep mine**. Whatever they save shows up in your next `jun pull`.
+
+## What stays out of the files
+
+Some things are deliberately not in the config, so they can't end up in git:
+
+- **Keys for actions.** An action's file names a key as `{secrets.NAME}`; the value is a Worker secret `JUN_SECRET_NAME` or a key pasted on the action's page. See [Secrets and settings](/reference/secrets).
+- **The model and provider.** Those are set in **Settings → AI**. See [Models](/ai/models).
+- **Knowledge.** Your docs, files and snippets live on the **Knowledge** page. See [Knowledge](/ai/knowledge).
+
+<CardGroup cols={2}>
+  <Card title="jun CLI" icon="terminal" href="/code/cli">
+    Every command, flag and environment variable.
+  </Card>
+  <Card title="File format" icon="file-code" href="/code/files">
+    Every key the desk accepts, file by file.
+  </Card>
+  <Card title="Evals in CI" icon="github" href="/code/ci">
+    Test every pull request and push on merge.
+  </Card>
+  <Card title="Tests" icon="flask" href="/ai/tests">
+    Writing test cases on the desk.
+  </Card>
+</CardGroup>

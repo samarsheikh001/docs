@@ -1,0 +1,86 @@
+---
+title: Assignment
+description: Give conversations an owner by hand, or let round robin hand each chat that needs a person to the next teammate online.
+icon: user-check
+---
+
+Every conversation can have one assignee: the teammate responsible for it. Assignment is about who answers; it doesn't stop anyone else on the team from replying. Conversations without an assignee sit under **Unassigned** in the inbox.
+
+## Assign by hand
+
+Any teammate can assign any conversation, to anyone on the team or to nobody.
+
+- **In a conversation:** use the **Assignee** menu in the header. It lists **Unassigned** and every teammate, with you marked **(me)**.
+- **From the keyboard:** press `a` to assign the open conversation (or the highlighted row) to yourself.
+- **From the command palette** (`Ctrl` `K` with a conversation open): **Assign to me**, **Assign to teammate…** or **Unassign**.
+
+When you assign a conversation to someone else, they get a [notification](/inbox/notifications) (**\<your name\> assigned you \<customer\>**) if they have **A chat is assigned to you** turned on. Assigning yourself never notifies you.
+
+## Round robin
+
+With round robin on, the desk gives each conversation that starts needing a person to the next teammate who has the desk open.
+
+### Turn it on
+
+<Steps>
+  <Step title="Open the assignment settings">
+    Go to **Settings → Inbox → Assignment**. Owners and admins can change it; agents see the current choice.
+  </Step>
+  <Step title="Pick Round robin">
+    Choose **Round robin** ("Give each chat to the next teammate who has the dashboard open."). The default is **Manual** ("Chats wait in Unassigned until someone takes them.").
+  </Step>
+  <Step title="Set a limit (optional)">
+    **Most open chats per teammate** caps how many open conversations a teammate can hold and still be picked. `0` means no limit; the most is 100.
+  </Step>
+  <Step title="Save">
+    Press **Save**. It applies to the next conversation that needs a person.
+  </Step>
+</Steps>
+
+### When it assigns
+
+Round robin runs at the moment a conversation starts needing a person:
+
+- **The AI hands off.** For any reason: the AI decides it can't help, the customer presses **Talk to a person**, a website action the site marked for a person, the AI's reply limit, the monthly AI cap, or an AI error. See [Handoff](/ai/handoff).
+- **A new chat arrives while AI replies are off.** It goes straight to the team.
+
+It doesn't run when:
+
+- a teammate takes over from the AI (by replying or with **Take over**),
+- a conversation already has an assignee,
+- the chat began with a teammate's invite from the [Visitors](/inbox/visitors#start-a-chat-with-a-visitor) page (it belongs to that teammate),
+- the conversation isn't open, or the AI is still handling it.
+
+### Who it picks
+
+The desk looks only at teammates who are **online** (see [Presence](#presence)) and still members of the workspace. Of those under the limit, it picks the one who has waited longest since their last round-robin assignment. A tie goes to the teammate with fewer open conversations. The open-conversation count includes chats assigned by hand.
+
+When it assigns a conversation, the thread gets an internal note: `Assigned to <name> automatically (round robin).` The teammate gets a **New chat assigned to you** notification if they want either **A chat is assigned to you** or **A chat needs a person**.
+
+If nobody is online, or everyone is at the limit, the conversation stays in **Unassigned** and every teammate who wants **A chat needs a person** is notified.
+
+<Note>
+Assigning someone by hand always wins. Round robin only touches unassigned conversations, so it never moves a conversation someone already has.
+</Note>
+
+## Presence
+
+A teammate counts as **online** while they have the desk open in a browser tab. The desk keeps a live connection per tab and pings it every 30 seconds; a tab that hasn't answered for 75 seconds counts as gone, so a laptop that went to sleep or a closed tab doesn't keep someone online.
+
+You see who's online in the account menu at the bottom of the sidebar: your name shows **\<workspace\> · N online**, and the menu lists everyone under **Online now**.
+
+Presence drives two things:
+
+- **Round robin** picks only from online teammates.
+- **The widget's email ask.** When nobody is online, the widget offers the visitor **Get the reply by email?** right away instead of after a minute. See [the inbox](/inbox/overview#email-for-visitors-who-might-leave).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Notifications" icon="bell" href="/inbox/notifications">
+    Know when a chat is assigned to you.
+  </Card>
+  <Card title="Business hours" icon="clock" href="/inbox/business-hours">
+    Tell visitors when your team is away.
+  </Card>
+</CardGroup>

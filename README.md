@@ -1,55 +1,29 @@
-# Mintlify Starter Kit
+# Jun Desk docs
 
-Use the starter kit to get your docs deployed and ready to customize.
+Documentation for [Jun Desk](https://github.com/samarsheikh001/jun), the open-source AI support desk you deploy to your own Cloudflare account. Built with [Mintlify](https://mintlify.com).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## Preview locally
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
-
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
-
-## AI-assisted writing
-
-Set up your AI coding tool to work with Mintlify:
-
-```bash
-npx skills add https://mintlify.com/docs
+```sh
+npx mint dev
 ```
 
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
+Open http://localhost:3000. Check links with `npx mint broken-links`.
 
-See the [AI tools guides](/ai-tools) for tool-specific setup.
+## Layout
 
-## Development
+| Folder | Section |
+|---|---|
+| `index.mdx`, `quickstart.mdx`, `how-it-works.mdx`, `get-started-checklist.mdx` | Get started |
+| `deploy/` | Deploying, signing in, domains, upgrades, limits, local development |
+| `widget/` | The website widget, identity, privacy, debug context, page actions, JavaScript API |
+| `ai/` | Models, knowledge, instructions, tasks, actions, widgets, tests, handoff |
+| `inbox/` | Inbox, notes, assignment, hours, notifications, issues, visitors, reports, team |
+| `code/` | Agent as code: the `jun` CLI, file formats, CI |
+| `reference/` | Loader options, secrets, security, troubleshooting, FAQ |
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+Navigation lives in `docs.json`; writing rules are in `AGENTS.md`.
 
-```
-npm i -g mint
-```
+## Publishing
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
-
-```
-mint dev
-```
-
-View your local preview at `http://localhost:3000`.
-
-## Publishing changes
-
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
-
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+With Mintlify's GitHub app installed, a push to `main` deploys the site.

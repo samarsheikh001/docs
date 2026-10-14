@@ -1,0 +1,151 @@
+---
+title: Install the widget
+description: Add the one-line loader to your site, check that it works, and limit which websites can use your widget key.
+icon: code
+---
+
+The widget is one `<script>` tag. It loads a small loader (`widget.js`) from your desk, draws the launcher, and loads the chat itself only when it's needed. Everything about its look comes from the desk, so you paste the snippet once and change colours, wording and launcher later without touching your site.
+
+## Copy the snippet
+
+<Steps>
+  <Step title="Open the Install tab">
+    In the desk, go to **Chat widget → Install** (`/appearance/install`). The **Install the chat widget** card shows the snippet with your desk's address and your widget key filled in. Press **Copy**.
+
+    The **Get started** checklist's **Put it on your site** step shows the same snippet.
+  </Step>
+  <Step title="Paste it into your site's head">
+    Put it inside `<head>`, before your own scripts:
+
+    ```html
+    <script src="https://your-desk.example.com/widget.js" data-key="wk_…" defer></script>
+    ```
+
+    `data-key` is your widget key. It is public by design: anyone can read it from your page source. Use [Allowed websites](#limit-which-websites-can-use-the-widget) to stop other sites reusing it.
+  </Step>
+  <Step title="Deploy your site and open a page">
+    The launcher appears within a second or so (the loader waits up to 1.5 seconds for your colour and launcher settings, so it never flashes in the default colour).
+  </Step>
+</Steps>
+
+## Why `defer`, in `<head>`, before your scripts
+
+The loader is written to run early, and the placement matters for two features:
+
+- **Debug context.** The loader listens for JavaScript errors and failed requests from the moment it runs. In `<head>` it sees problems from the start of the page load. See [Debug context](/widget/debug-context).
+- **Page actions.** If the browser has no native WebMCP, the loader installs a stand-in `document.modelContext` so your code can register actions. See [Page actions](/widget/page-actions).
+
+`defer` doesn't hold up the page, and deferred scripts (module bundles too) run in document order. So when the snippet comes before your app's bundle, the loader has already run when your code starts, and `document.modelContext` exists when your code checks for it.
+
+<Warning>
+  Don't use `async`, and don't put the tag after your bundle. Many sites feature-detect `document.modelContext` once on mount. With `async` (or a later tag), that check can run before the loader, find nothing, and register no actions. The chat still works; the AI just can't do anything on your page.
+</Warning>
+
+## Snippet attributes
+
+All attributes go on the same `<script>` tag. The full list with every `JunDesk.*` method is in the [JavaScript API](/widget/javascript-api).
+
+| Attribute | What it does |
+|---|---|
+| `data-key="wk_…"` | Required. Your widget key. Without it the loader logs `Jun Desk: no data-key` and stops. |
+| `data-consent="required"` | Stores nothing and stays off your live visitor list until you call `JunDesk.consent(true)`. See [Consent and privacy](/widget/consent-and-privacy). |
+| `data-capture="off"` | Turns off error, request, rage-click and "stuck" capture, and with it the "something broke" nudges. |
+| `data-color="#0f766e"` | Overrides the brand colour from the desk on this site only. Must be a six-digit hex colour. |
+| `data-user-token="<jwt>"` | Says who the signed-in customer is. See [Identify users](/widget/identify-users). |
+
+## Frameworks
+
+The rule is the same everywhere: the tag must end up in the document's `<head>`, with `defer`, ahead of your app's own scripts. Add it to the HTML your server sends, not from JavaScript after the page has loaded.
+
+<Tabs>
+  <Tab title="Plain HTML">
+    ```html index.html
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <script src="https://your-desk.example.com/widget.js" data-key="wk_…" defer></script>
+        <script src="/app.js" defer></script>
+      </head>
+      <body>…</body>
+    </html>
+    ```
+  </Tab>
+  <Tab title="Vite or other SPA">
+    Edit the `index.html` your bundler uses as its template, and put the snippet above the bundle's `<script type="module">` tag. Module scripts are deferred too, so document order still holds.
+
+    ```html index.html
+    <head>
+      <script src="https://your-desk.example.com/widget.js" data-key="wk_…" defer></script>
+      <script type="module" src="/src/main.tsx"></script>
+    </head>
+    ```
+  </Tab>
+  <Tab title="Server-rendered templates">
+    Add the tag to your base layout's `<head>` (the one every page extends), above any other script tags.
+  </Tab>
+</Tabs>
+
+<Note>
+  The loader runs only once per page: if `window.JunDesk` already exists, a second copy does nothing. Single-page apps don't need to re-add it on route changes. It follows `history.pushState`, `replaceState` and `popstate` itself.
+</Note>
+
+For React, `useJunAction` from `packages/widget-react` registers page actions while a component is mounted and waits for the loader if needed. See [Page actions](/widget/page-actions#react).
+
+## Check that it works
+
+<Steps>
+  <Step title="Try the demo page first">
+    **Chat widget → Install** has an **Open demo page** button. It opens `/demo.html?key=wk_…` on your desk: a fake customer site with buttons that fail on purpose (a 500 on "Pay invoice", a JavaScript error on "Show usage chart", a dead "Export CSV"), a cancel intent and three page actions. Use it to see the whole loop before touching your own site.
+  </Step>
+  <Step title="Send a message from your site">
+    Open your site, open the launcher, and write something. Open the desk's **Inbox** in another window. The message arrives live, with a **Browser** section in the side panel showing the page and recent events.
+  </Step>
+  <Step title="Look for yourself on the visitor list">
+    **Visitors** shows everyone on your site right now. Your own tab should be there (unless you use `data-consent="required"` and haven't consented yet).
+  </Step>
+</Steps>
+
+### Install detection
+
+The **Put it on your site** step in Get started ticks itself the first time the loader connects from a site other than the desk itself, and shows **Seen on** with that origin. The demo page doesn't count, because it runs on the desk's own origin.
+
+The check rides on the loader's live connection. With `data-consent="required"`, nothing connects until a visitor consents, so the step may not tick on its own. Press **I've added it** to tick it by hand.
+
+If nothing appears:
+
+- Open the browser console. `Jun Desk: no data-key` means the attribute is missing.
+- Check the network tab for `widget.js` and `/api/widget/<key>/config`. A 404 on `config` means the key doesn't match this desk.
+- If you set **Allowed websites**, check your site's hostname is on the list (see below).
+
+## Limit which websites can use the widget
+
+Because the key is public, anyone could copy your snippet onto their own site. Under **Chat widget → Install → Allowed websites**, list your domains, separated by commas or spaces:
+
+```text
+acme.com, *.acme.com
+```
+
+- `*.acme.com` covers every subdomain and `acme.com` itself.
+- You can paste full URLs; the desk keeps only the hostname.
+- Up to 50 entries. An empty list means any website, which is handy while you try things out.
+- The desk's own address always works, so the demo page and the **Chat widget → Look** preview keep working.
+
+With a list in place, the chat frame refuses to load on other sites (through the frame's `frame-ancestors` policy), the live visitor connection is refused, and proactive nudges aren't offered there.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Pick a launcher" icon="window-maximize" href="/widget/launchers">
+    Button, greeting card, "Ask anything" bar or island.
+  </Card>
+  <Card title="Set the look" icon="palette" href="/widget/appearance">
+    Colour, logos, greeting and suggested questions.
+  </Card>
+  <Card title="Identify signed-in users" icon="id-badge" href="/widget/identify-users">
+    Verified customers, chats across devices.
+  </Card>
+  <Card title="Page actions" icon="wand-magic-sparkles" href="/widget/page-actions">
+    Let the AI do things on your page.
+  </Card>
+</CardGroup>

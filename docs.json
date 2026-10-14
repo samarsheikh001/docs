@@ -1,72 +1,124 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Jun Desk",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#7E62A3",
+    "light": "#C9A9E0",
+    "dark": "#6B4F92"
   },
   "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
   "navigation": {
-    "pages": [
+    "groups": [
       {
-        "group": "Getting Started",
+        "group": "Get started",
+        "pages": ["index", "quickstart", "how-it-works", "get-started-checklist"]
+      },
+      {
+        "group": "Deploy and run",
         "pages": [
-          "index",
-          "quickstart"
+          "deploy/cloudflare",
+          "deploy/first-sign-in",
+          "deploy/custom-domain",
+          "deploy/upgrade",
+          "deploy/costs-and-limits",
+          "deploy/local-development"
+        ]
+      },
+      {
+        "group": "Website widget",
+        "pages": [
+          "widget/install",
+          "widget/launchers",
+          "widget/appearance",
+          "widget/identify-users",
+          "widget/consent-and-privacy",
+          "widget/debug-context",
+          "widget/page-actions",
+          "widget/intents",
+          "widget/javascript-api"
+        ]
+      },
+      {
+        "group": "AI agent",
+        "pages": [
+          "ai/models",
+          "ai/knowledge",
+          "ai/instructions",
+          "ai/tasks",
+          "ai/actions",
+          "ai/widgets",
+          "ai/tests",
+          "ai/handoff"
+        ]
+      },
+      {
+        "group": "Inbox and team",
+        "pages": [
+          "inbox/overview",
+          "inbox/notes-and-replies",
+          "inbox/assignment",
+          "inbox/business-hours",
+          "inbox/notifications",
+          "inbox/issues",
+          "inbox/visitors",
+          "inbox/reports",
+          "inbox/team"
+        ]
+      },
+      {
+        "group": "Agent as code",
+        "pages": ["code/overview", "code/cli", "code/files", "code/ci"]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/widget-options",
+          "reference/secrets",
+          "reference/security",
+          "reference/troubleshooting",
+          "reference/faq"
         ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "GitHub",
+          "href": "https://github.com/samarsheikh001/jun",
+          "icon": "github"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Issues",
+          "href": "https://github.com/samarsheikh001/jun/issues",
+          "icon": "bug"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
+        "label": "GitHub",
+        "href": "https://github.com/samarsheikh001/jun"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "Deploy",
+      "href": "https://deploy.workers.cloudflare.com/?url=https://github.com/samarsheikh001/jun"
     }
   },
   "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
-    ]
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/samarsheikh001/jun"
     }
   }
 }

@@ -1,0 +1,147 @@
+---
+title: "Deploy to Cloudflare"
+description: "Deploy Jun Desk with the Deploy button or from the command line, and what each route creates in your account."
+icon: "cloud"
+---
+
+Jun Desk deploys as one Cloudflare Worker with its own database, bucket, queue and Durable Objects. You can deploy it with the Deploy button or from a checkout of the repo.
+
+<Tip>
+Use the [Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/) ($5/month per account) for the AI. On Free, a Worker gets 10 ms of CPU per request, and reading a model's streamed answer takes far more, so AI replies fail now and then with error 1102. The inbox, widget and visitors run on Free. See [Costs and limits](/deploy/costs-and-limits).
+</Tip>
+
+## What gets created
+
+| Resource | Default name | Used for |
+|---|---|---|
+| Worker | `jun-desk` | The API, the dashboard and the widget |
+| D1 database | `jun-desk` | All durable records |
+| R2 bucket | `jun-desk-files` | Attachments, logos, knowledge files |
+| Queue | `jun-desk-crawl` | Website crawls and file indexing |
+| Durable Objects | `Conversation`, `WorkspaceHub`, `KnowledgeIndex` | Live chats, inbox fan-out, vector search |
+| Workers AI binding | `AI` | Default model, embeddings, reranking |
+| Cron trigger | every 15 minutes | Topic labels; daily knowledge re-sync at 03:15 UTC |
+
+Resource IDs aren't in `wrangler.jsonc` on purpose: the button and `wrangler deploy` provision them. See [How it works](/how-it-works) for what each one does.
+
+## With the Deploy button
+
+<Steps>
+  <Step title="Open the button">
+    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/samarsheikh001/jun)
+
+    Sign in to Cloudflare and connect your GitHub account when asked.
+  </Step>
+  <Step title="Fill in the form">
+    The form shows:
+
+    - **A repository name** for your copy of Jun Desk in your GitHub account.
+    - **A name for each resource**: the Worker, the D1 database, the R2 bucket and the queue. Keep the defaults for your first desk.
+    - **`SETUP_TOKEN`**: any passphrase of 16 or more characters. You enter it once to create the owner account, and again only to recover access.
+  </Step>
+  <Step title="Deploy">
+    Cloudflare copies the repo into your GitHub account, creates the resources and builds the Worker with Workers Builds. The deploy step is `npm run deploy`, which applies D1 migrations and deploys.
+  </Step>
+  <Step title="Open the Worker's URL">
+    Open `https://<worker-name>.<your-subdomain>.workers.dev` and continue with [First sign-in](/deploy/first-sign-in).
+  </Step>
+</Steps>
+
+The repo the button creates stays connected to the Worker through [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/), so pushing to it deploys again. That's how you upgrade; see [Upgrade](/deploy/upgrade).
+
+### A second desk in the same account
+
+If this Cloudflare account already has a Jun Desk, give the new one its own names on the form, for example `jun-trial`, `jun-trial-files` and `jun-trial-crawl`.
+
+<Warning>
+With the default names, the new Worker binds to the existing `jun-desk` database, `jun-desk-files` bucket and `jun-desk-crawl` queue. It then shares the first desk's conversations and files.
+</Warning>
+
+### "Could not push contents of source repo to destination repo"
+
+If the build stops with this message, Cloudflare created your repo with only `README.md` and `wrangler.jsonc` and couldn't copy the rest. GitHub refused the copy: its [push protection](https://docs.github.com/en/code-security/secret-scanning/push-protection-for-repositories-and-organizations) blocks a push that contains something shaped like a key. Jun's own files no longer carry any, so this should only happen with a fork that adds one. [workers-sdk#14553](https://github.com/cloudflare/workers-sdk/issues/14553) reports the same message.
+
+To get past it, either:
+
+- use the command line route below, or
+- push the code into the repo the button created, keeping that repo's `wrangler.jsonc`. `git push` prints the file GitHub objects to.
+
+## From the command line
+
+You need Node 22.18 or later and a Cloudflare account.
+
+<Steps>
+  <Step title="Clone and install">
+    ```sh
+    git clone https://github.com/samarsheikh001/jun.git jun-desk
+    cd jun-desk
+    npm install
+    ```
+  </Step>
+  <Step title="Sign in to Cloudflare">
+    ```sh
+    npx wrangler login
+    ```
+  </Step>
+  <Step title="Pick names (optional)">
+    For a second desk in the same account, change the names in `wrangler.jsonc`: the Worker `name`, `database_name`, `bucket_name`, and the queue in both `producers` and `consumers`.
+
+    ```jsonc wrangler.jsonc
+    {
+      "name": "jun-desk",
+      "d1_databases": [
+        { "binding": "DB", "database_name": "jun-desk", "migrations_dir": "migrations" }
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "jun-desk-files" }],
+      "queues": {
+        "producers": [{ "binding": "CRAWL_QUEUE", "queue": "jun-desk-crawl" }],
+        "consumers": [{ "queue": "jun-desk-crawl", "max_batch_size": 4, "max_batch_timeout": 2 }]
+      }
+    }
+    ```
+
+    Keep the binding names (`DB`, `FILES`, `CRAWL_QUEUE`, `AI`) and the Durable Object classes as they are.
+  </Step>
+  <Step title="Set the setup token">
+    ```sh
+    npx wrangler secret put SETUP_TOKEN
+    ```
+
+    Enter a passphrase of 16 or more characters. If the Worker doesn't exist yet, Wrangler offers to create it so it can hold the secret. You can also run this after the first deploy; until it's set, the setup page answers "SETUP_TOKEN isn't configured".
+  </Step>
+  <Step title="Deploy">
+    ```sh
+    npm run deploy
+    ```
+
+    `npm run deploy` runs `scripts/deploy.ts`, which:
+
+    1. builds the dashboard, the widget frame and the Worker with Vite,
+    2. on a first deploy (no D1 database with that name yet), deploys first so the database gets provisioned, then applies the migrations,
+    3. on later deploys, applies new D1 migrations first, then deploys, so new code never runs against an old schema.
+  </Step>
+</Steps>
+
+Wrangler prints the Worker's URL at the end. Open it to [create the owner account](/deploy/first-sign-in).
+
+## Optional secrets
+
+Nothing else is required. Add these when you need them, with `npx wrangler secret put <NAME>` or in the Cloudflare dashboard under the Worker's **Settings → Variables and Secrets**:
+
+| Secret | For |
+|---|---|
+| `OPENAI_API_KEY` | Replies from OpenAI instead of Workers AI |
+| `OPENAI_BASE_URL` | Route OpenAI through Cloudflare AI Gateway |
+| `GITHUB_TOKEN`, `LINEAR_API_KEY` | Issue trackers, instead of pasting a key in Settings |
+| `JUN_SECRET_<NAME>` | A key an action sends as `{secrets.NAME}` |
+
+The full list is in [Secrets](/reference/secrets).
+
+<CardGroup cols={2}>
+  <Card title="First sign-in" icon="key" href="/deploy/first-sign-in">
+    Create the owner account with your setup token.
+  </Card>
+  <Card title="Custom domain" icon="globe" href="/deploy/custom-domain">
+    Serve the desk from your own hostname.
+  </Card>
+</CardGroup>

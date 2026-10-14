@@ -1,0 +1,92 @@
+---
+title: "Custom domain"
+description: "Serve your desk from your own hostname, and what changes for passkeys, the widget snippet and your team."
+icon: "globe"
+---
+
+Your desk starts on `https://<worker-name>.<your-subdomain>.workers.dev`. You can serve it from your own hostname instead, such as `support.example.com`.
+
+<Tip>
+Move to your custom domain **before** you invite your team. Passkeys belong to the hostname they were created on, so every passkey made on the `workers.dev` address stops working on the new one.
+</Tip>
+
+## Add the domain
+
+The domain's zone must be on Cloudflare. Pick one of these:
+
+<Tabs>
+  <Tab title="Cloudflare dashboard">
+    1. Open **Workers & Pages** and select your desk's Worker (`jun-desk` by default).
+    2. Go to **Settings → Domains & Routes** and press **Add**.
+    3. Choose **Custom domain**, enter the hostname (for example `support.example.com`) and confirm.
+
+    Cloudflare creates the DNS record and the certificate. See [Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+  </Tab>
+  <Tab title="wrangler.jsonc">
+    Add a `routes` entry with `custom_domain: true` to `wrangler.jsonc`, then deploy:
+
+    ```jsonc wrangler.jsonc
+    {
+      "name": "jun-desk",
+      "routes": [{ "pattern": "support.example.com", "custom_domain": true }]
+      // …the rest of the file stays as it is
+    }
+    ```
+
+    ```sh
+    npm run deploy
+    ```
+
+    If you deployed with the Deploy button, commit this to the repo it created and push; Workers Builds deploys it. Keeping the domain in `wrangler.jsonc` means it's part of every deploy.
+  </Tab>
+</Tabs>
+
+Use a Custom Domain rather than a route on a path: the desk expects to own the whole hostname (`/api`, `/widget`, `/widget.js` and the dashboard all live at the root).
+
+The `workers.dev` address keeps working unless you turn it off in the same **Domains & Routes** panel.
+
+## What changes on the new hostname
+
+### Passkeys and sign-in
+
+The desk uses the hostname of the page you're on as the passkey's relying party, and sign-in sessions are cookies for that hostname. On the new hostname:
+
+- **The owner** opens `https://support.example.com/recover`, enters the setup token and presses **Add a new passkey**. That signs them in on the new hostname. See [First sign-in](/deploy/first-sign-in#recover-owner-access).
+- **Teammates** can't sign in with their old passkeys, and the setup token only recovers the owner. The owner removes each one in **Settings → Team** and sends a new invite from the new hostname. An invite can't reuse an email that already has an account, which is why the old account has to go first.
+
+Passkeys made on the old hostname keep working there, as long as the `workers.dev` address stays on.
+
+### The widget snippet
+
+Update the snippet on your site to load the loader from the new hostname:
+
+```html
+<script src="https://support.example.com/widget.js" data-key="wk_…" defer></script>
+```
+
+The widget key stays the same. Copy the new line from **Chat widget → Install**; the desk builds it from the address you're viewing it on.
+
+The chat frame keeps an anonymous visitor's token in the browser storage of the desk's hostname. After the switch, anonymous visitors start fresh: their earlier chats don't show in the widget, though your team still has them in the inbox. Customers you [identify](/widget/identify-users) with a signed token find their chats again, because those follow the verified customer.
+
+Your **Allowed websites** list is about your own sites, not the desk, so it doesn't change.
+
+### Other things to redo
+
+- **Notifications**: each teammate turns them on again on the new hostname (**Settings → Notifications**). Browser push belongs to the site that asked for it.
+- **The `jun` CLI**: run `npm run jun -- login https://support.example.com` again. See [CLI](/code/cli).
+- **Invite links** carry the hostname they were created on. Create new ones on the new hostname.
+
+### What carries over
+
+Everything in your database, bucket and Durable Objects: conversations, contacts, knowledge, agent config, settings, the widget key, issue tracker keys and action keys.
+
+A ChatGPT sign-in carries over too. If you sign in again later, a deployed desk always uses the paste-back flow: the sign-in ends on a `http://127.0.0.1:1455/auth/callback?…` page that doesn't load, and you paste its address into the desk. ChatGPT sign-in is only for a private desk you use yourself, per OpenAI's terms. See [Models](/ai/models).
+
+<CardGroup cols={2}>
+  <Card title="Install the widget" icon="code" href="/widget/install">
+    Snippet options and allowed websites.
+  </Card>
+  <Card title="Team" icon="users" href="/inbox/team">
+    Invites, roles and removing people.
+  </Card>
+</CardGroup>

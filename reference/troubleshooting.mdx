@@ -1,0 +1,224 @@
+---
+title: Troubleshooting
+description: Fixes for the problems people actually run into, from deploying and signing in to the widget, page actions, the AI and crawling.
+icon: wrench
+---
+
+## Deploying
+
+<AccordionGroup>
+  <Accordion title='The Deploy button stops at "could not push contents of source repo to destination repo"'>
+    Cloudflare created your GitHub repository with only `README.md` and `wrangler.jsonc` and couldn't copy the rest. GitHub refused the copy: its push protection blocks a push that contains something shaped like a key. Jun Desk's own files no longer contain any, so this normally happens only with a fork that adds one.
+
+    Either deploy from the command line instead (below), or push the code into the repository Cloudflare created, keeping its `wrangler.jsonc`. `git push` prints which file GitHub objects to.
+
+    ```sh
+    git clone https://github.com/samarsheikh001/jun && cd jun
+    npm install
+    npx wrangler secret put SETUP_TOKEN
+    npm run build && npm run deploy
+    ```
+  </Accordion>
+
+  <Accordion title="A second desk shows the first desk's conversations">
+    Both Workers use the same database, bucket and queue. With the default names, a new desk binds to the existing `jun-desk` database, `jun-desk-files` bucket and `jun-desk-crawl` queue.
+
+    Give every desk in an account its own names on the Deploy button's form, for example `jun-trial`, `jun-trial-files` and `jun-trial-crawl`. For a command-line deploy, change `database_name`, `bucket_name` and both queue names in `wrangler.jsonc` before the first `npm run deploy`. See [Deploy to Cloudflare](/deploy/cloudflare).
+  </Accordion>
+
+  <Accordion title="Setup refuses the setup token">
+    `SETUP_TOKEN isn't configured` means the Worker has no `SETUP_TOKEN` secret, or it's shorter than 16 characters. Set it (see [Secrets and settings](/reference/secrets#set-a-secret)) and reload.
+
+    `That setup token is wrong` means what you typed doesn't match the secret exactly. Secrets can't be read back; if you've lost it, set a new value and use that.
+  </Accordion>
+
+  <Accordion title="A new version fails after upgrading">
+    Upgrade with `npm run deploy`, never `wrangler deploy` alone: `npm run deploy` builds, applies new database migrations, and only then deploys the new code. If you ran `wrangler deploy` directly, run `npx wrangler d1 migrations apply DB --remote` now. See [Upgrade](/deploy/upgrade).
+  </Accordion>
+</AccordionGroup>
+
+## AI replies fail with error 1102
+
+**Symptom:** on the Workers Free plan, AI replies and the Agent page's AI chats fail now and then, and Cloudflare's logs show error 1102 (Worker exceeded resource limits).
+
+**Cause:** the Free plan gives a Worker 10 ms of CPU time per request. Reading an AI model's streamed answer takes far more: 0.3 to 1 second was measured for one widget edit. The Workers Paid plan ($5 a month) allows 30 seconds by default.
+
+**Fix:** move the account to Workers Paid. Everything else (the inbox, the widget, the visitor list) runs on the Free plan. See [Costs and limits](/deploy/costs-and-limits) and Cloudflare's [Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+## Signing in
+
+<AccordionGroup>
+  <Accordion title="Passkeys stop working after a domain change">
+    A passkey belongs to the hostname it was created on. After you move the desk from `jun-desk.<you>.workers.dev` to `support.acme.com` (or the other way), the browser has no passkey for the new address.
+
+    - **Owner:** open `https://<new address>/recover`, enter the setup token, and create a passkey there.
+    - **The old address keeps working** as long as the Worker still answers on it, so everyone can keep signing in there.
+
+    Adding a passkey under **Settings → Passkeys** needs you to be signed in on the address you're adding it for, so teammates can't carry theirs over from the old address. An owner or admin can remove a teammate in **Settings → Team** and send them a new invite for the new address; they join as a new account. To avoid this, pick the final domain before inviting your team. See [Custom domain](/deploy/custom-domain).
+  </Accordion>
+
+  <Accordion title="I lost every passkey">
+    If you're the owner, open `/recover` on your desk and enter the setup token. It registers a new passkey for the owner's account.
+
+    A teammate who lost theirs needs an owner or admin to remove them in **Settings → Team** and send a new invite. They join as a new account.
+  </Accordion>
+
+  <Accordion title="The invite link doesn't work">
+    Invite links work once and expire after 7 days. Create a new one in **Settings → Team**.
+  </Accordion>
+</AccordionGroup>
+
+## The widget
+
+<AccordionGroup>
+  <Accordion title="The launcher doesn't appear">
+    Open your site's browser console and check, in order:
+
+    1. **`Jun Desk: no data-key`** in the console: the tag has no `data-key`. Copy the snippet again from **Chat widget → Install**.
+    2. **The tag is an ordinary `<script src>` tag.** The loader finds its own tag through `document.currentScript`, which doesn't exist for `type="module"` scripts or code that `eval`s it. Don't bundle `widget.js`; load it from your desk.
+    3. **Your site's Content Security Policy** blocks the desk. The console shows `Refused to load the script…` or `Refused to connect…`. Allow your desk's origin in `script-src`, `connect-src` (with `wss://` too), `frame-src` and `img-src`. See [Widget options](/reference/widget-options#what-the-loader-loads).
+    4. **The tag is in the page.** Check the served HTML (View Source), not just your template: some frameworks drop tags they don't manage.
+
+    The launcher shows after your colour settings load, or after 1.5 seconds at the latest.
+  </Accordion>
+
+  <Accordion title="The launcher appears but the chat stays blank or won't load">
+    - **Allowed websites:** with sites listed under **Chat widget → Install → Allowed websites**, the chat frame refuses to load anywhere else. The console shows `Refused to frame … because an ancestor violates … frame-ancestors`. Add the site's hostname, or `*.acme.com` for every subdomain (that covers `acme.com` too). `localhost` needs its own entry if you test there.
+    - **Wrong key:** the key must be the one shown on your desk. A key from another desk doesn't work.
+    - **Ad and privacy blockers** can block third-party frames and sockets. Try a clean browser profile.
+  </Accordion>
+
+  <Accordion title="Visitors don't show on the Visitors page">
+    The live list needs the widget's live connection:
+
+    - With `data-consent="required"`, a visitor appears only after your page calls `JunDesk.consent(true)`.
+    - With Allowed websites set, the site must be on the list.
+    - A visitor with no activity for 75 seconds (a closed tab, a sleeping laptop) drops off the list.
+  </Accordion>
+
+  <Accordion title="No errors or failed requests show in the conversation">
+    - `data-capture="off"` turns capture off.
+    - Errors that happen before the loader runs aren't seen. Put the tag in `<head>`, before your own scripts.
+    - Capture is in memory and sent with the visitor's message, so a full page reload before they write clears it.
+    - Bodies, typed values and query values are never captured, by design. See [Debug context](/widget/debug-context).
+  </Accordion>
+</AccordionGroup>
+
+## Page actions
+
+<AccordionGroup>
+  <Accordion title="The AI never offers my page actions">
+    1. **Load order.** The tag must be in `<head>`, with `defer`, before your app's scripts. With `async`, or with the tag after your bundle, code that checks for `document.modelContext` once on load can run first, find nothing and register nothing.
+    2. **Registering before the loader runs.** Call `window.JunDesk?.registerAction(…)` only once the loader exists, or wait for its `jundesk:ready` event on `window`. The React hook `useJunAction` waits for you.
+    3. **`pages`.** An action with `pages: ["/pricing"]` is offered only on those paths. Check the path the visitor is on.
+    4. **`available`.** An action whose `available()` returns false isn't offered.
+    5. **Too many actions.** At most 30 are offered per reply, picked by the visitor's words and what's on screen, from at most 60 the loader sends.
+    6. **The desk sees the list when the visitor writes.** Send a message from the page, then check **Agent → Actions → On your website**: it lists every action the desk has seen.
+
+    See [Page actions](/widget/page-actions).
+  </Accordion>
+
+  <Accordion title="An action always asks for confirmation, or never does">
+    The site's `risk` sets the default (`confirm` unless you say otherwise). The desk's choice under **Agent → Actions → On your website** (stored in `website-actions.yaml`) overrides it: `auto`, `confirm` or `human`.
+  </Accordion>
+</AccordionGroup>
+
+## The AI
+
+<AccordionGroup>
+  <Accordion title="The AI doesn't answer">
+    The AI only answers conversations it's handling. In order, the desk checks:
+
+    | Cause | What happens | Fix |
+    |---|---|---|
+    | The AI is off | Every new message hands off to a person | Turn it on in **Settings → AI** |
+    | A teammate replied, or took the conversation over | The conversation is handled by people | **Hand back to AI** in the conversation. The AI then waits for the customer's next message |
+    | The customer asked for a person | Hands off at once | Expected |
+    | `maxReplies` reached | Hands off after that many AI answers (8 by default) | Raise `maxReplies` in **Agent → Instructions** |
+    | Monthly reply cap reached | Hands off with "Our assistant isn't available right now" | Raise the cap in **Settings → AI** (2,000 by default) |
+    | The provider failed | Hands off with "I couldn't answer that just now" | Check the conversation's internal brief for the error |
+
+    Every handoff leaves an internal brief in the conversation saying why. The AI never goes silent: if it can't answer, a person gets the conversation.
+  </Accordion>
+
+  <Accordion title="The brief says the AI is unavailable">
+    - **OpenAI:** `OPENAI_API_KEY isn't set` means the provider is OpenAI and the Worker has no key. Add the secret, or switch back to Workers AI.
+    - **ChatGPT sign-in:** the sign-in expired or was revoked. Sign in again in **Settings → AI**.
+    - **Workers AI:** on the Free plan, the daily free allocation can run out, and long answers can hit error 1102 (above).
+  </Accordion>
+
+  <Accordion title="ChatGPT sign-in on a deployed desk ends on a page that doesn't load">
+    That's expected. OpenAI's sign-in can only return to `http://127.0.0.1`, so on a deployed desk the browser ends on an address like `http://127.0.0.1:1455/auth/callback?code=…` that doesn't load.
+
+    1. Copy the whole address from the browser's address bar.
+    2. Go back to the desk's tab and paste it into the box the sign-in step shows.
+    3. Do it within 10 minutes of pressing **Sign in with ChatGPT**; after that, start again.
+
+    `That isn't the sign-in return address` means you pasted something else: the address must contain `/auth/callback?code=`. Locally (`npm run dev`), the sign-in returns to the desk on its own.
+
+    ChatGPT sign-in spends your own ChatGPT plan. OpenAI's terms cover plan usage for your own use, not a desk answering the public. See [Models](/ai/models).
+  </Accordion>
+
+  <Accordion title="The AI answers from outdated docs">
+    Website sources re-sync once a day (03:15 UTC). Choose **Re-sync now** in the source's menu on the **Knowledge** page to update it now. Pages that disappeared from the site are dropped from the index on the next sync.
+  </Accordion>
+</AccordionGroup>
+
+## Knowledge and crawling
+
+<AccordionGroup>
+  <Accordion title='A website source ends with "No readable pages"'>
+    The crawl finished without indexing any page. `No readable pages. Last error: …` names the last page that failed and why. Common causes:
+
+    - **The pages are drawn by JavaScript.** The crawler reads the HTML the server sends; it doesn't run scripts. A single-page app that renders in the browser has no text to read. Point it at a server-rendered docs or help site, or add the content as files or snippets.
+    - **`robots.txt` disallows the paths.** The crawler (user agent `JunDeskBot`) follows `Disallow` rules.
+    - **The server blocks bots** or returns errors (a firewall, a login wall, rate limits).
+    - **The responses aren't HTML.** Only `text/html` pages are read.
+  </Accordion>
+
+  <Accordion title="The crawl misses pages">
+    - **Scope:** only pages on the same origin and under the starting address's folder are crawled. Starting at `https://acme.com/docs/` covers `/docs/…`, not `/blog/…`.
+    - **Sitemap first:** the crawler reads `sitemap.xml` (and sitemaps listed in `robots.txt`). Without one, it follows links from the start page, up to 3 links deep.
+    - **Page limit:** each website source stops at its page limit (200 by default, set when you add it).
+  </Accordion>
+
+  <Accordion title="Crawling fails in local development">
+    The local Workers runtime can't fetch its own dev server, so a crawl of `localhost:5173` fails. Crawl a public URL instead.
+  </Accordion>
+
+  <Accordion title="Files are found only by keyword">
+    If Workers AI couldn't make embeddings (for example, its daily free allocation ran out), files and pages are still indexed for keyword search. The next re-index, sync or the daily run adds the vectors.
+  </Accordion>
+</AccordionGroup>
+
+## Notifications
+
+<AccordionGroup>
+  <Accordion title="No push notifications on iPhone or iPad">
+    Safari allows Web Push only for web apps on the Home Screen. Open the desk in Safari, tap **Share → Add to Home Screen**, open Jun Desk from the Home Screen, and turn notifications on in **Settings → Notifications** there.
+  </Accordion>
+
+  <Accordion title="Notifications don't arrive while the desk is open">
+    By design: nothing is pushed while you're looking at the desk. A desk tab that's open but hidden shows the notification itself. See [Notifications](/inbox/notifications).
+  </Accordion>
+</AccordionGroup>
+
+## The jun CLI
+
+<AccordionGroup>
+  <Accordion title={"\"This API token isn't valid\" or \"belongs to another workspace\""}>
+    The token was revoked, or it's for another desk. Create a new one in **Settings → Developer → API tokens** and run `jun login` again (or update `JUN_DESK_TOKEN` in CI).
+  </Accordion>
+
+  <Accordion title='"Only owners and admins can change the agent"'>
+    `jun push` needs an owner or admin; the token acts as whoever created it. `pull` and `eval` work for any member.
+  </Accordion>
+
+  <Accordion title='"Someone edited the agent in the dashboard since your last pull"'>
+    Someone saved on the Agent page after your last `pull`. Run `jun pull`, merge with git, and push again. See [Agent as code](/code/overview#when-someone-edited-on-the-desk).
+  </Accordion>
+</AccordionGroup>
+
+## Still stuck
+
+Search or open an issue on [GitHub](https://github.com/samarsheikh001/jun/issues). Include what you did, what you expected, and any error message or `code` from the API response. Cloudflare's logs for the Worker (**Workers & Pages → your Worker → Logs**) often show the cause.

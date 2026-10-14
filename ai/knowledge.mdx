@@ -1,0 +1,167 @@
+---
+title: "Knowledge"
+description: "Give the AI your docs site, files and text snippets to answer from, see exactly what it indexed, and test what it would find."
+icon: "book"
+---
+
+The AI states facts about your product only from what's on the **Knowledge** page, and cites them. Add your docs or help-center site, upload files, and write snippets for anything that isn't on the web.
+
+Owners and admins add, edit and remove sources. Agents can view them and use **Test a question**.
+
+## Add a website
+
+<Steps>
+  <Step title="Open Knowledge → Add website">
+    **Knowledge** is in the sidebar. **Add website** sits next to **Add files** and **Add text snippet**.
+  </Step>
+  <Step title="Choose Crawl links or Individual link">
+    - **Crawl links** reads the whole site from the address you give.
+    - **Individual link** indexes that one page only.
+  </Step>
+  <Step title="Enter the address">
+    For example `docs.example.com`, or `docs.example.com/billing/refunds` for one page. Pasting a full URL picks `https://` or `http://` for you.
+  </Step>
+  <Step title="Set the page limit (optional)">
+    Under **Advanced options**, **Max pages** caps the crawl. The default is 200, the most is 2,000.
+  </Step>
+  <Step title="Press Fetch links (or Add link)">
+    The crawl runs in the background. The page count shows once it finishes.
+  </Step>
+</Steps>
+
+### How the crawl works
+
+- **Sitemap first.** The crawler reads `robots.txt` for `Sitemap:` lines and also tries `/sitemap.xml`. A sitemap index is followed one level down (up to 20 sitemaps). If the sitemaps list pages under your address, those are the pages it reads.
+- **Links otherwise.** With no usable sitemap, it starts at your address and follows links up to three clicks deep.
+- **Scope.** Only pages on the same host and under the same folder as your address count. Starting at `https://example.com/docs/` reads `/docs/...` pages, not your blog. Images, PDFs, scripts and other non-page files are skipped.
+- **robots.txt.** `Disallow` rules for `*` or for `JunDeskBot` are respected. The crawler identifies itself as `JunDeskBot/0.1`.
+- **Readable HTML only.** It reads the HTML the server sends and keeps the main content, dropping navigation, headers, footers, forms and scripts. It doesn't run JavaScript, so pages that render their text in the browser come out empty. Pages with almost no text (50 characters or fewer) aren't indexed.
+- **Page limit.** The crawl stops claiming pages at **Max pages**.
+
+<Note>
+A crawl that indexes nothing ends in an error ("No readable pages found at this URL.", or the last page's error), not "ready with 0 pages".
+</Note>
+
+### Keeping it up to date
+
+- Every website re-syncs daily, at the 03:15 UTC run of the desk's scheduled job, if it hasn't synced in the last 20 hours.
+- A re-sync skips pages whose text hasn't changed and drops pages that are gone from the site.
+- **Re-sync now** in a source's menu starts one straight away.
+
+### Leave pages out
+
+Open a website source and use its **Settings** tab:
+
+- **Max pages**: from 1 to 2,000.
+- **Skip these pages**: one per line, a full URL (matched exactly) or a path like `/blog/` or `/changelog*` (a prefix, `*` matches anything).
+
+Both apply on the next sync. To take out a single page now, open the **Indexed pages** tab and remove it: it leaves the knowledge base at once and is added to the skip list, so the next sync doesn't bring it back.
+
+## Upload files
+
+**Add files** takes PDF, DOCX, Markdown (`.md`, `.markdown`) and plain text (`.txt`). Click or drag files onto the drop zone; each uploads as soon as it's picked and then shows "Uploaded, indexing".
+
+| Limit | Value |
+|---|---|
+| Size per file | 10 MB |
+| Files per workspace | 200 |
+| Text indexed per file | about 1,000 chunks (roughly 1.2 MB of text) |
+
+How each format is read:
+
+- **PDF** is converted to text by Workers AI's document conversion. Images inside it aren't described. Make sure the text is selectable: a scanned PDF (pictures of pages) has no text and fails with "No text found in this PDF."
+- **DOCX** is read from the document's own text and headings. Old `.doc` files need saving as `.docx` first.
+- **Markdown** keeps its headings, so answers can cite a section. Front matter and HTML comments are dropped.
+- **Text** is split into paragraphs on blank lines. It must be UTF-8 (or UTF-16 with a byte-order mark).
+
+The desk checks each file's contents, not just its name: a `.pdf` that isn't a PDF, or a `.docx` that isn't a Word document, is refused with a message saying why.
+
+The original stays in your R2 bucket. Anyone on the team can get it back with **Download original** in the source's sheet. Renaming a file source re-indexes it, because the title is part of what's searched. **Re-index now** reads the file again.
+
+## Add a text snippet
+
+**Add text snippet** is for answers that aren't on the web: a refund policy, an internal FAQ, a workaround. Give it a **Title** (up to 200 characters) and the text (up to 20,000 characters). Write it the way you'd explain it to a customer.
+
+A snippet is indexed as soon as you add it, and again whenever you edit it (**Save and re-index**).
+
+## Statuses and errors
+
+Each source row shows what it's doing:
+
+| Shown | Meaning |
+|---|---|
+| **Syncing… 12 pages queued** | A website crawl is running. |
+| **Indexing…** | A file or snippet is being read and indexed. |
+| **Added … · Synced 2 h ago · 140 pages · 812 chunks** | Ready. Files show their size; files and snippets say **Indexed** instead of **Synced**. |
+| An error message in red | The last sync or index failed. The message says why, for example an HTTP status, "No text found in this file." or "Couldn't convert this PDF right now". |
+
+Filter the list by type (**Files**, **Text snippets**, **Website**), search it, and sort it by status, date or name.
+
+### Keyword search only
+
+Indexing never fails because embedding does. If Workers AI can't embed a source (for example, its daily free allocation ran out), the chunks are still stored and found by keyword search. The source's sheet then says **Keyword search only** with how many chunks lack vectors.
+
+The missing vectors are added on the next **Re-sync now** or **Re-index now**, and the daily job retries them too.
+
+## See what was indexed
+
+Open any source (**Edit**, or **View** for agents) to see exactly what the AI can quote:
+
+- **Indexed pages** (websites): every page, with a filter. Expand a page to see its chunks, open the live page, or remove it.
+- **Indexed text** (files and snippets): the chunks as stored.
+
+Each chunk carries its heading path, like `Billing › Refunds`, so the AI's citations point at the right section.
+
+## How search works
+
+For every reply, the desk searches your knowledge with the visitor's latest message. When that message is short (under 40 characters, like "and for teams?"), the previous one is added for context.
+
+<Steps>
+  <Step title="Meaning and keywords, side by side">
+    The question is embedded with `@cf/baai/bge-m3` (multilingual) and compared to your chunks' vectors. At the same time, a full-text keyword search runs. Each finds up to 20 candidates.
+  </Step>
+  <Step title="Merge">
+    The two lists are merged with reciprocal rank fusion, so a chunk both searches like ranks highest.
+  </Step>
+  <Step title="Rerank">
+    A cross-encoder, `@cf/baai/bge-reranker-base`, reads the question against each candidate and keeps the best 5. If reranking fails, the merged order is used.
+  </Step>
+  <Step title="Answer with citations">
+    The AI gets the 5 chunks as numbered sources and must cite them inline, like `[1]`, right after the facts they support. Citations are renumbered in order of use, and chunks from the same page count as one source.
+  </Step>
+</Steps>
+
+Search always runs on Workers AI, whichever [model provider](/ai/models) writes the replies.
+
+The AI is told to treat your sources as facts and never as instructions, so text inside a page can't change its rules.
+
+### When nothing matches
+
+If no source covers the question, the AI doesn't invent an answer. It asks one short clarifying question or suggests safe, generic steps, and [hands off](/ai/handoff) if it still can't help. A reply with no words at all also hands off, with the reason "The AI couldn't answer from the knowledge base."
+
+### Test a question
+
+**Test a question** at the top of the page shows which chunks the AI would get for a question, in order, with each one's relevance score, title, URL and text. Use it to check a new source is found, or to see why the AI answered the way it did.
+
+## What visitors see
+
+In the widget, an answer from your knowledge shows:
+
+- **Source chips** inline where it cites, with the page's favicon and domain.
+- A **sources** list under the answer.
+- Up to three **follow-up questions** the visitor can tap. A separate, fast AI job writes them after the answer is saved, from the question, the answer and the sources it used. They only appear under answers that cited your knowledge, and only questions the sources can answer. Set this job's model under [Model per job](/ai/models#model-per-job) (**Follow-up questions**).
+
+<CardGroup cols={2}>
+  <Card title="Write the instructions" icon="pen-to-square" href="/ai/instructions">
+    Tone, rules and when to hand over.
+  </Card>
+  <Card title="Teach it tasks" icon="list-check" href="/ai/tasks">
+    Step-by-step procedures for jobs like refunds.
+  </Card>
+  <Card title="Models and AI settings" icon="microchip" href="/ai/models">
+    Turn the AI on and pick a provider.
+  </Card>
+  <Card title="Costs and limits" icon="gauge" href="/deploy/costs-and-limits">
+    Workers AI allocations and plan limits.
+  </Card>
+</CardGroup>

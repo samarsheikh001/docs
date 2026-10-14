@@ -1,0 +1,76 @@
+---
+title: Business hours
+description: Set when your team is around, the away message visitors get outside those hours, and what the widget shows.
+icon: clock
+---
+
+Business hours tell visitors when a person will answer. Outside them, the widget says when you're back, and a visitor writing to your team gets your away message once. The AI keeps answering at any hour.
+
+## Set your hours
+
+Owners and admins set hours in **Settings → Inbox → Business hours**. The card's corner shows the current state: **Always open (hours are off)**, **Open now**, **Closed now · opens Monday at 09:00 (London time)**, or **Closed (no open days)**.
+
+<Steps>
+  <Step title="Turn on Use business hours">
+    While it's off, the desk counts as always open and nothing below applies.
+  </Step>
+  <Step title="Pick a time zone">
+    **Time zone** defaults to your browser's. Every time on the card is in this zone. `UTC` is in the list too.
+  </Step>
+  <Step title="Set the days">
+    Tick each day you're open and set its opening and closing times. Each day has one span; untick a day to close it. New hours start as Monday to Friday, 09:00 to 17:00. Pick 23:59 as the closing time to stay open until midnight. Closing must be after opening.
+  </Step>
+  <Step title="Write the away message">
+    **Away message** is up to 500 characters. `{when}` becomes the next opening, for example `on Monday at 09:00 (London time)`, or `today at 13:00 (London time)` and `tomorrow at 09:00 (London time)` when it's that close.
+  </Step>
+  <Step title="Save">
+    Press **Save**. The widget picks up the change on its next load.
+  </Step>
+</Steps>
+
+The default away message is:
+
+```text
+Thanks for your message! Our team is away right now and will reply here {when}.
+```
+
+If your message doesn't contain `{when}`, the desk adds `We'll be back <when>.` at the end. When no day is open at all, `{when}` becomes `as soon as we can`.
+
+Daylight saving time is handled: the desk works out the next opening in your time zone, including on days the clocks change.
+
+## What visitors see
+
+Outside your hours:
+
+- **In the chat window**, the line under your name reads **We're away · back Monday at 09:00 (London time)**, followed by **The assistant can still help.** when AI replies are on. Inside hours it shows your usual reply-time text.
+- **On the bar and island launchers**, the header reads **back Monday at 09:00 (London time)**.
+- **In a conversation with your team**, an anonymous visitor without an email is asked **We're away right now. Get the reply by email?** straight away, so you can follow up after they leave. See [the inbox](/inbox/overview#email-for-visitors-who-might-leave).
+
+## The away message
+
+The away message is an automatic message in the conversation. The desk sends it when all of these are true:
+
+- business hours are on and you're closed right now,
+- the conversation is with your team, not the AI (it went to the team from the start, or the AI just handed it off),
+- no teammate has sent a reply in that conversation in the last 15 minutes.
+
+It's sent at most once per closed period in a conversation. If the visitor writes five messages on Saturday, they get it once; if they write again after you open and close again, they get it again.
+
+<Note>
+Notes don't count as replies here. A teammate leaving a note doesn't stop the away message; a teammate answering the visitor does.
+</Note>
+
+## Effect on the AI
+
+Business hours don't switch the AI off. While a conversation is with the AI, it answers as usual at any hour and no away message is sent. If the AI hands off outside your hours, the visitor gets the handoff notice and then your away message, so they know when a person will reply.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Handoff" icon="hand" href="/ai/handoff">
+    When the AI passes a chat to your team.
+  </Card>
+  <Card title="Assignment" icon="user-check" href="/inbox/assignment">
+    Who gets chats that need a person.
+  </Card>
+</CardGroup>

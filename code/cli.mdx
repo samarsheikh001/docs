@@ -1,0 +1,297 @@
+---
+title: jun CLI
+description: Reference for every jun command, flag, environment variable and file, for the agent config and for local ChatGPT development.
+icon: terminal
+---
+
+`jun` is Jun Desk's command-line tool. It does two separate jobs:
+
+- **Agent as code**: talk to your deployed desk with an API token: `login <url>`, `init`, `pull`, `push`, `eval`.
+- **Local LLM tools** for developing Jun Desk itself: `login chatgpt`, `logout`, `whoami`, `models`, `ask`, `chat`.
+
+## Install and run
+
+The CLI isn't published to npm. It's part of the Jun Desk repository (`packages/cli`, AGPL-3.0) and runs straight from the source on Node.js 22.18 or later, with no build step.
+
+```sh
+git clone https://github.com/samarsheikh001/jun   # or your own copy of it
+cd jun
+npm install
+npm run jun -- --help
+```
+
+From the repository root, these are the same:
+
+<CodeGroup>
+```sh npm script
+npm run jun -- pull support-agent
+```
+
+```sh npx
+npx jun pull support-agent
+```
+
+```sh node
+node packages/cli/src/index.ts pull support-agent
+```
+</CodeGroup>
+
+`npm install` links the `jun` command into `node_modules/.bin`, which is why `npx jun` works inside the checkout. With `npm run`, put `--` before the CLI's own arguments so npm passes them through. Folder paths are relative to the directory you run from; `npm run` always runs from the repository root.
+
+Run `jun` with no command, or with `-h` / `--help`, to print the built-in help.
+
+## Agent as code
+
+### API tokens
+
+The desk commands authenticate with a personal API token.
+
+- **Create one:** **Settings → Developer → API tokens**, enter a name (`laptop`, `GitHub Actions`) and press **Create token**. The token starts with `jun_` and is shown once.
+- **What it can do:** it acts as you, in this workspace only, and only on the agent config (`/api/workspaces/<id>/agent…`) and the CLI's login check. It can't read conversations, change settings, or read or change action keys. A token from one workspace is refused by another (`wrong_workspace`).
+- **Role:** any member can `pull` and `eval`. `push` needs an owner or admin, the same as saving on the Agent page.
+- **Revoke:** the same card lists your tokens with when each was created and last used. **Revoke** deletes it at once.
+
+The desk stores only a SHA-256 hash of each token. Tokens don't expire; revoke the ones you no longer use.
+
+### `jun login <desk-url>`
+
+Connects the CLI to a desk.
+
+```sh
+npm run jun -- login https://your-desk.example.com
+```
+
+<ParamField path="desk-url" type="string" required>
+  The desk's address, starting with `https://` (or `http://` for a local desk).
+</ParamField>
+<ParamField path="--token" type="string">
+  The API token. Without it, the CLI uses `JUN_DESK_TOKEN` if set, or asks: `API token (Settings → API tokens):`.
+</ParamField>
+
+The CLI checks the token against the desk and prints `Logged in to <workspace> at <url> as <you>.` It saves the URL, token, workspace and your name in `~/.jun/desk.json`, readable only by you (mode 600). Logging in again replaces it; one desk at a time.
+
+A token that doesn't start with `jun_` is refused before anything is sent.
+
+### `jun init [dir]`
+
+Writes a starter config into an empty folder (default `support-agent`).
+
+```sh
+npm run jun -- init support-agent
+```
+
+```text
+Created support-agent/ with 9 files:
+  README.md
+  AGENTS.md
+  skills/refund/SKILL.md
+  skills/cancellation/SKILL.md
+  tools/apply_save_offer.yaml.example
+  tools/lookup_order.yaml.example
+  widgets/order.widget.example
+  evals/basics.yaml
+  evals/cancellation.yaml
+```
+
+The `.example` files aren't part of the config until you rename them (drop `.example`); `push` and `eval` skip them. `init` refuses a folder that isn't empty. It doesn't contact the desk, so it works before `login`.
+
+### `jun pull [dir]`
+
+Downloads the desk's live config into the folder (default `support-agent`).
+
+```text
+Pulled 7 files (version 12) from Acme into support-agent/.
+```
+
+- Writes every config file, creating folders as needed.
+- Deletes config files in the folder that no longer exist on the desk. Files that aren't config files (your own notes, `.example` files) are left alone.
+- Writes the version to `.jun-version`, which `push` uses to detect desk edits made since. Commit it.
+
+If nothing was ever saved, you get the built-in default `AGENTS.md` and the message says `built-in default config`.
+
+### `jun push [dir]`
+
+Validates the folder and makes it the live config, as a new version.
+
+```sh
+npm run jun -- push support-agent -m "Refund window is now 30 days"
+```
+
+<ParamField path="-m, --message" type="string">
+  A note for the version, shown in **History** on the Agent page. At most 500 characters; a longer note is refused.
+</ParamField>
+<ParamField path="--force" type="boolean">
+  Push even if someone saved on the Agent page since your last pull. Their edits are discarded from the live config (they remain in **History**).
+</ParamField>
+
+What it sends is every config file in the folder. A file you deleted locally is deleted on the desk. Other files are listed as `(skipped <path>: not a config file)` and not sent. `AGENTS.md` must exist.
+
+On success:
+
+```text
+Pushed version 13 to Acme: 2 procedures, 1 tools, 5 eval cases. It's live now.
+```
+
+If the config has errors, nothing changes and each problem is listed:
+
+```text
+Not pushed: the config has errors.
+  ✘ tools/lookup_order.yaml: {order} isn't an input. Add it under input:, {user.id} (signed-in customer), or {secrets.NAME}.
+```
+
+If someone saved on the desk since your `.jun-version`, the push stops and tells you to `pull`, merge with git, and push again (or use `--force`). See [Agent as code](/code/overview#when-someone-edited-on-the-desk).
+
+### `jun eval [dir]`
+
+Tests the folder's config on the desk without making it live.
+
+```sh
+npm run jun -- eval support-agent
+```
+
+It sends the folder's files to the desk, which runs two checks with your workspace's AI provider and model:
+
+1. **Test cases**: every case in `evals/*.yaml`, run against your files. Each passes or fails on its `expect`.
+2. **Replay**: the first customer message of recent conversations the AI took part in, answered by the live config and by yours. A judge model compares the two and reports which answers would change in substance.
+
+<ParamField path="--sample" type="number" default="20">
+  How many recent conversations to replay, from 0 to 50. `0` skips the replay.
+</ParamField>
+<ParamField path="--mock-tools" type="boolean">
+  Actions return their `mock:` response instead of calling your API. An action without `mock:` returns an error to the AI.
+</ParamField>
+<ParamField path="--no-cases" type="boolean">
+  Skip `evals/*.yaml`, replay only.
+</ParamField>
+<ParamField path="--json" type="boolean">
+  Print one JSON event per line instead of the readable report. See [Run evals in CI](/code/ci#json-output) for the events. With `npm run`, add `-s` (`npm run -s jun -- eval … --json`) so npm's own banner lines don't end up in the output.
+</ParamField>
+<ParamField path="--fail-on-change" type="boolean">
+  Exit with code 1 when any replayed answer changes.
+</ParamField>
+
+A readable run looks like this:
+
+```text
+Evaluating support-agent/ against Acme (live: version 12)
+5 test cases, 20 recent conversations to replay
+
+✔ evals/basics.yaml › greeting
+✘ evals/basics.yaml › refund goes to a person
+    expected outcome handoff, got answer
+    reply (answer): Refunds are reviewed by our billing team within one business day…
+= How do I add a teammate?
+
+≠ Can I get a refund for last month?   (answer → handoff)
+    live (answer): You can ask for a refund within 14 days…
+    new  (handoff): (hands off: Refund request for invoice 2291)
+
+Cases: 4 passed, 1 failed.  Replay: 1 changed, 19 unchanged.
+```
+
+`=` is a replayed answer that stays the same in substance; `≠` one that changes, with the live and new reply side by side. `!` is an error (a case or conversation that couldn't run).
+
+<Note>
+  Without `--mock-tools`, actions call your real API, including POST requests. Use mocks, or point test runs at a staging API, for actions that change things.
+</Note>
+
+The config must be valid first: if it has errors, `eval` prints `Eval didn't run: Fix the config errors first.` and the problems. The desk's AI provider must be usable (for example, `OPENAI_API_KEY` set when the provider is OpenAI); otherwise the run stops with that error.
+
+#### Exit codes
+
+| Code | When |
+|---|---|
+| `0` | Every case passed and nothing errored. Replay changes don't count unless you pass `--fail-on-change` |
+| `1` | A case failed, a case or replay errored, the run couldn't start (invalid config, bad token, AI unavailable), or, with `--fail-on-change`, a replayed answer changed |
+
+`push` also exits with 1 when the config has errors or the push is refused; every command exits with 1 on an error.
+
+### Use the CLI in CI
+
+Set two environment variables instead of running `jun login`:
+
+| Variable | Value |
+|---|---|
+| `JUN_DESK_URL` | The desk's address, like `https://support.acme.com` |
+| `JUN_DESK_TOKEN` | An API token (`jun_…`) |
+
+When both are set, the desk commands use them and ignore `~/.jun/desk.json`. See [Run evals in CI](/code/ci) for a complete GitHub Actions workflow.
+
+## Local LLM tools
+
+These commands are for working on Jun Desk itself, for example to run the end-to-end tests with real AI. They don't touch your desk.
+
+<Warning>
+  Sign in with ChatGPT uses your own ChatGPT plan. OpenAI's terms cover plan usage for your own use, not serving the public. Use it for local development and your own desk only.
+</Warning>
+
+### `jun login chatgpt`
+
+Signs in with ChatGPT using OpenAI's loopback flow.
+
+<ParamField path="--no-browser" type="boolean">
+  Print the sign-in link instead of opening a browser.
+</ParamField>
+
+The CLI listens on `http://127.0.0.1:1455` (or any free port if that's taken), opens the sign-in page, and waits up to 10 minutes. If the browser ends on "127.0.0.1 refused to connect", copy the address from its address bar and paste it into the terminal. Credentials go to `~/.jun/chatgpt.json`, readable only by you.
+
+### `jun logout`
+
+Revokes the ChatGPT tokens and forgets them. It doesn't log out of your desk; to forget the desk login, delete `~/.jun/desk.json`.
+
+### `jun whoami`
+
+Shows the signed-in ChatGPT account, when its access token expires, and whether plan usage was granted.
+
+### `jun models`
+
+Lists the models your ChatGPT account can use.
+
+### `jun ask "<question>"`
+
+Asks once and streams the answer to the terminal.
+
+### `jun chat`
+
+A multi-turn chat in the terminal. An empty line or Ctrl+C ends it.
+
+`ask` and `chat` take:
+
+<ParamField path="--provider" type="chatgpt | openai" default="chatgpt">
+  Which provider to use. Defaults to `$JUN_LLM_PROVIDER`, else `chatgpt`. `openai` needs `OPENAI_API_KEY`.
+</ParamField>
+<ParamField path="--model" type="string">
+  A model slug. Defaults to `$JUN_MODEL`, else the provider's default.
+</ParamField>
+<ParamField path="--instructions" type="string">
+  System guidance for the assistant.
+</ParamField>
+
+## Environment variables
+
+| Variable | Used by | What |
+|---|---|---|
+| `JUN_DESK_URL`, `JUN_DESK_TOKEN` | `pull`, `push`, `eval` | Desk and token, instead of `~/.jun/desk.json`. Both must be set |
+| `JUN_DESK_TOKEN` | `login <url>` | The token, if `--token` isn't given |
+| `JUN_HOME` | all | Folder for `desk.json` and `chatgpt.json` instead of `~/.jun` |
+| `JUN_LLM_PROVIDER` | `ask`, `chat` | Default provider |
+| `JUN_MODEL` | `ask`, `chat` | Default model |
+| `OPENAI_API_KEY` | `ask`, `chat` with `--provider openai` | Your OpenAI API key |
+| `OPENAI_BASE_URL` | `ask`, `chat` with `--provider openai` | Another endpoint, for example a Cloudflare AI Gateway URL |
+
+## Files
+
+| File | What |
+|---|---|
+| `~/.jun/desk.json` | Desk login: URL, token, workspace id and name, your name. Mode 600 |
+| `~/.jun/chatgpt.json` | ChatGPT credentials. Mode 600 |
+| `<dir>/.jun-version` | The desk version the folder was last pulled or pushed at. Commit it |
+
+<CardGroup cols={2}>
+  <Card title="File format" icon="file-code" href="/code/files">
+    Every key in `AGENTS.md`, tasks, actions, widgets and tests.
+  </Card>
+  <Card title="Evals in CI" icon="github" href="/code/ci">
+    A GitHub Actions workflow for pull requests and merges.
+  </Card>
+</CardGroup>

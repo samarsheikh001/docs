@@ -1,0 +1,90 @@
+---
+title: "First sign-in"
+description: "Create the owner account with your setup token, manage passkeys, recover access and sign out."
+icon: "key"
+---
+
+Jun Desk signs people in with passkeys: a fingerprint, face or device PIN, or a security key. There are no passwords, and no email or OAuth service to set up. The owner account is created with the `SETUP_TOKEN` secret you chose when you deployed.
+
+## Create the owner account
+
+<Steps>
+  <Step title="Open the desk">
+    Open your Worker's URL. A fresh desk shows **Set up your desk**.
+
+    Use the hostname you'll keep using. Passkeys only work on the hostname they were created on; see [Custom domain](/deploy/custom-domain) if you plan to move.
+  </Step>
+  <Step title="Fill in the form">
+    - **Setup token**: the `SETUP_TOKEN` you chose when deploying.
+    - **Workspace name**: your company or team, such as "Acme Support".
+    - **Your name** and **Email**: for your account. No email is sent.
+  </Step>
+  <Step title="Create the passkey">
+    Press **Create passkey and finish setup** and confirm in your browser's prompt. The desk creates the workspace, your owner account, the website inbox with its widget key, and your first passkey in one step, then signs you in and opens [Get started](/get-started-checklist).
+  </Step>
+</Steps>
+
+Setup runs once. After that, the setup form refuses with "Setup is already complete. Sign in instead."
+
+<Note>
+If you see "SETUP_TOKEN isn't configured", the secret is missing or shorter than 16 characters. Set it with `npx wrangler secret put SETUP_TOKEN`, or in the Cloudflare dashboard under the Worker's **Settings → Variables and Secrets**, and try again.
+</Note>
+
+## Sign in
+
+On a desk that's set up, signed-out visitors see **Sign in**. Press **Sign in with passkey** and pick your passkey. You don't type a username: the passkey says who you are.
+
+A sign-in lasts 30 days in that browser.
+
+## Add more passkeys
+
+Add a passkey on a second device so losing one phone or laptop doesn't lock you out.
+
+<Steps>
+  <Step title="Open Passkeys">
+    Open the account menu at the bottom of the sidebar, choose **Settings**, then **Passkeys**.
+  </Step>
+  <Step title="Add one">
+    Press **Add passkey** and complete the browser's prompt. To add one for another device, run this on that device after signing in there, or choose the browser's option to use a phone or security key.
+  </Step>
+</Steps>
+
+**Your passkeys** lists each one with a name like "Chrome on Windows", a **synced** label for passkeys your password manager backs up, and when it was created and last used. **Remove** appears once you have more than one: you can't remove your only passkey.
+
+## Recover owner access
+
+If the owner has lost every passkey, the setup token lets you add a new one.
+
+<Steps>
+  <Step title="Open /recover">
+    Go to `https://<your-desk>/recover`, or press **Recover with the setup token** on the sign-in page.
+  </Step>
+  <Step title="Enter the setup token">
+    Enter the `SETUP_TOKEN` and press **Add a new passkey**. The new passkey is added to the first owner account, and you're signed in.
+  </Step>
+</Steps>
+
+Recovery only works for the owner. An admin or agent who loses every passkey can't recover on their own: remove them in **Settings → Team** and send a new invite. An invite can't reuse an email that already has an account, so remove the old one first. If you've forgotten the setup token too, set a new one as the Worker secret first.
+
+<Warning>
+Anyone with the setup token can add a passkey to the owner account. Keep it in a password manager, and change the Worker secret if it leaks.
+</Warning>
+
+## Sign out
+
+Open the account menu at the bottom of the sidebar and choose **Sign out**. It ends the session in that browser.
+
+## Add your team
+
+Teammates don't use the setup token. An owner or admin creates an invite link in **Settings → Team** (or in the last [Get started](/get-started-checklist) step). The teammate opens it, enters their name and email, and presses **Create passkey and join**. Each link works once, for 7 days.
+
+Owners can invite admins and agents; admins can invite agents. See [Team](/inbox/team).
+
+<CardGroup cols={2}>
+  <Card title="Get started checklist" icon="list-check" href="/get-started-checklist">
+    The six steps after your first sign-in.
+  </Card>
+  <Card title="Custom domain" icon="globe" href="/deploy/custom-domain">
+    Move the desk, and your passkeys, to your own hostname.
+  </Card>
+</CardGroup>

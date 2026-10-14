@@ -1,47 +1,81 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Go from the Deploy button to a working desk and your first chat in a few minutes."
+icon: "rocket"
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+This page takes you from nothing to a desk that answers a chat on your site. You need a Cloudflare account and a GitHub account.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+<Tip>
+Use the Workers Paid plan ($5/month) if you want the AI. On the Free plan, AI replies fail now and then with Cloudflare's error 1102 because of the 10 ms CPU limit. Everything else runs on Free. See [Costs and limits](/deploy/costs-and-limits).
+</Tip>
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Press the Deploy button">
+    Open the Deploy button:
 
-    ```bash
-    npm install your-package
-    ```
+    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/samarsheikh001/jun)
+
+    Cloudflare copies the repo into your GitHub account and creates the Worker, a D1 database, an R2 bucket, a Queue and the Durable Objects. Keep the default resource names unless this Cloudflare account already has a Jun Desk. In that case read [Deploy to Cloudflare](/deploy/cloudflare#a-second-desk-in-the-same-account) first.
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+  <Step title="Choose a setup token">
+    The form asks for one secret, `SETUP_TOKEN`. Enter any passphrase of 16 or more characters.
 
-    ```bash
-    your-cli init
-    ```
+    You type it once to create the owner account. Keep it somewhere safe: it's also how you get back in if you lose every passkey.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+  <Step title="Open your desk">
+    When the build finishes, open the Worker's URL (`https://jun-desk.<your-subdomain>.workers.dev` with the default name). You see **Set up your desk**.
+  </Step>
+  <Step title="Create the owner and a passkey">
+    Fill in **Setup token**, **Workspace name**, **Your name** and **Email**, then press **Create passkey and finish setup**. Your browser asks for a fingerprint, face or device PIN.
 
-    ```bash
-    your-cli start
+    Passkeys belong to the hostname you create them on. If you plan to use a custom domain, you can move later; see [Custom domain](/deploy/custom-domain).
+  </Step>
+  <Step title="Work through Get started">
+    The desk opens on **Get started**, one step at a time:
+
+    1. **Create your account**: already done.
+    2. **Add your docs**: paste your help center or docs URL and press **Add website**. It reads the sitemap and ticks off when pages are indexed.
+    3. **Set up the AI assistant**: pick **Workers AI** (built in, no key) and press **Turn on the AI**.
+    4. **Make the widget yours** (optional): pick your brand colour.
+    5. **Put it on your site**: copy the snippet.
+    6. **Invite your team** (optional): create an invite link.
+
+    Each step ticks itself off from the desk's real state. See [Get started checklist](/get-started-checklist) for details.
+  </Step>
+  <Step title="Paste the snippet on your site">
+    Put the snippet in your site's `<head>`, before your own scripts:
+
+    ```html
+    <script src="https://jun-desk.<your-subdomain>.workers.dev/widget.js" data-key="wk_…" defer></script>
     ```
+
+    Copy the exact line from the **Put it on your site** step or from **Chat widget → Install**. The `data-key` is your workspace's public widget key. The step ticks itself off the first time the loader runs on a site other than the desk. See [Install the widget](/widget/install).
+  </Step>
+  <Step title="Send your first chat">
+    Open your site, or the desk's demo page if your site isn't live yet: the **demo page** link in the install step opens `/demo.html?key=wk_…`. Press the chat button and ask something your docs answer.
+
+    Keep the desk's **Inbox** open in another window. The conversation appears live, the AI's answer streams in with source chips, and you can take over by replying yourself.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Try the debug context
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+The demo page has a **Pay invoice** button that calls a request which fails with a server error, like a real bug would. Press it, then open the chat and write "I can't pay my invoice". The AI sees the failed request, and your team sees it in the conversation's debug panel. See [Debug context](/widget/debug-context).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Add more passkeys" icon="key" href="/deploy/first-sign-in">
+    Add a passkey on a second device so you can't get locked out.
+  </Card>
+  <Card title="Identify signed-in users" icon="user-check" href="/widget/identify-users">
+    Let the AI and your team see who the customer is, verified.
+  </Card>
+  <Card title="Write the AI's instructions" icon="pen" href="/ai/instructions">
+    Tone, rules and when to hand off.
+  </Card>
+  <Card title="Invite your team" icon="users" href="/inbox/team">
+    Admins and agents, each with their own passkey.
+  </Card>
+</CardGroup>

@@ -1,0 +1,419 @@
+---
+title: File format
+description: Every file and key the desk accepts in an agent config, with the rules the checker applies.
+icon: file-code
+---
+
+This page lists every key the config checker accepts. It's the same checker on the desk, in `jun push` and in `jun eval`: an unknown key, a wrong type or a value out of range is an error that names the file, and the config isn't saved until it's fixed.
+
+The agent-config format is MIT-licensed.
+
+## Folder layout
+
+```text
+AGENTS.md                    required
+README.md                    optional, ignored by the AI
+website-actions.yaml         optional
+skills/<name>/SKILL.md       tasks
+tools/<name>.yaml            actions (.yml works too)
+widgets/<name>.widget        widgets
+evals/<name>.yaml            tests (.yml works too)
+```
+
+| Rule | Value |
+|---|---|
+| Task folder names | lowercase letters and digits, words joined by `-` (`refund`, `change-plan`) |
+| Action file names | start with a letter; lowercase letters, digits, `_` (`lookup_order`) |
+| Widget file names | start with a letter; lowercase letters, digits, `_`, `-` |
+| Test file names | letters, digits, `_`, `-` |
+| Files | at most 200, 256 KB in total |
+| Actions | at most 20 |
+| Widgets | at most 20 |
+
+Any other path is an error: `Unknown file. Allowed: AGENTS.md, README.md, website-actions.yaml, skills/<name>/SKILL.md, tools/<name>.yaml, evals/<name>.yaml, widgets/<name>.widget (lowercase names).`
+
+## AGENTS.md
+
+The AI's instructions. Optional YAML frontmatter sets guardrails; the Markdown body is how the AI talks to customers and what it must and mustn't do. This is the starter:
+
+```markdown AGENTS.md
+---
+# Guardrails. Remove a line to use the default.
+maxReplies: 8            # AI replies per conversation before a person takes over
+handoffTopics:           # always hand these to a person
+  - legal or security questions
+---
+# How to talk to customers
+
+- Be friendly, concise and specific. A few short sentences or a short list.
+- Use the customer's name if you know it.
+- Don't promise refunds, credits, discounts or timelines unless a procedure says you can.
+```
+
+<ParamField path="maxReplies" type="integer" default="8">
+  How many times the AI answers in one conversation before it hands off to a person. A whole number from 1 to 50. Extra turns the AI takes to continue a run of website actions don't count.
+</ParamField>
+<ParamField path="handoffTopics" type="string[]">
+  Topics the AI always hands to a person, in plain words. Up to 30 are used.
+</ParamField>
+
+No other frontmatter key is allowed. The frontmatter itself is optional. In the body, `@lookup_order` refers to the action of that name. See [Instructions](/ai/instructions).
+
+## skills/&lt;name&gt;/SKILL.md
+
+A task: a procedure in the [Agent Skills](https://agentskills.io) format. The frontmatter says when it applies; the body is the steps.
+
+```markdown skills/refund/SKILL.md
+---
+name: refund
+description: The customer asks for a refund, their money back, or to cancel a charge.
+---
+1. Ask for the order or invoice number if they haven't given it.
+2. Explain that refunds are reviewed by the billing team within one business day.
+3. Hand off to a person with the order number in the reason.
+```
+
+<ParamField path="name" type="string" required>
+  Must equal the folder name.
+</ParamField>
+<ParamField path="description" type="string" required>
+  When this procedure applies. At most 1,024 characters. The AI reads it to choose the task.
+</ParamField>
+
+The body must not be empty. Other Agent Skills fields (`license`, `metadata`, …) are allowed and ignored.
+
+### Intent keys
+
+A task can define an **intent**: your app opens a chat for that purpose with `JunDesk.open({ intent, onExit })`, and the chat starts with the task's opening line and quick replies. See [Intents](/widget/intents).
+
+```markdown skills/cancellation/SKILL.md
+---
+name: cancellation
+description: The customer wants to cancel their subscription or close their account.
+intent: cancel
+opening: "Sorry to see you go. What's the main reason?"
+replies: [Too expensive, Not using it enough, Missing a feature, Something isn't working, Switching to another tool, Other]
+exit: Cancel anyway       # always on screen, one click: closes the chat and calls your onExit
+---
+1. If they haven't said why, ask for the main reason, once.
+2. Try to fix the real problem first:
+...
+```
+
+<ParamField path="intent" type="string">
+  The intent name your app passes to `JunDesk.open`. Lowercase letters, digits, `_` and `-`, at most 40 characters. One task per intent.
+</ParamField>
+<ParamField path="opening" type="string">
+  The chat's first line, shown without calling the AI. One line, at most 300 characters.
+</ParamField>
+<ParamField path="replies" type="string[]">
+  Quick replies under the opening. At most 8, each one line of at most 60 characters. Needs `opening`.
+</ParamField>
+<ParamField path="exit" type="string">
+  A button label that stays on screen for the whole chat. One click closes the chat and calls your `onExit`. At most 40 characters.
+</ParamField>
+
+`opening`, `replies` and `exit` are errors without `intent`.
+
+## tools/&lt;name&gt;.yaml
+
+An action: one HTTP request the AI may make. The file name is the action's name. This is the starter, `tools/lookup_order.yaml.example`:
+
+```yaml tools/lookup_order.yaml
+description: Look up an order by its number. Returns status, order date and total.
+status: Checking your order                      # what the customer sees while it runs (default "Looking that up")
+method: GET
+url: https://api.example.com/orders/{orderNumber}
+headers:
+  Authorization: Bearer {secrets.ACME_API_KEY}   # Worker secret JUN_SECRET_ACME_API_KEY
+input:
+  orderNumber:
+    type: string
+    description: The order number, like A-1042
+pick: [status, orderedOn, total]                 # only these fields reach the AI
+mock: { status: delivered, orderedOn: "2026-09-02", total: "$49.00" }   # used by jun eval --mock-tools
+# pages: ["/orders/*", "/account"]               # optional: offer it only on these pages
+# widget: order                                  # optional: show the result as widgets/order.widget
+```
+
+### Keys
+
+<ParamField path="description" type="string" required>
+  What the action returns and when to use it. The AI reads this to decide when to call it.
+</ParamField>
+<ParamField path="method" type="GET | POST" default="GET">
+  The HTTP method.
+</ParamField>
+<ParamField path="url" type="string">
+  The address to call, starting with `https://` (or `http://`), with `{placeholders}` for inputs. Required, except for an action that only shows its widget (see `widget`). Inputs in the URL are URL-encoded.
+</ParamField>
+<ParamField path="headers" type="map">
+  Request headers. The place for keys: `{secrets.NAME}` and `{user.secrets.NAME}`. `accept: application/json` is sent by default.
+</ParamField>
+<ParamField path="query" type="map">
+  Query parameters, with placeholders. A parameter whose value comes out empty is left out.
+</ParamField>
+<ParamField path="body" type="any">
+  The JSON body, for `POST` only (an error with `GET`). Placeholders work at any depth; a value that is exactly `"{name}"` keeps the input's type, so numbers stay numbers. Without `body`, a `POST` sends the inputs as a JSON object.
+</ParamField>
+<ParamField path="input" type="map">
+  The values the AI fills in, by name (letters, digits and `_`). Each is a map with the keys below, or just a type (`orderNumber: string`).
+</ParamField>
+<ParamField path="input.<name>.type" type="string | number | integer | boolean" default="string">
+  The input's type.
+</ParamField>
+<ParamField path="input.<name>.description" type="string">
+  What the value is, for the AI.
+</ParamField>
+<ParamField path="input.<name>.required" type="boolean" default="true">
+  `false` lets the AI leave it out.
+</ParamField>
+<ParamField path="input.<name>.enum" type="string[]">
+  The only values allowed.
+</ParamField>
+<ParamField path="pick" type="string[]">
+  Keep only these top-level fields of a JSON response for the AI. Responses are cut at 4,000 characters either way.
+</ParamField>
+<ParamField path="mock" type="any">
+  A canned response, used instead of the real call by `jun eval --mock-tools` and by the test chat's safe mode.
+</ParamField>
+<ParamField path="status" type="string" default="Looking that up">
+  The one line the customer sees while the action runs. Plain text, one line, at most 60 characters, no `{placeholders}`. The customer never sees the action's name, inputs or result.
+</ParamField>
+<ParamField path="pages" type="string[]">
+  Offer the action only on these page paths of your site. Each starts with `/`; a trailing `*` matches everything under it (`/orders/*`). The page comes from the widget's latest snapshot, so the action isn't offered when the page isn't known.
+</ParamField>
+<ParamField path="widget" type="string">
+  Show a successful result to the customer as `widgets/<name>.widget`. The file must exist. With `widget` and no `url`, the action calls nothing: the card is filled from the widget's example data and the AI's inputs.
+</ParamField>
+<ParamField path="widget_done" type="string">
+  When a widget's button ran this action and it worked, the line the card folds to. A Jinja template over the values entered and the result, at most 200 characters, like `Thanks {{ name }}, we'll be in touch.` The AI doesn't answer the press.
+</ParamField>
+<ParamField path="widget_failed" type="string">
+  When a widget's button ran this action and it failed, the line shown on the card, which stays open. Same rules as `widget_done`.
+</ParamField>
+
+### Placeholders
+
+Every `{placeholder}` in `url`, `headers`, `query` and `body` must be one of these, or the file is refused:
+
+| Placeholder | Value | Where |
+|---|---|---|
+| `{name}` | The input `name` | anywhere |
+| `{user.id}`, `{user.email}`, `{user.name}` | The signed-in customer, from your identity token | anywhere |
+| `{user.<attribute>}` | One of the token's `attributes` (`{user.plan}`) | anywhere |
+| `{secrets.NAME}` | A workspace key: the Worker secret `JUN_SECRET_NAME`, else a key pasted on the action's page | headers (refused in `url` and `query`) |
+| `{user.secrets.NAME}` | The customer's own key, from the token's `secrets` claim | headers only |
+
+Key names are `UPPER_SNAKE_CASE`. When the customer isn't signed in, an action that uses `{user.…}` returns an error to the AI instead of calling your API. See [Identify users](/widget/identify-users) and [Secrets and settings](/reference/secrets).
+
+### Reserved names
+
+An action can't be called `handoff`, `flag_problem`, `jun_done`, `show_widget` or `activate_skill`: those are the AI's own tools.
+
+<Note>
+  Actions have no confirm or risk setting. The AI calls them when it decides to. Write the confirmation into the task ("say exactly what changes and wait for a clear yes"), as the starter `apply_save_offer` does, or put the step behind a widget's button. Website actions are different: see [`website-actions.yaml`](#website-actions-yaml).
+</Note>
+
+## widgets/&lt;name&gt;.widget
+
+A card in OpenAI's ChatKit widget format: the file you get from **Download** in [ChatKit Studio](https://widgets.chatkit.studio), or one you write by hand. It's JSON whose `template` is a Jinja template that renders to the card's component tree.
+
+```json widgets/order.widget
+{
+  "version": "1.0",
+  "name": "Order",
+  "template": "{\"type\":\"Card\",\"size\":\"sm\",\"children\":[{\"type\":\"Row\",\"children\":[{\"type\":\"Title\",\"value\":{{ (\"Order \" ~ number) | tojson }},\"size\":\"sm\"},{\"type\":\"Spacer\"},{\"type\":\"Badge\",\"label\":{{ (status) | tojson }},\"color\":{% if status == \"delivered\" %}\"success\"{% else %}\"info\"{% endif %}}]},{\"type\":\"Divider\",\"flush\":true},{\"type\":\"Row\",\"children\":[{\"type\":\"Caption\",\"value\":\"Ordered\"},{\"type\":\"Spacer\"},{\"type\":\"Text\",\"value\":{{ (orderedOn) | tojson }},\"size\":\"sm\"}]},{\"type\":\"Row\",\"children\":[{\"type\":\"Caption\",\"value\":\"Total\"},{\"type\":\"Spacer\"},{\"type\":\"Text\",\"value\":{{ (total) | tojson }},\"size\":\"sm\",\"weight\":\"semibold\"}]}]}",
+  "summary": "Order {{ number }} · {{ status }}",
+  "sample": {
+    "number": "A-1042",
+    "status": "delivered",
+    "orderedOn": "2026-09-02",
+    "total": "$49.00"
+  }
+}
+```
+
+<ParamField path="version" type='"1.0"' required>
+  The only supported version.
+</ParamField>
+<ParamField path="template" type="string" required>
+  A Jinja template that renders the card's JSON. The data is the action's JSON response: an object as is, a list as `items`, anything else as `value`. Write values with `| tojson`.
+</ParamField>
+<ParamField path="name" type="string">
+  The widget's title on the desk. Defaults to the file name.
+</ParamField>
+<ParamField path="summary" type="string">
+  One line of plain text for the chat's folded launcher, from the same data: a Jinja template of at most 200 characters. The line is cut at 80 characters. If it fails to render, the card still shows without it.
+</ParamField>
+<ParamField path="sample" type="object">
+  Example data, for previews and checks. When present, the template (and `summary`) must render with it, or the file is refused.
+</ParamField>
+<ParamField path="jsonSchema" type="object">
+  The data's JSON Schema (ChatKit Studio's key). When present, `sample` and every state must fit it. Without it, the desk works out the parameters from `sample`.
+</ParamField>
+<ParamField path="states" type="{ name, data }[]">
+  More named examples, at most 10. Each must fit the schema and render. ChatKit Studio's own states (inside `encodedWidget`) are used when the file has no `states` list.
+</ParamField>
+<ParamField path="aiFill" type="boolean">
+  `true` lets the AI show this card with data it fills in itself, through its built-in `show_widget` tool. Needs `sample`, since the AI fills the card in its shape.
+</ParamField>
+<ParamField path="pageActions" type="string[]">
+  Website actions whose result this card shows, at most 10 names. One card per website action across all widgets.
+</ParamField>
+
+ChatKit Studio's download also carries `encodedWidget` and `outputJsonPreview`. They're allowed: without `sample`, the desk uses Studio's default state as the example data, and Studio's rendered preview for the card's preview.
+
+### What a rendered card must be
+
+- The root is a `Card`, `ListView` or `Basic`.
+- Only these components: `Basic`, `Card`, `ListView`, `ListViewItem`, `Box`, `Row`, `Col`, `Form`, `Spacer`, `Divider`, `Transition`, `Table`, `Table.Row`, `Table.Cell`, `Text`, `Title`, `Caption`, `Markdown`, `Label`, `Badge`, `Icon`, `Image`, `Chart`, `Button`, `Input`, `Textarea`, `Select`, `DatePicker`, `Checkbox`, `RadioGroup`.
+- At most 400 components, 24 levels deep, 48 KB of JSON.
+
+### Button actions
+
+A button's `onClickAction` (or a form's, list item's or card's confirm) has a `type`:
+
+| `type` | What happens |
+|---|---|
+| `tool:<name>` | Runs the action `tools/<name>.yaml` at once with the payload and the card's fields. The action must exist |
+| `page:<name>` | Offers the website action `<name>` with the payload and the card's fields |
+| `open_url` | Opens `payload.url` (https only) in the browser. Never sent to the desk |
+| `dismiss` | Folds the card. Never sent |
+| anything else | Sent to the AI as the customer's choice, with the button's label |
+
+An action with `"handler": "client"` goes to your page instead (`JunDesk.onWidgetAction`). See [Widgets](/ai/widgets) for the full behaviour.
+
+### The Jinja subset
+
+Templates run in Jun Desk's own Jinja interpreter. It's lenient where real API data is: a missing field is undefined, and `undefined | tojson` is `null`. It supports `{{ }}`, `if`/`elif`/`else`, `for` with `loop`, `set`, slices, `~`, `and`/`or`/`not`, `is` tests and inline `if … else`.
+
+Filters: `abs`, `attr`, `batch`, `capitalize`, `center`, `count`, `d`, `default`, `dictsort`, `e`, `escape`, `first`, `float`, `indent`, `int`, `items`, `join`, `last`, `length`, `list`, `lower`, `map`, `max`, `min`, `reject`, `rejectattr`, `replace`, `reverse`, `round`, `safe`, `select`, `selectattr`, `sort`, `string`, `sum`, `title`, `tojson`, `trim`, `truncate`, `unique`, `upper`, `wordcount`.
+
+Tests: `boolean`, `defined`, `divisibleby`, `eq`, `equalto`, `even`, `false`, `float`, `ge`, `gt`, `in`, `integer`, `iterable`, `le`, `lower`, `lt`, `mapping`, `ne`, `none`, `number`, `odd`, `sameas`, `sequence`, `string`, `true`, `undefined`, `upper`.
+
+## website-actions.yaml
+
+How each action on your website runs, over what your site registered. Set it on the desk under **Agent → Actions → On your website**, or by hand. A map of action name to `auto`, `confirm` or `human`, or to a map with `run` and `status`:
+
+```yaml website-actions.yaml
+add_to_cart: confirm
+remove_from_cart: auto
+cancel_order: human
+set_pickup: { run: auto, status: "Setting your pickup" }
+```
+
+<ParamField path="<action name>" type="string | map">
+  The website action's name as your page registers it (letters, digits, `_`, `.`, `-`, up to 64 characters).
+</ParamField>
+<ParamField path="run" type="auto | confirm | human">
+  `auto` runs without asking. `confirm` shows a summary and a **Confirm** button first. `human` sends the request to your team.
+</ParamField>
+<ParamField path="status" type="string">
+  The line the customer sees while it runs. One line, at most 60 characters.
+</ParamField>
+
+Actions not listed keep the risk your page gave them (`confirm` by default). See [Page actions](/widget/page-actions).
+
+## evals/&lt;name&gt;.yaml
+
+Tests: a YAML list of cases. Each has the customer's message (or several) and what a good reply does.
+
+```yaml evals/basics.yaml
+- name: greeting
+  message: hi there
+  expect:
+    outcome: answer
+
+- name: refund goes to a person
+  message: I want my money back for order A-1042
+  expect:
+    outcome: handoff
+```
+
+```yaml evals/cancellation.yaml
+- name: cancel, insists
+  intent: cancel
+  messages: [Switching to another tool, No thanks, I just want to cancel]
+  expect:
+    criteria: Accepts it without arguing and points to the "Cancel anyway" button.
+```
+
+### Case keys
+
+<ParamField path="name" type="string">
+  Shown in results. Defaults to `case <n>`.
+</ParamField>
+<ParamField path="message" type="string">
+  The customer's message. Use this or `messages`.
+</ParamField>
+<ParamField path="messages" type="string[]">
+  Several customer messages in a row; the AI answers each in turn and `expect` is checked on the last reply. A handoff ends the case early.
+</ParamField>
+<ParamField path="intent" type="string">
+  Run the case as a chat your app opened with this intent.
+</ParamField>
+<ParamField path="page" type="string">
+  The page path the customer is on, like `/pricing`, for actions and website actions with `pages`.
+</ParamField>
+<ParamField path="actions" type="list">
+  Website actions on the customer's page for every turn, in the WebMCP shape. Each needs `name` and `description`, and may have `inputSchema`, `risk` (`auto`, `confirm`, `human`), `context`, `key`, `annotations` and `mock` (a string: what the page returns when it runs, fed to the next turn as if the customer confirmed).
+</ParamField>
+<ParamField path="expect" type="map">
+  What a good reply does. Every key given must hold.
+</ParamField>
+
+### `expect` keys
+
+<ParamField path="outcome" type="answer | handoff | escalate | action">
+  `answer`: the AI replies. `handoff`: it hands off to a person. `escalate`: it flags a problem to the team (`flag_problem`). `action`: it proposes a website action.
+</ParamField>
+<ParamField path="tools" type="string[]">
+  Actions the AI must call (it may call others too).
+</ParamField>
+<ParamField path="criteria" type="string">
+  A sentence describing a good reply. A judge model checks the reply against it.
+</ParamField>
+<ParamField path="action" type="string | { name, input }">
+  The website action the reply must propose, and optionally input values it must have filled (compared exactly).
+</ParamField>
+<ParamField path="widget" type="string">
+  The widget the reply must show.
+</ParamField>
+
+A website-action case:
+
+```yaml evals/cart.yaml
+- name: adds the right size
+  page: /products/mug
+  actions:
+    - name: add_to_cart
+      description: Add the mug to the cart
+      inputSchema:
+        type: object
+        properties:
+          size: { enum: [S, M, L] }
+          quantity: { type: integer, minimum: 1, maximum: 5 }
+        required: [size]
+      mock: Added 2 × M
+  message: Two mugs in medium please
+  expect:
+    action:
+      name: add_to_cart
+      input: { size: M, quantity: 2 }
+```
+
+A message that asks for a person ("can I talk to a real person") hands off straight away, as on the live desk, without calling the model.
+
+## README.md
+
+Free text for your team, kept with the config. The AI never reads it.
+
+<CardGroup cols={2}>
+  <Card title="jun CLI" icon="terminal" href="/code/cli">
+    Pull, push and test these files.
+  </Card>
+  <Card title="Actions" icon="bolt" href="/ai/actions">
+    Building actions on the desk, keys and Try it.
+  </Card>
+</CardGroup>

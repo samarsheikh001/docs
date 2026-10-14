@@ -1,0 +1,117 @@
+---
+title: Launchers
+description: Choose how the closed widget looks on your site, from a plain chat button to the "Ask anything" bar and the morphing island.
+icon: window-maximize
+---
+
+The **launcher** is what visitors see before they open the chat. Jun Desk has four, and you switch between them on the desk without changing your snippet.
+
+## Pick one
+
+Go to **Chat widget → Look**, find **Shape and placement**, and set **Closed state**. The preview on the right switches with it. Press **Save**; visitors get the change within a minute.
+
+| Closed state | Setting value | What visitors see | Good for |
+|---|---|---|---|
+| **Greeting card** (default) | `card` | A welcome card with your greeting above the corner, collapsing to a "Chat with us" pill | Most sites; invites a first message |
+| **Chat button only** | `button` | A round button in the corner | Quiet pages, app dashboards |
+| **Ask bar** | `bar` | An "Ask anything…" bar with your suggested questions typing themselves out | Docs and marketing sites where the AI answers most questions |
+| **Island** | `island` | A small pill at the bottom centre that changes shape with each moment | AI-first sites, and page actions that run in steps |
+
+<Tip>
+  All four share the same chat, AI, debug context, page actions and API. Only the shape of the closed state and the way the chat opens differ.
+</Tip>
+
+## Greeting card
+
+The default. The card sits in the corner (the side you set in **Side of the page**) and shows:
+
+- your logo and the **Name shown in the chat**, with the reply-time line under it (or "We're away · back …" outside [business hours](/inbox/business-hours));
+- your **Greeting**;
+- two buttons, **Contact the team** and **Start a new chat**;
+- a message box that opens the chat, with your placeholder text.
+
+The × hides the card until the next page load, leaving a "Chat with us" pill. Clicking anywhere else on the card opens the chat window: about 380×540 in the corner, full screen on phones. **Esc** closes it.
+
+When a proactive nudge or a teammate's invite arrives, the card shows that line instead of the greeting. Opening the chat from it starts a conversation with that line.
+
+## Chat button only
+
+A 52px button in the corner, in your brand colour. It shows your logo once you've uploaded one (a chat bubble until then). Set **Button shows** to **"Chat with us"** to show the words instead.
+
+On a dark brand colour (one that gets white text), the button uses your [logo for dark backgrounds](/widget/appearance#logos) if you've uploaded one.
+
+This launcher is the lightest: the chat frame loads only on the first click. The other three draw themselves inside the frame, so they load it right away.
+
+A red badge on the button counts unread replies from your team (up to "9+"). Nudges and invites appear as a small card above the button with a **Chat with us** button.
+
+## Ask bar
+
+An "Ask anything…" bar at the bottom corner, modelled on Fin's messenger. While closed, it types out your [suggested questions](/widget/appearance#suggested-questions) one after another as placeholder text (or your placeholder if you have none). Clicking it opens the chat above the bar on dark glass, with the suggested questions as chips until the first message.
+
+- It holds one conversation at a time.
+- **Esc** folds the chat back into the bar, and so does a click on the page before anything has been asked.
+- It has one fixed look: a white bar and the chat on dark glass. **Theme** and **Corner rounding** don't apply to it. It always uses the logo for dark backgrounds if you have one.
+- The bar is 368px wide closed and 592px open (minus 20px on phones).
+
+## Island
+
+A pill at the bottom centre of the page that morphs to fit the moment, then returns to rest. It never touches your page: everything happens inside its own transparent frame, which is clipped so the rest of your page stays clickable.
+
+| Moment | Shape |
+|---|---|
+| Rest | The pill. With a chat going, a one-line summary of the last answer |
+| Open | A question box with your suggested questions above it |
+| Thinking | One status line while the AI works |
+| Answer | The latest exchange, the question as its title, over the pill |
+| Panel | The whole conversation (a teammate's chat, or **Earlier**) |
+| Nudge | A one-line offer of help, for about 8 seconds |
+
+How it behaves:
+
+- **`/` opens it** from anywhere on the page, unless the visitor is typing in a field.
+- An AI answer **folds itself** back to the rest pill once it has had time to be read (8 seconds plus reading time, at most 30 seconds), and not while the visitor is hovering, typing or scrolled down in it, or while something waits on them. It never auto-folds in a teammate's chat or an [intent](/widget/intents) chat.
+- When a [page action](/widget/page-actions) runs, the pill stays one live line ("Checking fares… · step 2") and grows only when the customer is needed: a **Confirm**, a missing detail, or a card waiting for input. A card that waits on the visitor is shown on its own, and while collapsed the pill says "*card* · tap to finish".
+- Hovering shows **Minimize** and **End** in the top corner. End starts the next question as a new chat; the old one stays open for your team.
+
+Island options, shown only when **Closed state** is **Island**:
+
+- **Island colour**: **Dark (like Dynamic Island)**, near-black with white text on every page whatever the theme (the default), or **Match the page theme**, which follows **Theme**.
+- **Neon border**: a slowly turning multi-colour glow around the island. On by default.
+
+The island uses your brand colour and rounding. **Side of the page** doesn't apply. On the dark surface, a near-black brand colour would vanish, so its buttons turn white instead.
+
+## How to choose
+
+<AccordionGroup>
+  <Accordion title="You want the least visual weight">
+    **Chat button only.** It loads nothing but the loader until someone clicks.
+  </Accordion>
+  <Accordion title="You want people to start talking">
+    **Greeting card.** A visible greeting and two clear buttons get more first messages than a bare icon.
+  </Accordion>
+  <Accordion title="Most questions are answered from your docs">
+    **Ask bar.** The typed-out suggested questions show visitors what they can ask, and the answer appears right above the bar.
+  </Accordion>
+  <Accordion title="The AI does things on your pages">
+    **Island.** It's built around runs of [page actions](/widget/page-actions): it keeps a run to one line and only grows when the customer has to confirm or fill something in.
+  </Accordion>
+</AccordionGroup>
+
+## Open the chat from your own buttons
+
+Every launcher responds to the [JavaScript API](/widget/javascript-api):
+
+```js
+document.querySelector("#help").addEventListener("click", () => window.JunDesk?.open());
+```
+
+`JunDesk.close()` and `JunDesk.toggle()` work the same way, and `JunDesk.open({ intent })` starts a purpose-built chat ([Intents](/widget/intents)).
+
+<CardGroup cols={2}>
+  <Card title="Appearance" icon="palette" href="/widget/appearance">
+    Every option on the Look tab.
+  </Card>
+  <Card title="JavaScript API" icon="brackets-curly" href="/widget/javascript-api">
+    Open, close and control the widget from code.
+  </Card>
+</CardGroup>

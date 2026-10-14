@@ -1,0 +1,121 @@
+---
+title: Consent and privacy
+description: What the widget stores and sends, how consent mode holds it back until a visitor agrees, and what is never captured.
+icon: shield-halved
+---
+
+The widget is built to collect as little as it can, and to mask what it does collect twice: in the visitor's browser and again on your desk. This page lists exactly what it stores and sends, and how to make it wait for cookie consent.
+
+## Consent mode
+
+If your site asks for consent before storing anything (a cookie banner), add `data-consent="required"` to the snippet:
+
+```html
+<script src="https://your-desk.example.com/widget.js" data-key="wk_…" data-consent="required" defer></script>
+```
+
+Then call `JunDesk.consent(true)` when the visitor accepts, and `JunDesk.consent(false)` if they withdraw:
+
+```js
+// Wire this to your consent banner's callbacks.
+onConsentChange((accepted) => window.JunDesk?.consent(accepted));
+```
+
+`consent()` takes a boolean. You can call it as often as the visitor changes their mind.
+
+<Note>
+  The loader doesn't remember consent between page loads. Call `JunDesk.consent(true)` on every page where your consent tool says the visitor has already agreed.
+</Note>
+
+### Before and after consent
+
+| | Before `consent(true)` | After |
+|---|---|---|
+| Browser storage | Nothing. The chat's visitor token is kept in memory only, so a chat started now is lost on reload | Session id in the page's `sessionStorage`; the chat's visitor token in the chat frame's `localStorage` |
+| **Visitors** list | Not shown. No live connection is opened | Shown, with the page they're on |
+| Chat | Works, for this page load | Works, and survives reloads |
+| "Something broke" nudges and page openers | Never shown | Shown, if turned on |
+| Rage clicks, "stuck on a page" | Not recorded | Recorded |
+| `JunDesk.reportError()` | Ignored | Recorded |
+| JavaScript errors, failed requests, page trail | Kept in memory on the page, sent only with a message the visitor writes | Same |
+
+`JunDesk.consent(false)` closes the live connection (the visitor drops off your **Visitors** list) and deletes what the chat frame stored in `localStorage`.
+
+Without `data-consent="required"`, the widget acts as if consent was given from the start.
+
+<Tip>
+  The **Get started** checklist detects your install through the live connection, so with consent mode it ticks only after a visitor consents. Press **I've added it** if you want to tick it yourself.
+</Tip>
+
+## What the widget stores
+
+Even without consent mode, the widget stores very little, and nothing on the chat side until a visitor writes.
+
+| Where | Key | What | When |
+|---|---|---|---|
+| Your page's `sessionStorage` | `jun:s` | A random session id (96 random bits) | On page load (after consent) |
+| Your page's `sessionStorage` | `jun:t` | When the session started | On page load (after consent) |
+| The chat frame's `localStorage` (your desk's origin) | `jun:visitor:<widget key>` | A random visitor token. The desk keeps only its SHA-256 hash | When the visitor sends their first message |
+| The chat frame's `localStorage` | `jun:ended:<widget key>` | Ids of the last 20 chats the visitor ended with the island's × | When they end one |
+
+No cookies. Opening the chat without writing stores nothing in the chat frame. `JunDesk.logout()` replaces the session and forgets the visitor token ([Identify users](/widget/identify-users#signing-out)).
+
+## What the widget sends
+
+**While the visitor browses** (the live connection behind the **Visitors** list):
+
+- the page address, with query values removed, and the page title, masked;
+- the referrer, cleaned the same way;
+- when the session started, the browser's language and time zone.
+
+The desk adds the country, city and a rough location (rounded to 0.1°) from Cloudflare's request data, and the user agent.
+
+**When the visitor sends a message**, a debug snapshot goes with it: the page, browser, viewport, language, time zone, and up to 40 recent events. See [Debug context](/widget/debug-context) for the full list. Set `data-capture="off"` and the snapshot has no events at all.
+
+**When something breaks** and nudges are on, the loader sends the one masked event and the page to the desk to word a "Want a hand?" line. Nothing is stored for it.
+
+## What is never captured
+
+- Request or response bodies, for any request.
+- Cookies, `localStorage`, `sessionStorage` or anything else your page stores.
+- What visitors type into your forms.
+- The text of your page. Rage clicks keep only the element's tag, `id`, `aria-label`, `name` and `role`, and a button's or link's visible label when it's 40 characters or shorter. "Stuck" events keep only the page path.
+- Query string values. URLs keep their path and the names of query parameters (`/search?q=…`), never the values.
+- Clicks inside the widget itself, or scripted clicks.
+
+## Masking, twice
+
+Everything that leaves the browser is masked by the loader first. The desk then masks it again with the same rules, drops unknown fields, and caps every length, so a modified loader can't slip anything through.
+
+| Pattern | Becomes |
+|---|---|
+| Email addresses | `[email]` |
+| JWT-shaped tokens (`eyJ….….…`) | `[token]` |
+| `Bearer …` values | `Bearer [token]` |
+| Stripe-style keys (`sk_live_…`, `pk_test_…`, `rk_…`) | `[key]` |
+| `password=`, `secret:`, `token=`, `api_key=`, `auth…=`, `session…=`, `cookie=` values | `[redacted]` |
+| 13 to 19 digits in a row, with or without spaces or dashes (card numbers) | `[number]` |
+
+Error messages are cut to 500 characters, stacks to their first five lines, and app error messages from `reportError()` to 300.
+
+## Who sees what
+
+- **Your agents** see the debug context in the conversation's **Browser** panel, and the contact's details.
+- **The AI** gets the events as plain lines in its prompt. The optional error codes from `reportError()` are for your team only: the AI answering visitors never sees them, so it can't repeat one.
+- **Other visitors** never see anything about anyone else.
+- **Issue drafts** ([Issues](/inbox/issues)) are built from the masked context and masked again before they're sent to GitHub or Linear.
+
+Internal notes, tags and topics never reach visitors or the AI's answers.
+
+## Turning capture off
+
+`data-capture="off"` stops the loader from listening for errors, failed requests, rage clicks and stuck pages, and turns off the "something broke" nudges with them. Page openers, the live visitor list and the chat still work.
+
+<CardGroup cols={2}>
+  <Card title="Debug context" icon="bug" href="/widget/debug-context">
+    What's captured and how agents and the AI use it.
+  </Card>
+  <Card title="Security" icon="lock" href="/reference/security">
+    How the desk handles secrets and tokens.
+  </Card>
+</CardGroup>

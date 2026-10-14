@@ -1,0 +1,217 @@
+---
+title: The inbox
+description: Find, read and answer conversations, take over from the AI and hand back, resolve chats, and work from the keyboard.
+icon: inbox
+---
+
+The inbox is where your team reads and answers every chat that comes in through the widget. It opens at `/inbox` and is the page the desk lands on after you sign in. Conversations update live: new messages, status changes, assignments and AI replies appear without a reload.
+
+## The conversation list
+
+The list shows every conversation on your desk, newest activity first. Each row has the customer, their latest message, and these columns:
+
+| Column | What it shows |
+|---|---|
+| **Person** | The customer's name, else their email, else `Visitor #1234` (a stable number for an anonymous visitor). A ✓ means your site verified who they are. Small tags show **AI** (the AI is answering), an intent name (the chat was opened from your app with an intent) and **⚠ N** (errors or failed requests in the visitor's browser). |
+| **Message** | The latest message. `You:` or `AI:` in front when it came from the team or the AI. |
+| **Status** | Open, Pending, Snoozed or Resolved. |
+| **Topic** | The short topic the AI gave the chat (see [Reports](/inbox/reports#topics)). |
+| **Assignee** | The teammate who has it. |
+| **Tags** | The conversation's tags. |
+| **Rating** | 👍 Good or 👎 Bad, the customer's latest rating. |
+| **Updated** | Time of the latest message. |
+
+Click a column header to sort by it, and again to reverse. The **Columns** button at the end of the filter row hides or shows every column except **Person**; your choice is remembered in this browser. The list shows 25 rows per page, with page buttons under it.
+
+A row in bold has a customer message nobody on the team has read yet. The browser tab title counts those conversations, for example `(3) Jun Desk`.
+
+### Views and filters
+
+The tabs across the top filter by status: **All**, **Open**, **Pending** and **Resolved**, each with its count. The inbox opens on **Open**. Snoozed conversations appear under **All**.
+
+Next to the tabs you can narrow the list further. The filters combine, and the tab counts follow them.
+
+| Filter | Options |
+|---|---|
+| Assignee | **Everyone's**, **Assigned to me**, **Unassigned**, **Mentions me** (conversations where a teammate @mentioned you in a note; shows `(N new)` while you have unread mentions) |
+| Tag | **Any tag**, or one of your tags (shown once you have tags) |
+| Topic | **Any topic**, or one of the AI's topics (shown once there are topics) |
+| Rating | **Any rating**, **Rated 👍 Good**, **Rated 👎 Bad** |
+
+Picking a rating while you're on **Open** switches to **All**, because rated conversations are resolved ones. Links from the Dashboard's **Top topics** open the inbox already filtered by that topic, on **All**.
+
+The **Search conversations…** box filters the loaded list as you type. Every word must appear in the customer's name or email, the latest message, the topic or a tag. It searches the list the server returned for your filters (the 100 most recent matching conversations), not your whole history. To find any conversation by name, use the [command palette](#command-palette).
+
+## A conversation
+
+Click a row, or press `Enter` on it, to open the conversation in a panel that slides in over the list. Each conversation has its own address, `/inbox/<id>`, so you can bookmark or share it. Press `Esc` or the **✕** to close it; focus goes back to its row.
+
+The header shows:
+
+- The customer's name, a ✓ if verified, their rating badge and an **Intent** badge if the chat came from your app with an intent.
+- **Live** (or **Connecting…** / **Reconnecting…**), when it started, its topic and the customer's email.
+- An **Assignee** menu (**Unassigned** or any teammate). See [Assignment](/inbox/assignment).
+- A **Status** menu: **Open**, **Pending**, **Snoozed**, **Resolved**.
+- **Resolve**, while it isn't resolved.
+- **Create issue**, to file a GitHub or Linear issue. It's disabled until an admin connects a tracker; a **Set up** link then takes you to the settings. See [Issues](/inbox/issues).
+
+Under the header are the conversation's tags (**+ Tag** adds one), links to any issues filed from it, and the thread.
+
+### The thread
+
+Messages from the customer are on one side, the team's and the AI's on the other. Each message shows who wrote it: the customer's label, **AI assistant**, **You**, or the teammate's name.
+
+- **Notes** (internal messages) are marked **Note**; internal system notes carry **Note · only your team sees this**. The customer and the AI never see them. See [Notes and replies](/inbox/notes-and-replies).
+- **System notes** record what happened: `<name> took over from the AI.`, `Handed off to the team. Reason: …` with the AI's brief, `Assigned to <name> automatically (round robin).`, `The customer left their email for a reply: …`, `The customer rated this conversation 👍 Good`, and `Issue created: …`.
+- **AI answers** stream in as the AI writes them, so you can watch a reply form. When the AI called actions while answering, a fold under its reply says **N tool calls** (and **· N failed** if any did). Open it to see each call's name, its input, and its result or error, with the HTTP status, how long it took, when it ran and the config version.
+- **Seen** appears under the last of your team's messages the customer has read.
+- When the customer is typing, you see a typing bubble. They see yours too while you write a reply (not while you write a note).
+- A message that failed to send shows the error with **Retry**.
+
+The conversation is marked read for you while it's open and the tab is visible.
+
+### The side panel
+
+The panel next to the thread has four parts.
+
+**Customer.** Their name, email, user ID and any attributes your site sent with a verified identity, and when they were first seen. For an anonymous visitor it reads **Anonymous visitor. Add a name or email if they tell you.** and has an **Edit** button for name and email. Details of a verified customer come from your app and can't be edited here. When there's an email, **Reply by email** opens your own mail client with the subject `Re: your chat with us`: the desk doesn't send email itself. **Other conversations (N)** lists this customer's other chats with their status and date.
+
+**AI actions.** Every action the AI called in this conversation, with input, result, status and timing. Secrets are masked. See [Actions](/ai/actions).
+
+**Browser.** The page they were on, their browser and OS, screen size, language and time zone.
+
+**What happened.** A timeline of what the widget recorded in their browser: pages visited, failed requests (method, URL, status, duration), JavaScript errors with stack traces, errors your app reported, rage clicks, and **Stuck** (they stayed on a page after something failed without a successful submit). Tick **Errors only** to hide the rest. Emails, tokens and query values are masked, and request bodies are never captured. See [Debug context](/widget/debug-context).
+
+If the visitor never wrote from a page with the widget, the panel says there are no browser details.
+
+## Working with the AI
+
+While the AI is answering a conversation, a banner over the thread says:
+
+> 🤖 The AI assistant is answering this conversation. Replying yourself takes it over.
+
+You have two ways to take over:
+
+- **Reply.** Sending a reply (not a note) takes the conversation from the AI. An internal note records `<your name> took over from the AI.` The AI stops answering this conversation.
+- **Take over.** The button in the banner does the same without sending anything, so you can read first.
+
+Once a teammate has the conversation and the AI has answered in it before, the banner reads **A teammate is handling this conversation.** with **Hand back to AI**. Handing back doesn't make the AI answer at once: if a teammate has already replied to the customer's latest message, the AI waits for the customer's next message.
+
+The AI also hands conversations to your team on its own: when it can't help, when the customer presses **Talk to a person**, when it reaches its reply limit or the monthly cap, or when it fails. The customer sees a short notice, and your team gets an internal note with the reason and a brief of the chat so far. See [Handoff](/ai/handoff).
+
+<Note>
+Notes never take a conversation from the AI. You can write a note to a teammate while the AI keeps answering.
+</Note>
+
+## Statuses and resolving
+
+| Status | Meaning |
+|---|---|
+| **Open** | Needs attention. New conversations start here. |
+| **Pending** | You're waiting on something (the customer, another team). |
+| **Snoozed** | Out of the way for now. There is no timer: it stays snoozed until someone changes it or the customer writes. |
+| **Resolved** | Done. |
+
+Press **Resolve** in the header (or `e`) to resolve a conversation. When the customer writes again in a resolved or snoozed conversation, it goes back to **Open** by itself.
+
+### Ratings (CSAT)
+
+When a conversation is resolved and the team or the AI replied in it, the widget asks the customer **How did we do?** with 👍 and 👎. After a thumb they can add an optional comment (up to 1,000 characters) or skip.
+
+- They can rate once each time the conversation is resolved. If they write again, it reopens; the next time it's resolved, they can rate again.
+- Your team gets an internal note with the rating and the comment.
+- The latest rating shows as a badge in the list and the header, and the **Rating** filter finds them.
+- Ratings feed the **CSAT** number and the **Ratings** section on the [Dashboard](/inbox/reports#ratings).
+
+Ratings are on by default. To turn them off, go to **Chat widget → Look**, section **After the chat**, and switch off **Ask "How did we do?" when a conversation is resolved**. See [Appearance](/widget/appearance).
+
+## Files and screenshots
+
+Attach files to a reply with the paperclip (**Attach files**) in the composer. Each file can be up to 10 MB and a message can carry up to 10 files. PNG, JPEG, GIF and WebP images show inline; every other type downloads instead of opening in the browser, so an uploaded HTML or SVG file can't run on your desk's address.
+
+Customers attach files the same way from the widget, and in browsers that support screen capture they can **Take a screenshot**. They see the screenshot before it's sent.
+
+Images in a conversation can be added to a GitHub or Linear issue. See [Issues](/inbox/issues#screenshots).
+
+## Email for visitors who might leave
+
+The desk doesn't send email, but it can collect an address so you can reply from your own mail client. In a conversation your team is handling, the widget asks an anonymous visitor without an email **Get the reply by email?** when:
+
+- your team is outside [business hours](/inbox/business-hours) (**We're away right now.**),
+- nobody on the team has the desk open (**Nobody's online right now.**), or
+- a minute has passed since their message with no reply (**Sorry for the wait.**).
+
+The address is saved on the contact, shown in the side panel with **Reply by email**, and your team gets a note: `The customer left their email for a reply: …`. Verified customers aren't asked: their email comes from your app.
+
+## Keyboard shortcuts
+
+Press `?` anywhere in the desk for the full list, or **Keyboard shortcuts** at the bottom of the sidebar. Single-key shortcuts are off while you type in a text field; press `Esc` to leave it.
+
+<Tabs>
+  <Tab title="Anywhere">
+    | Keys | Action |
+    |---|---|
+    | `Ctrl` `K` (`⌘` `K` on Mac) | Command palette |
+    | `?` | Keyboard shortcuts |
+    | `g` then `i` | Go to Inbox |
+    | `g` then `v` | Go to Visitors |
+    | `g` then `d` | Go to Dashboard (`g` then `r` works too) |
+    | `g` then `s` | Go to Settings |
+    | `Ctrl` `B` (`⌘` `B`) | Collapse or expand the sidebar |
+
+    After `g`, press the second key within 1.5 seconds.
+  </Tab>
+  <Tab title="Inbox">
+    | Keys | Action |
+    |---|---|
+    | `j` | Next conversation |
+    | `k` | Previous conversation |
+    | `Enter` or `o` | Open conversation |
+    | `/` | Filter conversations (focuses the search box) |
+    | `r` | Reply |
+    | `n` | Write a note |
+    | `e` | Resolve |
+    | `a` | Assign to me |
+    | `t` | Add a tag |
+
+    With a conversation open, `j` and `k` open the next or previous one directly. `e` and `a` act on the open conversation, or on the highlighted row when none is open.
+  </Tab>
+  <Tab title="Composer">
+    | Keys | Action |
+    |---|---|
+    | `Enter` or `Ctrl` `Enter` | Send |
+    | `Shift` `Enter` | New line |
+    | `Esc` | Leave the composer |
+
+    `Ctrl` `Enter` sends even while the saved-reply or @mention list is open.
+  </Tab>
+</Tabs>
+
+### Command palette
+
+`Ctrl` `K` (or **Search** in the sidebar) opens the command palette. Type to search, use the arrow keys to move, `Enter` to run, `Backspace` on an empty box to go back a level, and `Esc` to close.
+
+It finds:
+
+- **Conversations** by customer name, email, latest message, topic or tag. Without a query it lists the five most recent.
+- **Go to** any page (Dashboard, Inbox, Visitors, Knowledge, Agent and its Tasks, Actions, Widgets and Tests, Chat widget, Settings) and any settings section by name, for example **Settings: Business hours**.
+- **Keyboard shortcuts** and the theme (**Theme: Light**, **Dark** or **System**).
+
+With a conversation open, it also lists that conversation's actions: **Reply**, **Write a note**, **Assign to me**, **Assign to teammate…**, **Unassign**, **Resolve**, **Reopen**, **Mark as pending**, **Take over from the AI** or **Hand back to the AI**, **Add tag…** (pick a tag or create one), **Insert saved reply…**, **Create issue** (when a tracker is connected) and **Copy link to conversation**.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Notes and replies" icon="note-sticky" href="/inbox/notes-and-replies">
+    Internal notes, @mentions, saved replies and tags.
+  </Card>
+  <Card title="Assignment" icon="user-check" href="/inbox/assignment">
+    Assign chats by hand or with round robin.
+  </Card>
+  <Card title="Notifications" icon="bell" href="/inbox/notifications">
+    Get told when a chat needs you.
+  </Card>
+  <Card title="Issues" icon="bug" href="/inbox/issues">
+    Turn a conversation into a GitHub or Linear issue.
+  </Card>
+</CardGroup>

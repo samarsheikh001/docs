@@ -1,0 +1,195 @@
+---
+title: "Tasks"
+description: "Teach the AI one job from start to finish, like a refund or a plan change: when it applies, the steps, and the actions it uses."
+icon: "list-check"
+---
+
+A task is one thing the AI does for customers from start to finish: a refund request, a plan change, an order lookup. It says when it applies, the steps in plain words, and which [actions](/ai/actions) the steps use.
+
+Tasks are under **Agent → Tasks** (`/agent/tasks`). Each task is a file, `skills/<name>/SKILL.md`, in the [Agent Skills](https://agentskills.io) format; the files call them procedures. See [Agent files](/code/files) for the format.
+
+## When to use a task
+
+| Put it in | When |
+|---|---|
+| [Instructions](/ai/instructions) | It applies to every chat: tone, things to always or never do. |
+| [Knowledge](/ai/knowledge) | It's a fact the AI should quote and cite: a price, a policy, a how-to. |
+| **A task** | It's a sequence for one kind of request: ask for X, check Y, offer Z, hand over if W. |
+
+The AI reads each task's **When** line to pick the right one, then follows its steps in order and does what they say about handing off.
+
+## A task's parts
+
+Here is the refund task a new `jun init` folder starts with:
+
+```markdown skills/refund/SKILL.md
+---
+name: refund
+description: The customer asks for a refund, their money back, or to cancel a charge.
+---
+1. Ask for the order or invoice number if they haven't given it.
+2. Explain that refunds are reviewed by the billing team within one business day.
+3. Hand off to a person with the order number in the reason.
+```
+
+On the desk, the same task is a form:
+
+<ParamField path="When should the AI do this?" type="text" required>
+  The `description`. The AI reads it to pick the right task, so describe the customer's request, not your process. Up to 1,024 characters.
+</ParamField>
+
+<ParamField path="Steps" type="text" required>
+  What the AI does, in order. Say what it may offer and when it should hand over to a person. Type `@` to name an action, like `@lookup_order`.
+</ParamField>
+
+<ParamField path="Name" type="string">
+  The folder name, set when you create the task: lowercase letters, digits and dashes, like `order-status`. It must match `name` in the file.
+</ParamField>
+
+### Name actions with @
+
+In **Steps**, type `@` to pick one of your actions. It's written as plain text (`@apply_save_offer`) and highlighted; the AI reads `@name` as the action called `name`. A name that isn't an action yet shows in a warning colour, and **What it uses** offers to create it.
+
+### Start it from a button in your app
+
+**Start it from a button in your app** (folded away at the bottom of the form) lets your app open the chat straight into this task, for example a Cancel subscription button. Your developer calls `JunDesk.open({ intent: "cancel" })` with the name you set here.
+
+| Field | File key | What it does |
+|---|---|---|
+| **Name your app uses** | `intent` | The intent name, lowercase, up to 40 characters. One task per intent. |
+| **First message** | `opening` | Shown before the customer types anything, with no AI needed. Up to 300 characters. |
+| **Quick replies** | `replies` | Up to 8 buttons under the first message, each up to 60 characters. They need a first message. |
+| **Leave button** | `exit` | Always on screen, so the customer can finish without talking to the AI. One click closes the chat and calls your app's `onExit`. |
+
+The starter `cancellation` task shows a full example, and [Intents](/widget/intents) covers the developer side.
+
+### How the AI loads tasks
+
+When all your tasks together are short (under about 8,000 characters), the AI gets every task's steps with each reply. Past that, it gets only each task's name and **When** line, and loads a task's full steps when it decides to follow it. Either way, a clear **When** line is what makes the AI pick the right task.
+
+## Create a task
+
+<Steps>
+  <Step title="Press New task">
+    On **Agent → Tasks**.
+  </Step>
+  <Step title="Say when and what">
+    - **When should the AI do this?** For example "The customer asks where their order is".
+    - **What should it do?** For example "Ask for the order number, look it up, and tell them the status and the delivery date. If it's late, offer to pass it to the team."
+  </Step>
+  <Step title="Say how your system does it (optional)">
+    Paste a curl command from your API docs, or describe the request in a few words. A curl command becomes the task's action straight away, with any key in it kept on the desk (see [New action from curl](/ai/actions#create-an-action)). No API, or not sure? Leave it empty.
+  </Step>
+  <Step title="Check the name and press Set it up">
+    The name is made from your **When** line; you can change it.
+  </Step>
+</Steps>
+
+The task's page opens with your own words as its first steps, and its AI chat starts on the first request: write the steps as a short numbered list, use the desk's actions where they fit, and create any action a step needs. Nothing changes for customers until you save.
+
+## The task's page
+
+A task's page has tabs on the left and the form on the right:
+
+- **AI**: change the task by describing what you want.
+- **Test**: chat with it as a customer, using your unsaved draft.
+- **Code**: the `SKILL.md` file as text.
+
+The trash icon at the top removes the task when you save.
+
+### Change it with AI
+
+Describe a change in your words: "Add a step to confirm before anything changes", "Hand over to a person if they're upset", "Make the steps shorter", "Add the action this needs".
+
+One answer can change the steps and the actions they use, create a new action, and describe new widgets, which the desk then builds with the [widget editor](/ai/widgets#the-widget-editor) ("Making the Order status widget…"). Everything it writes is checked together like a save; if a file has a problem, the AI gets one more try with the problems. Each change has **Undo** (and **Redo**), and goes into your draft only.
+
+The AI never invents API addresses or keys. It uses the job's model, **Agent page editing**, and needs the AI turned on and under its monthly cap (see [Models](/ai/models)).
+
+### What it uses
+
+**What it uses** lists everything the steps rely on, so you can see whether the task can work:
+
+- **Actions** named in the steps, each with what it does (**Looks up**, **Makes a change**, or **Shows a widget (calls nothing)**), whether it answers in words or shows a widget, and **Ready** or **Not set up** with the reason and a **Set it up** link. **Try it** calls the action right there (see [Try it](/ai/actions#try-it)).
+- **Widgets** those actions show, with what each button does: runs one of your actions (and whether it's ready), runs an action on your website (and whether your site has offered it yet), is handled by your website's own code, opens a link, or tells the AI what was picked.
+- **Widgets the AI fills in**, when the steps use `@show_widget`, and whether any widget allows it.
+- **Website actions** the steps name that your site registers. See [Page actions](/widget/page-actions).
+- **Names that aren't actions yet**, with **Create it**, which opens [New action](/ai/actions#create-an-action) with the step's words filled in.
+
+A widget named in the steps as if it were an action (`@order_card`) can't be shown that way; the list explains how: show it through an action, or let the AI fill it with `@show_widget`.
+
+## Test it
+
+The **Test** tab is a chat with the AI as your customers would get it, using your unsaved draft. Write as a customer and the AI answers with the same code that answers your website, including knowledge search, tasks, actions, widgets and handoffs. Buttons on widgets work too. Nothing is stored and nobody else sees it. Only owners and admins have this tab.
+
+<Tabs>
+  <Tab title="Safe (default)">
+    **Safe: look-ups are real, changes are pretended.** Actions that look something up (GET) call your system for real. Actions that make a change (POST) aren't called: they answer with the action's `mock` response if it has one, else the widget's example data with the AI's inputs, else `{"ok": true}`. The step shows it was pretended.
+  </Tab>
+  <Tab title="Use my real systems">
+    Switch on **Use my real systems** and the bar says **Uses your real systems: changes are made**. Every action, including changes, calls your system for real.
+
+    <Warning>
+    With this on, a refund or plan change in the test chat really happens. Use a test customer.
+    </Warning>
+  </Tab>
+</Tabs>
+
+Under **Customer and page**:
+
+- **Their id, email, name, or key**: when an action uses `{user.*}` (the signed-in customer), type a test customer to act as. Without one, those actions fail as they would for an anonymous visitor.
+- **On the page**: a path like `/billing`, for actions offered only on some pages.
+
+Website actions the desk has seen your site register are offered as they would be on a page. When the AI asks to run one, the test shows it and treats it as done on the next turn.
+
+If the AI hands off, the chat ends with "In a real chat a person takes over here." **Reset** starts again.
+
+**Save as a test** turns the chat into a [test case](/ai/tests): your messages, the page, and what the last reply did (its outcome, the actions it called, the widget it showed, the website action it chose). It goes into `evals/tests.yaml` (or your first test file) and goes live when you save.
+
+Test chats use the **Replies to visitors** model, and their tokens count toward the month's usage (not toward the reply cap).
+
+## Examples
+
+The cancellation task from `jun init` uses an intent, an offer per reason, and an action that only runs after a clear yes:
+
+```markdown skills/cancellation/SKILL.md
+---
+name: cancellation
+description: The customer wants to cancel their subscription or close their account.
+intent: cancel
+opening: "Sorry to see you go. What's the main reason?"
+replies: [Too expensive, Not using it enough, Missing a feature, Something isn't working, Switching to another tool, Other]
+exit: Cancel anyway       # always on screen, one click: closes the chat and calls your onExit
+---
+1. If they haven't said why, ask for the main reason, once.
+2. Try to fix the real problem first:
+   - Something isn't working: explain what failed (the technical context helps) and flag it to the team.
+   - Missing a feature: check the sources for it or a workaround.
+   - Not using it enough: offer one short tip for what they signed up to do.
+3. At most one offer, and only the one that fits their reason (edit these to what you really offer):
+   - Too expensive: 50% off the next 3 months (offer: discount_50_3m).
+   - Not using it enough: pause the subscription for up to 3 months (offer: pause_3m).
+   - Missing a feature, switching to another tool, or other: no offer. Ask what would have made them stay.
+4. Before applying an offer with apply_save_offer, say exactly what changes and wait for a clear yes.
+   If that tool isn't set up, hand off to a person with the accepted offer in the reason.
+5. If they say no or still want to cancel, thank them and point them to the "Cancel anyway" button
+   (or, if there isn't one in this chat, to Settings → Billing). Never argue or push again.
+```
+
+<Tip>
+Actions on your server run as soon as the AI calls them; there's no confirm button for them. When an action makes a change, write the confirmation into the steps, as step 4 does above.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="Actions" icon="bolt" href="/ai/actions">
+    The requests to your systems that tasks use.
+  </Card>
+  <Card title="Widgets" icon="table-cells-large" href="/ai/widgets">
+    Show results as cards with buttons.
+  </Card>
+  <Card title="Tests" icon="flask" href="/ai/tests">
+    Keep a task working as you change things.
+  </Card>
+  <Card title="Intents" icon="door-open" href="/widget/intents">
+    Open a chat on a task from your app.
+  </Card>
+</CardGroup>

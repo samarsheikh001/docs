@@ -1,0 +1,135 @@
+---
+title: Appearance
+description: Every option on the Chat widget's Look tab, the live preview, and the parts of the widget that react to your hours, your team and resolved chats.
+icon: palette
+---
+
+You change how the widget looks on the desk, not in your snippet. Go to **Chat widget → Look** (`/appearance`). Owners and admins can edit; agents see the page read-only.
+
+## The live preview
+
+The right side of the Look tab is the real widget, running in a frame with your unsaved changes. It isn't a mock-up, so it can't drift from what visitors get. Use **Chat** and **Closed** above the settings to switch between the open chat and the closed launcher.
+
+<Warning>
+  Messages you send in the preview start real conversations in your inbox.
+</Warning>
+
+Changes apply when you press **Save**. Visitors see them within a minute (the widget's settings are cached for 60 seconds), and you never need a new snippet. **Reset to defaults** puts every field back to its default in the form; it still needs **Save**.
+
+Logos are the exception: they're saved as soon as you pick a file.
+
+## Brand
+
+| Option | What it does | Default and limits |
+|---|---|---|
+| **Name shown in the chat** | The name in the chat header and on the greeting card | Your workspace name. Up to 80 characters |
+| **Logo** | In the chat header, on the greeting card, and on the round button | None (the Jun mark in the chat, a chat bubble on the button) |
+| **Logo on dark backgrounds** | Used on dark surfaces instead of the logo above | Optional |
+| **Theme** | **Auto** follows each visitor's light or dark system setting; **Light** and **Dark** force one | Auto |
+| **Brand colour** | The launcher, the card's buttons and the send button | `#2f5bea`. Must be a six-digit hex colour |
+
+### Logos
+
+Upload PNG, JPEG, WebP or GIF, up to 512 KB each. **Remove** deletes one.
+
+The **Logo on dark backgrounds** is used wherever the widget draws on a dark surface:
+
+- the island on its dark surface;
+- the chat in the dark theme (or Auto on a visitor's dark system);
+- the "Ask anything" bar's dark glass;
+- the round button, when your brand colour is dark enough to get white text.
+
+Leave it empty and the main logo is used everywhere.
+
+### Brand colour and text
+
+The widget picks readable text on your colour by itself: dark text (`#1c1c1a`) on light colours, white on dark ones. You don't set a text colour.
+
+To use a different colour on one site, add `data-color="#0f766e"` to that site's snippet. It overrides the desk's colour there only.
+
+## Shape and placement
+
+| Option | What it does | Default and limits |
+|---|---|---|
+| **Corner rounding** | The chat window, message bubbles and buttons | 16px. Whole numbers from 0 to 24 |
+| **Side of the page** | Right or left corner, for the button, the greeting card and the bar | Right |
+| **Closed state** | **Chat button only**, **Greeting card**, **Ask bar** or **Island** | Greeting card |
+| **Button shows** | Only with **Chat button only**: **Company logo** or **"Chat with us"** | Company logo |
+| **Island colour** | Only with **Island**: **Dark (like Dynamic Island)** or **Match the page theme** | Dark |
+| **Neon border** | Only with **Island**: a slowly turning multi-colour glow | On |
+| **Play a sound for new replies** | A soft chime for new replies (see below) | On |
+
+[Launchers](/widget/launchers) explains each closed state and how to choose. The bar has one fixed look, so **Theme** and **Corner rounding** don't apply to it, and the island sits at the bottom centre, so **Side of the page** doesn't apply to it.
+
+### Sound
+
+With **Play a sound for new replies** on, the widget plays a short chime:
+
+- for a **teammate's reply**, always, even with the chat open (it usually comes minutes later, when the visitor has looked away);
+- for an **AI reply**, only while the chat is closed or folded, or the visitor is on another tab.
+
+Browsers only allow sound after the visitor has clicked or typed on the page, so the first chime can't come before that. The widget plays at most one chime every 4 seconds, and never for the chat history it loads. **Test sound** plays the same chime on the desk.
+
+## Wording
+
+Leave a field empty to use the default shown in it.
+
+| Option | Where it shows | Default and limits |
+|---|---|---|
+| **Greeting** | The greeting card, and the top of a new chat | "Hi! How can we help?" Up to 200 characters |
+| **Reply time** | Under the name in the header | "We usually reply in a few minutes". Up to 80 characters |
+| **Message box placeholder** | The message box, and the bar or island at rest | "Write a message…". Up to 60 characters |
+| **Suggested questions** | See below | None. Up to 4, each up to 80 characters |
+
+### Suggested questions
+
+Type one question per line, up to four. They show under the greeting in a new chat, as chips over the bar or island, and typed out one by one in the closed "Ask anything" bar. Tapping one sends it as the visitor's first message.
+
+**Draft from your knowledge** asks the AI to write the questions for you. It reads a small sample of your [knowledge](/ai/knowledge) (source and page titles, the opening of a few documents, and your most common topics) and replaces the questions in the field. Nothing changes for visitors until you **Save**, so edit them first.
+
+Drafting needs some indexed knowledge and the AI turned on, with replies left under the monthly cap.
+
+## After the chat
+
+**Ask "How did we do?" when a conversation is resolved** turns customer satisfaction ratings (CSAT) on or off. It's on by default.
+
+When a conversation is resolved and someone (a teammate or the AI) has replied in it, the widget shows **How did we do?** with 👍 and 👎 under the chat. After a rating it asks "Anything to add?" with an optional comment (up to 1,000 characters). The visitor can skip or close it with ×.
+
+- One rating per resolution. If the visitor writes again, the chat reopens, and they can rate it again the next time it's resolved.
+- Your team gets the rating, and any comment, as an internal note in the conversation.
+- Ratings feed the CSAT numbers in [Reports](/inbox/reports).
+
+## Things that follow your settings elsewhere
+
+Some of what visitors see isn't on the Look tab.
+
+### Business hours
+
+Set hours under **Settings → Inbox → Business hours** ([Business hours](/inbox/business-hours)). Outside them:
+
+- the greeting card's and chat header's reply-time line says "We're away · back *when*", adding "The assistant can still help." while the AI is on;
+- the bar's header shows "back *when*";
+- the AI keeps answering, and visitors whose chat is with your team get your away message once.
+
+### Email capture
+
+When a visitor is waiting for your team, the widget offers to take their email so you can reply after they've left. There's no setting for it. It appears under the chat when the visitor's last message has no reply yet and either:
+
+- you're outside business hours ("We're away right now. Get the reply by email?"),
+- nobody on the team has the desk open ("Nobody's online right now."), or
+- a minute has passed without a reply ("Sorry for the wait.").
+
+It's never shown to [identified customers](/widget/identify-users) (their email comes from your app) or to visitors who already left one. The email is saved on the contact and noted in the conversation for your team.
+
+### Proactive help and page openers
+
+**Chat widget → Install → Proactive help** controls when the widget reaches out first: after something breaks on the page ([Debug context](/widget/debug-context#proactive-nudges)), or after a visitor spends time on a page (page openers). Their line replaces the greeting on the greeting card and shows as a nudge on the other launchers.
+
+<CardGroup cols={2}>
+  <Card title="Launchers" icon="window-maximize" href="/widget/launchers">
+    How each closed state behaves.
+  </Card>
+  <Card title="Business hours" icon="clock" href="/inbox/business-hours">
+    Opening times and the away message.
+  </Card>
+</CardGroup>

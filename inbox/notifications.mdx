@@ -1,0 +1,113 @@
+---
+title: Notifications
+description: Choose which events notify you, turn on push notifications per device, and set the desk's chime.
+icon: bell
+---
+
+The desk can tell you when a chat needs you: on your computer while the desk is in a background tab, and on your devices as a push notification while it's closed. Everything is per person: each teammate picks their own events and devices in **Settings → Notifications**.
+
+Push uses the browser's standard Web Push. There's no notification service to sign up for: your desk generates its own keys the first time someone turns notifications on.
+
+## What you can be notified about
+
+Under **Notify me when**, each event has its own switch. All are on until you turn them off.
+
+| Switch | Who gets it |
+|---|---|
+| **A chat needs a person** | Everyone who has it on, when a chat is handed to the team and nobody has it yet. Also lets a round-robin assignment through (see below). |
+| **A chat is assigned to you** | The assignee, when round robin or a teammate assigns them a chat. |
+| **A customer replies in your chat** | The assignee, when the customer writes in a chat assigned to them. |
+| **Someone @mentions you in a note** | Each teammate mentioned in an internal note. |
+
+Rules that apply to all of them:
+
+- **You're never notified about your own actions.** Assigning yourself or mentioning yourself doesn't notify you.
+- **Members only.** Someone removed from the workspace gets nothing, and their devices are dropped.
+- **Round robin counts as both.** When round robin assigns you a chat that just needed a person, you're notified if either **A chat is assigned to you** or **A chat needs a person** is on. See [Assignment](/inbox/assignment#round-robin).
+
+A notification's title says what happened, for example **Dana Lee needs a person**, **New chat assigned to you: Dana Lee**, **Sam assigned you Dana Lee**, **Dana Lee replied** or **Sam mentioned you (Dana Lee)**. The text is the customer's latest message. For a mention, it's the note itself: internal note text only ever goes to teammates, in a mention. Clicking a notification opens that conversation in your desk tab, or a new tab if none is open.
+
+Each conversation has one notification at a time; a newer one replaces the older.
+
+## Where notifications show up
+
+What you get depends on what the desk is doing on your side:
+
+| The desk is… | You get |
+|---|---|
+| Open in a tab you're looking at | No system notification and no push. The inbox updates live, a mention shows as a toast while you're on the Inbox page, and the chime plays (see [Sound](#sound)). |
+| Open in a tab that's hidden or not focused | A system notification shown by that tab. No push. |
+| Closed, or open nowhere | A push notification on every device you've turned on. |
+
+"Looking at" means the tab is visible and the window has focus. The desk reports this to the server as you switch tabs, so you don't get a push on your phone for a chat you're reading on your laptop. If the same event arrives both ways, the second copy replaces the first silently instead of alerting twice.
+
+## Turn on notifications on a device
+
+<Steps>
+  <Step title="Open Settings → Notifications">
+    Open **Settings** from the account menu at the bottom of the sidebar, then **Notifications**. The **This device** card shows the state of the browser you're using.
+  </Step>
+  <Step title="Turn them on">
+    Press **Turn on notifications on this device** and allow notifications when your browser asks.
+  </Step>
+  <Step title="Send a test">
+    The card now reads **On for this device (Chrome on Windows)** or similar. Press **Send a test notification**. It should appear within a few seconds, titled **Notifications are on**.
+  </Step>
+</Steps>
+
+Repeat on every browser and phone where you want notifications. **Your devices** lists them all, with when each was added, when a notification last reached it, and failures. **Remove** stops notifications to that device; **Turn off on this device** does the same for the one you're on. You can have up to 20 devices.
+
+If a push service reports that a device's subscription is gone (you cleared site data, uninstalled the browser), the desk deletes that device on the next send.
+
+### iPhone and iPad
+
+Safari on iPhone and iPad supports push only for a web app added to the Home Screen. The **This device** card says so:
+
+<Steps>
+  <Step title="Add the desk to your Home Screen">
+    Open your desk in Safari, tap **Share**, then **Add to Home Screen**.
+  </Step>
+  <Step title="Open it from the Home Screen">
+    Open **Jun Desk** from its new icon. It opens on the inbox, without Safari's address bar.
+  </Step>
+  <Step title="Turn notifications on there">
+    Go to **Settings → Notifications** in that app and press **Turn on notifications on this device**.
+  </Step>
+</Steps>
+
+### When it doesn't work
+
+| The card says | What to do |
+|---|---|
+| **Notifications are blocked for this site.** | You (or a policy) blocked them. Allow notifications in the browser's site settings (the icon next to the address bar), then reload the page. |
+| **This browser can't show notifications.** | Use a current Chrome, Edge, Firefox or Safari. |
+| **This browser couldn't subscribe to push (…)** | Permission is granted but the browser has no push service (some privacy-focused or headless browsers). You'll still get notifications while the desk is open in a tab. |
+| **This device's subscription has expired. Turn notifications on again.** | Shown by the test. Press **Turn on notifications on this device** again. |
+| **The push service didn't accept it (…)** | The browser vendor's push service refused or didn't answer. Try again in a minute. |
+
+<Note>
+Push notifications are sent from your desk through your browser vendor's push service. The message is encrypted end to end between your desk and your browser; the push service delivers it but can't read it.
+</Note>
+
+## Sound
+
+**Play a sound** (on by default) plays a soft chime in the open desk for the events you're notified about. It doesn't change who is notified. It doesn't play while you're looking at the conversation the event is about. Press **Test sound** to hear it.
+
+Browsers only allow sound after you've clicked or typed in the page, so the chime starts working after your first interaction with the desk tab.
+
+## Privacy and storage
+
+- Your choices are stored on your membership, per workspace.
+- The desk's private push key is generated on first use and kept only in the workspace's Durable Object storage, never in the database or any API response.
+- The settings page shows your devices by browser and OS, never the push endpoint or its keys.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Assignment" icon="user-check" href="/inbox/assignment">
+    Round robin and who gets which chat.
+  </Card>
+  <Card title="Notes and replies" icon="note-sticky" href="/inbox/notes-and-replies">
+    @mention a teammate in a note.
+  </Card>
+</CardGroup>

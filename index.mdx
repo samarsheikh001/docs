@@ -1,20 +1,75 @@
 ---
 title: "Introduction"
-description: "Welcome to your project"
+description: "Jun Desk is an open-source, AI-first support desk for B2B SaaS that runs entirely in your own Cloudflare account."
+icon: "house"
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Jun Desk is a support desk where the AI already knows what broke. The chat widget on your site notices the failed request or JavaScript error your customer just hit. When they write "I can't pay my invoice", the AI can answer "your payment request failed with a server error at 14:02, I've flagged it to the team" instead of asking which browser they use.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+You deploy it to your own Cloudflare account with one click. There is no email service, auth provider or database server to sign up for.
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+<Note>
+Jun Desk is a v1 release candidate. Everything on these pages is built and tested end to end, but expect rough edges. [Issues](https://github.com/samarsheikh001/jun/issues) are welcome.
+</Note>
+
+## Three ideas
+
+<CardGroup cols={3}>
+  <Card title="Support that sees the bug" icon="bug" href="/widget/debug-context">
+    The widget captures recent errors, failed requests and pages visited, masks them in the browser and again on the server, and shows them to your team and the AI.
+  </Card>
+  <Card title="Your desk, your Cloudflare" icon="cloud" href="/how-it-works">
+    The whole desk is one Cloudflare Worker with D1, R2, Durable Objects, a Queue and Workers AI. Your conversations never leave your account.
+  </Card>
+  <Card title="Support agent as code" icon="code" href="/code/overview">
+    The AI's rules, tasks, actions and tests are plain files. Edit them on the desk or keep them in git, and test changes with `jun eval` before you push.
+  </Card>
+</CardGroup>
+
+## What you get
+
+- **A chat widget** with live replies, typing indicators, read receipts, file uploads, screenshots, your colour and logo, and business hours. You pick a launcher: a button, a greeting card, an "Ask anything…" bar or the island. When nobody's around it asks for an email, and when a conversation is resolved it asks for a quick rating.
+- **An AI agent** that answers from your docs with citations and hands off to a person when it can't help or when the customer asks. It runs on Workers AI out of the box, so you need no API key. It can use OpenAI instead.
+- **Debug context.** JavaScript errors, failed requests (method, URL and status, never bodies), pages visited, rage clicks and errors your app reports with `JunDesk.reportError()`. When something breaks, the widget can offer help on its own.
+- **Actions, tasks and widgets.** The AI can call your API (`tools/*.yaml`), follow step-by-step tasks, run actions your page registers in the visitor's browser, and show results as interactive cards.
+- **A real-time inbox** with assignment, takeover from the AI, internal notes with @mentions, saved replies, tags, a contact sidebar and keyboard shortcuts (Ctrl+K or ⌘K opens the command palette).
+- **Visitors**: a live list and globe of who's on your site right now. You can start a chat with any of them.
+- **Issues from a conversation.** "Create issue" drafts a GitHub or Linear issue from the chat and the masked browser details. A teammate edits and files it. The AI never files issues on its own.
+- **A dashboard** for the last 7, 30 or 90 days: conversations, how many the AI resolved on its own, handoff rate and reasons, first-response times, CSAT, replies per teammate and the top topics.
+- **Notifications** in the browser and as Web Push on desktop and phone, with nothing to configure.
+
+## Where to start
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    From the Deploy button to your first chat in a few minutes.
+  </Card>
+  <Card title="How it works" icon="diagram-project" href="/how-it-works">
+    The Worker, Durable Objects and storage behind one desk.
+  </Card>
+  <Card title="Install the widget" icon="code" href="/widget/install">
+    Put the chat on your site with one script tag.
+  </Card>
+  <Card title="Set up the AI" icon="sparkles" href="/ai/models">
+    Choose Workers AI, OpenAI or ChatGPT sign-in, and add your knowledge.
+  </Card>
+  <Card title="Work the inbox" icon="inbox" href="/inbox/overview">
+    Take over chats, write notes, assign and file issues.
+  </Card>
+  <Card title="Keep the agent in git" icon="code-branch" href="/code/overview">
+    Pull, test and push the AI's files with the `jun` CLI.
+  </Card>
+</CardGroup>
+
+## Open source
+
+Jun Desk is open source. The source is at [github.com/samarsheikh001/jun](https://github.com/samarsheikh001/jun).
+
+| Part | Licence |
+|---|---|
+| Server and dashboard (`worker/`, `web/`, `packages/llm`, `packages/cli`) | [AGPL-3.0-only](https://github.com/samarsheikh001/jun/blob/main/LICENSE) |
+| Widget loader (`public/widget.js`) | MIT |
+| React hook `@jun/widget-react` (`packages/widget-react`) | MIT |
+| Agent config format (`AGENTS.md`, `skills/`, `tools/`, `evals/` files and the `jun init` templates) | MIT |
+
+The loader and the config format are MIT, so putting Jun Desk on your site never triggers a licence review. Outside contributions will need a contributor licence agreement (CLA), which isn't set up yet. Until it is, open an issue before starting a large change. See [CONTRIBUTING.md](https://github.com/samarsheikh001/jun/blob/main/CONTRIBUTING.md).

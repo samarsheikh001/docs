@@ -1,0 +1,124 @@
+---
+title: Debug context
+description: What the widget notices in the visitor's browser, how it's masked, and how your agents and the AI use it to answer "it doesn't work".
+icon: bug
+---
+
+When a customer writes "I can't pay my invoice", the widget already knows their payment request just failed with a 500. It records errors, failed requests, the pages they visited, rage clicks and "stuck" moments in the browser, masks them, and sends them along with the customer's message. Your agents see them next to the chat, and the AI can say what failed instead of asking which browser they use.
+
+Debug context is on by default. You don't configure anything beyond the [snippet](/widget/install).
+
+## What's captured
+
+The loader keeps the last 40 events in memory on your page. Nothing is sent while the visitor just browses: the events go to the desk only with a message they write (or, for one event, to word a [nudge](#proactive-nudges)).
+
+| Event | When it's recorded | What's kept |
+|---|---|---|
+| **JavaScript error** | An uncaught error or an unhandled promise rejection | The message, the file and line, the first five lines of the stack |
+| **Failed request** | A `fetch` or `XMLHttpRequest` that got a 4xx or 5xx, or no response at all; an image, script or stylesheet that failed to load | Method, URL (path and query parameter names only), status (0 for no response), duration |
+| **Navigation** | Each page change in a single-page app (`pushState`, `replaceState`, back and forward) | The URL, cleaned |
+| **App error** | Your code calls `JunDesk.reportError()` | Your message (up to 300 characters) and optional code |
+| **Rage click** | The same button, link or input clicked 3+ times within a second and 30px, with nothing on the page changing or scrolling until a second after the last click | A safe description of the element and the click count |
+| **Stuck** | The visitor has spent 3 visible minutes on a page after an error, failed request or rage click there, with no successful form submit since | The page path, the seconds, and the kind of the earlier problem |
+
+Each snapshot also carries the current page (URL and title), the user agent, viewport size, language and time zone.
+
+Some details on what counts:
+
+- The widget's own traffic (the chat frame, uploads) is never recorded.
+- A successful non-GET request (a 2xx save) or a form `submit` clears the page's problem, so a visitor who recovered isn't "stuck".
+- Time with the tab hidden doesn't count toward "stuck".
+- A triple click that selects text isn't a rage click, and clicks in text fields, selects, canvases, media and the widget itself are ignored.
+
+### Report your app's own errors
+
+When something fails for a reason your app can name, tell the widget. The message joins the timeline, so the AI and your agents can explain it in your words ("Your CSV import failed on row 42.").
+
+```js
+// The loader may not have loaded yet, hence the ?.
+window.JunDesk?.reportError({ message: "Row 42: missing email", code: "import.row_invalid" });
+```
+
+- `message` is required, masked like everything else, and cut to 300 characters.
+- `code` is optional: letters, digits, `_`, `.` and `-`, up to 60 characters. It's for your team. Agents see it in the timeline and in issue drafts; the AI answering visitors never gets it.
+- It does nothing with `data-capture="off"` or before `JunDesk.consent(true)`, and it never throws.
+
+## Masking
+
+Everything is masked in the browser before it leaves, and again on the desk with the same rules. Query values are removed from every URL. Emails, tokens, keys, password-like values and card-like numbers become placeholders such as `[email]` and `[token]`. Request and response bodies, storage and typed values are never read. [Consent and privacy](/widget/consent-and-privacy#masking-twice) has the full table.
+
+## Where agents see it
+
+Open a conversation in the **Inbox**. The side panel has a **Browser** section:
+
+- **Page**, **Browser** (like "Chrome 141 on Windows"), **Screen** and **Locale** from the latest message;
+- **What happened**: a timeline of events from the conversation's recent messages (up to 100, newest first, duplicates merged), with a ⚠ count of issues;
+- **Errors only** hides navigation and keeps errors, failed requests and rage clicks.
+
+The conversation list shows the same ⚠ count, so you can spot chats where something broke before opening them. The timeline refreshes when the visitor writes or the AI answers.
+
+With **Create issue** ([Issues](/inbox/issues)), the debug context becomes the issue's steps, failing requests, errors and browser, masked again before it goes to GitHub or Linear.
+
+## How the AI uses it
+
+When a message carries debug context, the AI's prompt includes it as plain lines, oldest first, in the visitor's time zone:
+
+```text
+[14:01:52] Visited /billing
+[14:02:11] POST /api/demo/billing → HTTP 500 in 212 ms
+[14:02:15] Clicked button#export "Export CSV" 4 times in quick succession; the page didn't change
+```
+
+The AI is told to:
+
+- use it only when it explains the customer's problem, and ignore it otherwise;
+- say plainly what failed and when ("your request to /api/billing failed with a server error (500) at 14:02"), without guessing the cause or promising a fix;
+- treat "The app reported an error" lines as your app's own words, and never repeat masked placeholders like `[email]`.
+
+### `flag_problem`
+
+When debug context is present, the AI gets a built-in tool, `flag_problem`, with one argument: a one-line `summary` for engineers. The AI is told to call it first when an error or failed request explains the problem, then tell the customer what failed and that the team has it.
+
+After that answer, the desk hands the conversation to your team:
+
+- the customer sees "I've passed this to the team with the technical details. They'll follow up right here.";
+- your team gets an internal brief that starts with "Bug flagged by the AI:" and the summary, and quotes the failing request or error.
+
+The call is listed in the conversation's AI actions. The AI never files an issue itself: an agent does, with **Create issue**.
+
+<Note>
+  `flag_problem` and `handoff` are built-in names. A `tools/*.yaml` file can't use them.
+</Note>
+
+## Proactive nudges
+
+When something really breaks on the page, the widget can offer help before the visitor asks: "Looks like the usage chart didn't load. Want a hand?" Turn it on or off with **Chat widget → Install → Proactive help → Offer help when something breaks**. It's on by default.
+
+A nudge is offered for:
+
+- JavaScript errors and app errors from `reportError()`;
+- rage clicks and "stuck" moments;
+- requests that got no response from your own site, failed with a 5xx, or failed on a non-GET (a GET that returns 404 doesn't nudge on its own).
+
+How it behaves:
+
+- The loader waits about a second for a burst of errors to settle, then sends the one masked event and the page to the desk.
+- The AI words a single line from it. The same failure on the same page gets the same line for a day, so it's one AI call per day, not per visitor. If the AI is off, over its monthly cap or slow, the visitor sees "Looks like something went wrong on this page. Want a hand?"
+- A visitor sees at most one nudge per page load, never while the chat is open, and none before consent.
+- With the round-button launcher it's a small card above the button; the greeting card, bar and island show it themselves. Clicking it opens a chat that starts with that line.
+- Nudges are only offered on [allowed websites](/widget/install#limit-which-websites-can-use-the-widget), and `data-capture="off"` turns them off.
+
+Page openers (offering a chat after time on a page, like 30 seconds on `/pricing`) live in the same **Proactive help** card. They don't depend on debug capture.
+
+## Try it
+
+**Chat widget → Install → Open demo page** opens a test page with a "Pay invoice" button that fails with a 500, a "Show usage chart" button that throws, and an "Export CSV" button that does nothing however often you click it. Click them, then ask "why can't I pay my invoice?" in the chat.
+
+<CardGroup cols={2}>
+  <Card title="Consent and privacy" icon="shield-halved" href="/widget/consent-and-privacy">
+    What's stored, what's never captured.
+  </Card>
+  <Card title="Issues" icon="code-branch" href="/inbox/issues">
+    File a GitHub or Linear issue from the chat.
+  </Card>
+</CardGroup>

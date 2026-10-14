@@ -1,0 +1,296 @@
+---
+title: "Actions"
+description: "Let the AI look things up and make changes in your own systems with HTTP requests, set up from a curl command and tried before they go live."
+icon: "bolt"
+---
+
+An action is a request to your own systems that the AI can make while it answers: look up an order, check a customer's plan, apply an offer they accepted. The AI decides when to call one from its description, fills in the details from the chat, and uses what comes back in its answer.
+
+Actions are under **Agent → Actions** (`/agent/actions`). Each is a file, `tools/<name>.yaml`. See [Agent files](/code/files) for every key.
+
+<Note>
+This page is about actions your server calls. Actions that run **in the customer's browser**, registered by your website's code, are [page actions](/widget/page-actions). The desk lists the ones it has seen under [On your website](#on-your-website), at the bottom of the Actions page.
+</Note>
+
+## How an action works
+
+1. The AI sees each action's name and **What it does** and decides whether the customer's message needs it.
+2. It asks the customer for any required detail it doesn't have yet (like an order number), then calls the action with those details.
+3. The desk builds the request: your address with the details filled in, your headers and keys, and for a change, a JSON body.
+4. The customer sees only the action's status line, like "Checking your order", never the action's name, inputs or result.
+5. The AI gets the response (only the fields you pick, at most 4,000 characters) and answers from it. If the action has a [widget](/ai/widgets), the customer sees the result as a card.
+6. Agents see every call in the conversation's [audit log](#audit-log).
+
+A request that takes longer than 10 seconds fails, and the AI tells the customer it couldn't check right now.
+
+<Warning>
+Actions run as soon as the AI calls them. There is no confirm button for actions on your server. For anything that changes data, write "say exactly what changes and wait for a clear yes" into the [task's](/ai/tasks) steps, as the starter cancellation task does.
+</Warning>
+
+## Create an action
+
+<Steps>
+  <Step title="Press New action">
+    On **Agent → Actions**.
+  </Step>
+  <Step title="Say what the AI should be able to do">
+    For example "Look up an order by its number and tell the customer where it is".
+  </Step>
+  <Step title="Paste a curl command (optional)">
+    Under **How does your system do it?**, paste a curl command from your API docs, or describe the request in a few words. No API yet? Leave it empty.
+  </Step>
+  <Step title="Check the name and press Set it up">
+    The name is made from your description, like `look_up_order`: lowercase letters, digits and underscores. `handoff`, `flag_problem`, `jun_done`, `activate_skill` and `show_widget` are taken by the AI's own tools.
+  </Step>
+</Steps>
+
+The action's page opens and its AI chat starts on the first request: write the description, the status line, and turn the values that change per customer (an ID, an email, an order number) into details the AI asks for. Then [try it](#try-it). Nothing changes for customers until you save.
+
+### What the desk reads from a curl command
+
+A curl command is read on the desk, without the AI, and the dialog shows what it found:
+
+```sh
+curl https://api.acme.com/orders/1042 \
+  -H "Authorization: Bearer sk_live_…"
+```
+
+- **Method, address, query, headers and a JSON body** go into the action.
+- **Keys never go in the file.** An `Authorization` header, an `x-api-key` (or any header ending in `key`, `token` or `secret`) and `-u user:password` become `{secrets.NAME}`, named after the host (`api.acme.com` → `ACME_API_KEY`). The key itself is saved on the desk. A stand-in like `$API_KEY` or `<your-token>` gets a key name for you to add on the action's page.
+- **Keys in the address are left out**, with a note: the desk sends keys only in headers. Ask your developer whether the API takes it as a header.
+- **Only GET and POST.** `PUT`, `PATCH` and `DELETE` become POST, and so does a GET with a body. Form fields are sent as JSON. `-u` becomes an `Authorization` header. An `http://` address becomes `https://`. File uploads (`-F`) aren't supported.
+
+## The action's page
+
+The page has **AI** and **Code** tabs on the left and the form on the right. At the top of the form, **Connected** links the action to the tasks and widgets that use it.
+
+### Form fields
+
+<ParamField path="What it does" type="text" required>
+  The `description`. The AI reads it to decide when to use the action, so say what it returns or changes. For example "Finds an order by its number and returns its status and delivery date."
+</ParamField>
+
+<ParamField path="While it runs, the customer sees" type="string" default="Looking that up">
+  The `status` line, like "Checking your order". One line of plain text, up to 60 characters, no placeholders.
+</ParamField>
+
+<ParamField path="Request" type="GET | POST, URL">
+  **Look up (GET)** or **Make a change (POST)**, and the address. Put details the AI fills in inside braces: `https://api.acme.com/orders/{order_id}`. Your developer can give you this address.
+
+  An action that only shows a [widget](/ai/widgets) can leave the address empty: it calls nothing and draws the widget from its example data and the AI's inputs.
+</ParamField>
+
+<ParamField path="Keys" type="list">
+  The keys its headers use, each with where it comes from. See [Keys](#keys).
+</ParamField>
+
+<ParamField path="Details the AI asks for" type="list">
+  The action's inputs: what the AI needs from the customer (or the chat) before it can run it. Each has a name, a type (**Text**, **Number**, **Whole number** or **Yes or no**), a description the AI reads, and **Required** (on by default). Renaming a detail renames its `{placeholder}` in the address and query too.
+</ParamField>
+
+Under **More options**:
+
+<ParamField path="Headers" type="map">
+  Sent with every request, like `Authorization: Bearer {secrets.API_KEY}`.
+</ParamField>
+
+<ParamField path="Query parameters" type="map">
+  Added to the address after the `?`, like `email: {email}`. Empty values are left out.
+</ParamField>
+
+<ParamField path="Only on these pages" type="list">
+  The `pages` list. See [Offer an action only on some pages](#offer-an-action-only-on-some-pages).
+</ParamField>
+
+<ParamField path="Show the result as a widget" type="string">
+  The `widget` that shows a successful result as a card. Without one, the AI describes the answer in words.
+</ParamField>
+
+<ParamField path="When a widget's button runs it, the widget says" type="string">
+  The `widget_done` line, for when a [widget's button](/ai/widgets#buttons) runs this action. See [Done and failed lines](/ai/widgets#done-and-failed-lines).
+</ParamField>
+
+<ParamField path="If it fails, the widget says" type="string">
+  The `widget_failed` line.
+</ParamField>
+
+Some settings are only in **Code**, and the form keeps them as they are: `body` (a POST's JSON body template), `pick` (the top-level fields of a JSON response the AI gets) and `mock` (a canned response for `jun eval --mock-tools` and the task test chat's safe mode).
+
+### A complete action
+
+The `lookup_order` example from `jun init`:
+
+```yaml tools/lookup_order.yaml
+description: Look up an order by its number. Returns status, order date and total.
+status: Checking your order                      # what the customer sees while it runs (default "Looking that up")
+method: GET
+url: https://api.example.com/orders/{orderNumber}
+headers:
+  Authorization: Bearer {secrets.ACME_API_KEY}   # Worker secret JUN_SECRET_ACME_API_KEY
+input:
+  orderNumber:
+    type: string
+    description: The order number, like A-1042
+pick: [status, orderedOn, total]                 # only these fields reach the AI
+mock: { status: delivered, orderedOn: "2026-09-02", total: "$49.00" }   # used by jun eval --mock-tools
+# pages: ["/orders/*", "/account"]               # optional: offer it only on these pages (AI-21)
+# widget: order                                  # optional: show the result as widgets/order.widget (W-09)
+```
+
+<Note>
+This example still points at `api.example.com`, so the desk flags it as not set up until you change the address. See [Setup problems](#setup-problems).
+</Note>
+
+## Placeholders
+
+Every `{placeholder}` in the address, query, headers or body must be one of these:
+
+| Placeholder | Filled with | Where |
+|---|---|---|
+| `{orderNumber}` | A detail the AI asks for (one of the action's inputs). | Anywhere. In the address it's URL-encoded. |
+| `{user.id}`, `{user.email}`, `{user.name}` | The signed-in customer, from your [identity token](/widget/identify-users). | Anywhere. |
+| `{user.plan}` (any attribute) | One of the customer's verified `attributes`. | Anywhere. |
+| `{secrets.NAME}` | Your business's key. | Headers only. |
+| `{user.secrets.NAME}` | The customer's own key, from the `secrets` claim of their identity token. | Headers only. |
+
+Key names are `UPPER_SNAKE_CASE`. Secrets in the address or query are refused, because addresses end up in logs.
+
+For a POST without `body`, the details the AI filled in are sent as a JSON object. With `body`, its values are filled in; a value that is exactly `"{param}"` keeps the input's type, so numbers stay numbers. The apply-offer example:
+
+```yaml tools/apply_save_offer.yaml
+description: Apply a retention offer the customer accepted to their own subscription. Only after a clear yes.
+status: Applying your offer                       # what the customer sees while it runs
+method: POST
+url: https://api.example.com/billing/save-offers
+headers:
+  Authorization: Bearer {secrets.ACME_BILLING_KEY}   # Worker secret JUN_SECRET_ACME_BILLING_KEY
+input:
+  offer:
+    type: string
+    description: The offer the customer accepted
+    enum: [discount_50_3m, pause_3m]
+body:
+  userId: "{user.id}"
+  offer: "{offer}"
+pick: [ok, message]                               # only these fields reach the AI
+mock: { ok: true, message: "Offer applied" }      # used by jun eval --mock-tools
+```
+
+### Acting for the signed-in customer
+
+`{user.*}` values come only from a verified identity token, never from the chat or the page's JavaScript, so the AI can't be talked into looking up someone else's account. If the visitor isn't signed in, the call fails and the AI is told to ask them to sign in or hand off.
+
+`{user.secrets.NAME}` is for APIs that only accept the customer's own key. The key is kept only until their token expires (or `JunDesk.logout()`), and never shown to agents, the AI or the prompt.
+
+## Keys
+
+The **Keys** field lists each `{secrets.NAME}` the headers use and where its value comes from:
+
+- **Set by your developer**: the Worker secret `JUN_SECRET_<NAME>`. It always wins.
+
+  ```sh
+  npx wrangler secret put JUN_SECRET_ACME_API_KEY
+  ```
+
+- **Pasted on the desk**: an owner or admin pastes the key and presses **Save**. It's saved right away, kept in the workspace's Durable Object storage (never in the agent's files or the database), and only its last 4 characters are shown. **Replace** and **Remove** change it. A workspace can keep up to 50 keys this way.
+- **The customer's own** (`{user.secrets.NAME}`): from their sign-in, nothing to add here.
+
+Any key a request carried is masked as `••••` if the API echoes it back, in what the AI reads and in the audit log. See [Secrets](/reference/secrets).
+
+## Setup problems
+
+An action that can't work yet is never offered to the AI. Its card says **Not set up**, and its form starts with "The AI won't use this action yet." and the reasons:
+
+- **The key NAME isn't added yet.** Paste it under **Keys**, or set the Worker secret.
+- **Its address is still an example** (`example.com`, `example.org` or `example.net`).
+- **Its description is still the starter text**, so the AI can't tell when to use it.
+
+[Tests](/ai/tests) run with `--mock-tools` still use such actions, with their `mock` responses.
+
+## Try it
+
+**Try it** on the action's page calls your draft of the action once, for real, with details you type. Use it before you save.
+
+1. Type a value for each detail. An action made from a curl command starts with the command's own values.
+2. If the action uses `{user.*}`, type a test customer's id, email, attributes or key.
+3. Press **Try it**, or **Run it for real** for an action that makes a change ("This makes a real change in your system.").
+
+The result shows **It worked** or **It didn't work**, the HTTP status, how long it took and what came back. Nothing is saved to a conversation or the audit log.
+
+When the answer is JSON, you can turn it into the card the customer sees:
+
+- **Use as the widget's example data**, when the action already has a widget.
+- **Show it as this widget**, which makes a first widget from the answer and links it to the action. Restyle it afterwards with the widget's AI.
+
+## Offer an action only on some pages
+
+**Only on these pages** (`pages`) offers the action only while the customer is on matching pages of your site:
+
+- `/billing` matches exactly that path.
+- `/orders/*` matches anything starting with `/orders/`.
+
+The page comes from the browser details the widget sent with the customer's latest message. When the desk doesn't know the page (for example, with capture turned off), only actions without `pages` are offered.
+
+## Audit log
+
+Every call the AI makes is recorded next to the conversation. In the inbox, the conversation's side panel shows **AI actions**: each call's action, inputs, output, status, HTTP status and duration, and which saved version of the agent made it (`config v4`). Request headers are never stored, so keys can't show there. Calls made by a widget's button are recorded the same way.
+
+Only your team sees the log. Customers see only the status line while an action runs.
+
+## On your website
+
+The bottom of **Agent → Actions** lists the [page actions](/widget/page-actions) your website's code registers (with WebMCP or `JunDesk.registerAction`). The AI runs these in the customer's browser, with their own login. The desk never has their code: it lists what the loader reported when a customer chatted, with names, descriptions and the shape of the last result, never its values.
+
+"None seen yet" means no customer has chatted on a page that registers them.
+
+For each website action you can set:
+
+<ParamField path="When the AI runs it" type="auto | confirm | human">
+  - **Your site's setting** (default): what your code asked for.
+  - **Runs without asking** (`auto`).
+  - **Asks the customer first** (`confirm`): the chat shows a summary and a Confirm button.
+  - **A person does it** (`human`): the chat is handed to your team instead.
+</ParamField>
+
+<ParamField path="While it runs, the customer sees" type="string">
+  The line shown while it runs, up to 60 characters, like "Setting your pickup". Without one, a line is made from the action's name.
+</ParamField>
+
+<ParamField path="Show what it returns as" type="string">
+  **Text (no widget)**, or one of your widgets. Every time it runs, its result shows as that widget. A widget picked here wins over one your site's code names.
+</ParamField>
+
+**Run by buttons in** lists the widgets with a button that runs this action. **Make a widget** builds a first widget from the shape of the action's last result; it appears once the action has run on your site.
+
+Your choices are saved in `website-actions.yaml`:
+
+```yaml website-actions.yaml
+add_to_cart: confirm
+set_pickup: { run: auto, status: "Setting your pickup" }
+```
+
+## Limits
+
+| Limit | Value |
+|---|---|
+| Actions per agent | 20 |
+| Request timeout | 10 seconds |
+| Response the AI reads | 4,000 characters (after `pick`) |
+| Status line | 60 characters |
+| Keys pasted on the desk | 50 |
+| Methods | GET and POST |
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="table-cells-large" href="/ai/widgets">
+    Show an action's result as a card.
+  </Card>
+  <Card title="Tasks" icon="list-check" href="/ai/tasks">
+    Use actions in step-by-step jobs.
+  </Card>
+  <Card title="Page actions" icon="hand-pointer" href="/widget/page-actions">
+    Actions that run in the customer's browser.
+  </Card>
+  <Card title="Identify users" icon="id-card" href="/widget/identify-users">
+    Verified customers for `{user.*}`.
+  </Card>
+</CardGroup>

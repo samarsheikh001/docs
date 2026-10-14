@@ -1,0 +1,116 @@
+---
+title: "Upgrade"
+description: "Pull a new version of Jun Desk into your copy and deploy it, with database migrations applied first."
+icon: "arrows-rotate"
+---
+
+You upgrade by pulling the new version into your copy of the repo and deploying it. `npm run deploy` applies new D1 migrations **before** it deploys the new Worker, so new code never runs against an old schema.
+
+## What carries over
+
+Everything you have keeps working across an upgrade:
+
+- the workspace, teammates and their passkeys,
+- conversations and messages, contacts, and visitors' tokens (so a visitor's browser still finds its chats),
+- the widget key, so the snippet on your site doesn't change,
+- knowledge sources, their indexed chunks and vectors,
+- the agent config (`AGENTS.md`, tasks, actions, widgets, tests) and its version history,
+- settings and keys kept in Durable Object storage: issue tracker keys, action keys, the Web Push key.
+
+Sessions survive too, so teammates stay signed in.
+
+## Upgrade a Deploy button install
+
+The Deploy button created a repo in your GitHub account and connected it to the Worker with Workers Builds. Pushing to that repo deploys.
+
+<Steps>
+  <Step title="Clone your copy">
+    ```sh
+    git clone https://github.com/<you>/<your-repo>.git jun-desk
+    cd jun-desk
+    ```
+  </Step>
+  <Step title="Pull the new version">
+    ```sh
+    git pull https://github.com/samarsheikh001/jun main
+    ```
+
+    If Git reports a conflict in `wrangler.jsonc`, keep your resource names (the Worker `name`, `database_name`, `bucket_name` and queue names) and take everything else from the new version, such as new bindings or Durable Object migrations.
+  </Step>
+  <Step title="Push">
+    ```sh
+    git push
+    ```
+
+    Workers Builds runs the build and `npm run deploy`, which migrates the database and then deploys. Follow it in the Cloudflare dashboard under the Worker's **Deployments**.
+  </Step>
+</Steps>
+
+<Warning>
+Keep your own `wrangler.jsonc` names. If an upgrade puts the default names back on a desk that uses others, the Worker binds to a different (possibly another desk's) database, bucket and queue.
+</Warning>
+
+## Upgrade a command-line install
+
+From your checkout:
+
+```sh
+git pull https://github.com/samarsheikh001/jun main
+npm install && npm run deploy
+```
+
+`npm run deploy` runs `scripts/deploy.ts`: it builds with Vite, runs `wrangler d1 migrations apply DB --remote`, then `wrangler deploy`. If a migration fails, it stops before deploying, and the old Worker keeps running on the old schema.
+
+To apply migrations on their own, run:
+
+```sh
+npm run db:migrate
+```
+
+## Migrations
+
+Migrations are SQL files in `migrations/`, numbered in order (`0001_init.sql`, `0002_conversations.sql`, …). Wrangler records which ones have run in the database, so each runs once. Some migrations move data into a new shape; for example, the AI's old free-text guidance became `AGENTS.md` and visitors' tokens moved to their own table.
+
+Durable Object classes have their own migrations in `wrangler.jsonc` (`"tag": "v1"`, `"v2"`, …). Wrangler applies them as part of the deploy.
+
+## Check an upgrade yourself
+
+`scripts/upgrade-check.ts` is the test for upgrades. It seeds a desk running an older version, you upgrade that same database to the new code, and it checks that everything survived. It passes from the first AI release (M2) onwards.
+
+It seeds:
+
+- an owner account and workspace,
+- AI settings with custom guidance and a monthly cap,
+- a knowledge snippet,
+- a visitor's conversation with a teammate's reply.
+
+After the upgrade it verifies that the owner gets back in (through `/recover`) to the same workspace, the old conversation and widget key are intact, the visitor's old token still works, knowledge is still searchable, the old guidance became `AGENTS.md`, the AI answers a new question from the old knowledge, and Get started and the live visitor socket work on the old data.
+
+<Steps>
+  <Step title="Run the old version and seed it">
+    Check out the old version, start it locally on its own port, then seed it:
+
+    ```sh
+    BASE_URL=http://localhost:5175 node scripts/upgrade-check.ts seed state.json
+    ```
+  </Step>
+  <Step title="Upgrade the same database">
+    Check out the new version and point it at the same local state: apply the migrations, then start it.
+  </Step>
+  <Step title="Verify">
+    ```sh
+    BASE_URL=http://localhost:5174 node scripts/upgrade-check.ts verify state.json
+    ```
+  </Step>
+</Steps>
+
+The script reads `SETUP_TOKEN` from the environment or from `.dev.vars`, and the AI step answers through the provider the seed turned on (Workers AI). See [Local development](/deploy/local-development) for running the desk locally with its own state directory.
+
+<CardGroup cols={2}>
+  <Card title="Deploy to Cloudflare" icon="cloud" href="/deploy/cloudflare">
+    The Deploy button and the command-line route.
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/reference/troubleshooting">
+    When a deploy or upgrade goes wrong.
+  </Card>
+</CardGroup>

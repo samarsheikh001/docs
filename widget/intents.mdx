@@ -1,0 +1,136 @@
+---
+title: Intents
+description: Open the chat from your app for a specific purpose, like cancelling a subscription, with a fixed opening, quick replies, a task the AI follows, and an exit button that's always on screen.
+icon: route
+---
+
+An **intent** is a chat your app opens for a purpose. Your "Cancel subscription" button, instead of going straight to a cancel form, opens the chat with the `cancel` intent. The chat starts with your question ("Sorry to see you go. What's the main reason?") and quick replies, the AI follows a [task](/ai/tasks) you wrote for it, and a **Cancel anyway** button stays on screen the whole time. One click on it closes the chat and hands back to your app.
+
+It takes two pieces: a call in your app, and a task on the desk that defines the intent.
+
+## 1. Define the intent in a task
+
+An intent lives in a task's frontmatter (`skills/<name>/SKILL.md` in your [agent config](/code/files)). Here is the cancellation starter that `jun init` creates:
+
+```markdown skills/cancellation/SKILL.md
+---
+name: cancellation
+description: The customer wants to cancel their subscription or close their account.
+# Intent (AI-20): your app opens this chat with JunDesk.open({ intent: "cancel", onExit }).
+intent: cancel
+opening: "Sorry to see you go. What's the main reason?"
+replies: [Too expensive, Not using it enough, Missing a feature, Something isn't working, Switching to another tool, Other]
+exit: Cancel anyway       # always on screen, one click: closes the chat and calls your onExit
+---
+1. If they haven't said why, ask for the main reason, once.
+2. Try to fix the real problem first:
+   - Something isn't working: explain what failed (the technical context helps) and flag it to the team.
+   - Missing a feature: check the sources for it or a workaround.
+   - Not using it enough: offer one short tip for what they signed up to do.
+3. At most one offer, and only the one that fits their reason (edit these to what you really offer):
+   - Too expensive: 50% off the next 3 months (offer: discount_50_3m).
+   - Not using it enough: pause the subscription for up to 3 months (offer: pause_3m).
+   - Missing a feature, switching to another tool, or other: no offer. Ask what would have made them stay.
+4. Before applying an offer with apply_save_offer, say exactly what changes and wait for a clear yes.
+   If that tool isn't set up, hand off to a person with the accepted offer in the reason.
+5. If they say no or still want to cancel, thank them and point them to the "Cancel anyway" button
+   (or, if there isn't one in this chat, to Settings → Billing). Never argue or push again.
+```
+
+| Key | Required | What it does | Limits |
+|---|---|---|---|
+| `intent` | Yes | The name your app passes to `JunDesk.open` | Lowercase letters, digits, `_` and `-`, up to 40 characters. One task per intent |
+| `opening` | No | The first message, shown instantly. It's fixed text, never written by the AI, and not stored as a message | One line, up to 300 characters |
+| `replies` | No | Quick replies under the opening. A tap sends it as the visitor's own message | Up to 8, each up to 60 characters. Needs `opening` |
+| `exit` | No | The label of the button that ends the flow in your app | Up to 40 characters |
+
+`opening`, `replies` and `exit` only work with `intent`. The desk's config check tells you if one is missing or too long.
+
+The task's body is the procedure. The AI is told the chat was opened with this intent, to follow the procedure step by step, to make at most one offer and only one the procedure (or an action) defines, and to wait for a clear yes before calling anything that changes the customer's account. With an `exit`, it's also told never to discourage, delay, argue against or obstruct that button, and to point to it when the customer still wants to go ahead.
+
+The starter also includes `tools/apply_save_offer.yaml.example`. Copy it to `tools/apply_save_offer.yaml` and point it at your billing API to let the AI apply an accepted offer. It acts on the signed-in customer through `{user.id}`, so it needs [identified users](/widget/identify-users).
+
+You can also create and edit tasks on the desk under **Agent → Tasks** ([Tasks](/ai/tasks)).
+
+## 2. Open the chat from your app
+
+```js
+document.querySelector("#cancel-subscription").addEventListener("click", () => {
+  window.JunDesk.open({
+    intent: "cancel",
+    onExit: () => { location.href = "/billing/cancel"; },
+  });
+});
+```
+
+<ParamField path="intent" type="string" required>
+  The intent's name, matching a task's `intent:`. A name that isn't lowercase letters, digits, `_` or `-` (up to 40 characters) opens a plain chat.
+</ParamField>
+
+<ParamField path="onExit" type="function">
+  Called once when the visitor clicks the exit button, after the chat closes. This is where your app carries on: show your own cancel screen, call your cancel endpoint. Required when the intent has an `exit`.
+</ParamField>
+
+## The exit button
+
+This is a hard rule in the widget: **a flow with an exit is never a trap**.
+
+- The exit button is always on screen, outside the scrolling chat, for the whole conversation.
+- It's one click. There's no "are you sure" step from Jun Desk.
+- The click closes the chat and calls your `onExit` right away. It never waits on the desk.
+- If the intent has an `exit` but `JunDesk.open()` got no `onExit` function, the widget opens a **plain chat** instead and logs a console warning: `intent "cancel" has an exit ("Cancel anyway") but JunDesk.open() got no onExit function: opening a plain chat.`
+
+The desk records the exit and leaves your team an internal note: `The customer clicked "Cancel anyway" (intent: cancel) and went on in your app.`
+
+After a page reload the intent chat comes back with its exit button still showing. Your `onExit` function can't survive a reload, so a click then only closes the chat (the exit is still recorded).
+
+## What visitors see
+
+<Steps>
+  <Step title="Your app calls JunDesk.open({ intent })">
+    The widget fetches the intent's opening, replies and exit from the desk. No AI call is made for this.
+  </Step>
+  <Step title="The chat opens on the opening question">
+    The quick replies sit under it, and the exit button sits outside the scrolling messages, where it stays.
+  </Step>
+  <Step title="The visitor answers">
+    By tapping a reply or typing. The conversation starts, tagged with the intent, and the AI follows the task.
+  </Step>
+  <Step title="The visitor stays or leaves">
+    If the AI solves the problem or the offer lands, the chat ends like any other. If not, one click on the exit hands back to your app.
+  </Step>
+</Steps>
+
+A few rules:
+
+- Calling `JunDesk.open({ intent })` again while that intent's chat is on screen carries on in it. Otherwise it starts a new chat, so an intent never mixes into an unrelated conversation.
+- An intent that no task defines opens a plain chat, still tagged with the intent. The AI is told about it and just helps.
+- With the [island launcher](/widget/launchers#island), an intent chat never folds itself away, and the island's × isn't offered: the chat ends through its exit.
+
+## For your team
+
+Intent chats show an **Intent: cancel** tag in the inbox, with "· exited" once the visitor clicked the exit. Everything else works as usual: agents can take over, and handoff rules apply.
+
+## Test it
+
+Eval cases take `intent:`, so `jun eval` runs a case as a chat opened with that intent:
+
+```yaml evals/cancellation.yaml
+- name: too expensive gets the discount offer
+  intent: cancel
+  message: Too expensive
+  expect:
+    outcome: answer
+    criteria: Offers 50% off the next 3 months, once, and mentions the Cancel anyway button.
+```
+
+The demo page (**Chat widget → Install → Open demo page**) has a **Cancel subscription** button that opens the `cancel` intent.
+
+<CardGroup cols={2}>
+  <Card title="Tasks" icon="list-check" href="/ai/tasks">
+    Write the procedure the AI follows.
+  </Card>
+  <Card title="JavaScript API" icon="brackets-curly" href="/widget/javascript-api">
+    `JunDesk.open` and the rest.
+  </Card>
+</CardGroup>

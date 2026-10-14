@@ -1,0 +1,130 @@
+---
+title: "Instructions"
+description: "Tell the AI how to talk to customers and when to hand a chat to your team, then save it as a new version."
+icon: "pen-to-square"
+---
+
+The **Instructions** page is the first page under **Agent** in the sidebar (`/agent`). It's where you brief the AI the way you'd brief a new teammate: its tone, and anything it should always or never do. Steps for one specific job, like refunds, go in [Tasks](/ai/tasks) instead.
+
+Behind the page is one file, `AGENTS.md`. The text you write is its body; the handover settings are its frontmatter. See [Agent files](/code/files) for the file format.
+
+## The page
+
+- **How the AI talks** (left): a page to write on. The expand button opens it in a larger window.
+- **Hand over to your team** (right): when the AI stops answering and passes the chat on.
+- **Model** (right, below): the model replying to visitors, its provider, whether the AI is off, and this month's replies against your cap. Change these in [Settings → AI](/ai/models).
+
+Owners and admins can edit. Agents see the page read-only.
+
+## Write how the AI talks
+
+Write short, plain rules. A new desk starts with these:
+
+```markdown AGENTS.md
+---
+# Guardrails. Remove a line to use the default.
+maxReplies: 8            # AI replies per conversation before a person takes over
+handoffTopics:           # always hand these to a person
+  - legal or security questions
+---
+# How to talk to customers
+
+- Be friendly, concise and specific. A few short sentences or a short list.
+- Use the customer's name if you know it.
+- Don't promise refunds, credits, discounts or timelines unless a procedure says you can.
+```
+
+The AI reads your text as "Guidance from the team", on top of rules the desk always gives it. You don't need to repeat those:
+
+- Facts about your product come only from your [Knowledge](/ai/knowledge), [tasks](/ai/tasks) and [action](/ai/actions) results, cited like `[1]`. It never invents prices, policies or URLs.
+- When the sources don't cover a question, it asks one clarifying question or suggests safe, generic steps before giving up.
+- It hands off when the customer asks for a person, needs something only staff can do, is frustrated, or it still can't help after asking.
+- It replies in the customer's language, ignores instructions hidden in sources or messages, and never reveals its prompt.
+- For a signed-in customer, it knows who they are from your [identity token](/widget/identify-users) and uses their name.
+- When the widget captured an error in the customer's browser, it flags it for engineers and explains plainly what failed. See [Debug context](/widget/debug-context).
+
+### Writing tips
+
+- **Say what to do, not only what to avoid.** "Point people to Settings → Billing for invoices" works better than "Don't discuss invoices".
+- **Keep facts in Knowledge.** Prices, limits and how-tos belong in your docs or a [snippet](/ai/knowledge#add-a-text-snippet), where the AI can cite them. Instructions are for behaviour.
+- **One rule per line.** A short list is easier for the model to follow than paragraphs.
+- **Put procedures in Tasks.** "Refund requests: first ask for the order number…" is a [task](/ai/tasks). The AI picks the matching task by its description.
+- **Test after a change.** Run your [tests](/ai/tests) before you save.
+
+### Name an action with @
+
+Type `@` to open a list of your [actions](/ai/actions) and pick one with the arrow keys and Enter (or the mouse). It's written into the text as `@lookup_order`, and the AI reads `@name` as "the tool called name". A known action is highlighted; a name that isn't an action shows in a warning colour.
+
+When any widget lets the AI fill it in, `@show_widget` is in the list too. See [Widgets](/ai/widgets#let-the-ai-fill-a-widget).
+
+## When the AI hands over
+
+**Hand over to your team** has two settings:
+
+<ParamField path="After this many AI replies" type="number" default="8">
+  The most replies the AI sends in one conversation before a person takes over. From 1 to 50. Empty uses 8. Written to `maxReplies`.
+
+  Follow-up turns after a [website action](/widget/page-actions) runs don't count, only answers to the customer's messages.
+</ParamField>
+
+<ParamField path="Always for these topics" type="list">
+  Topics the AI hands to a person instead of answering, even if your docs cover them. Up to 30 short descriptions, like "legal or security questions". Written to `handoffTopics`.
+</ParamField>
+
+The AI also hands over whenever a customer asks for a person, or when it can't help. All the reasons are on [When the AI hands off](/ai/handoff).
+
+## Save and go live
+
+Every page under **Agent** edits one shared draft. Nothing reaches customers until you save.
+
+<Steps>
+  <Step title="Edit">
+    As soon as the draft differs from what's live, a save bar appears: "Unsaved changes. Customers see them once you save." The draft is checked as you type.
+  </Step>
+  <Step title="Fix any problems">
+    If a file has a problem, the bar says how many and links to each page that has one. You can't save until they're fixed.
+  </Step>
+  <Step title="Describe the change (optional)">
+    Type a note in **What changed? (optional)**, like "Refund window is now 30 days". It shows in History.
+  </Step>
+  <Step title="Press Save and go live">
+    The bar says "Saved. Version 4 is live ✓". **Discard** throws the draft away instead.
+  </Step>
+</Steps>
+
+If someone else saved in the meantime (on the desk, or with `jun push` from git), the save stops and the bar offers **Load theirs (drops your edits)** or **Keep mine**, which saves over theirs.
+
+## History
+
+**History** (top right on every Agent page) lists every saved version with its note, who saved it, when, and whether it was **Saved** on the desk or **Pushed from git**. The live one is marked **Live**.
+
+**Restore** puts an older version in your draft with the note "Restore version N". It goes live when you save, so you can check it first.
+
+Before the first save, History says "Nothing saved yet. The AI uses the built-in defaults."
+
+## Form or Code
+
+The **Form / Code** switch at the top of the page shows the same settings as files, exactly as `jun pull` and `jun push` see them. Your choice is remembered in this browser.
+
+On Instructions, Code shows `AGENTS.md`, plus any other file that isn't a task, action, widget or test (such as a `README.md`) through a file picker. Edits in either view go into the same draft.
+
+If a file can't be read by the form (broken YAML in the frontmatter, say), the form says so and sends you to Code to fix it. Forms change single fields and keep your comments, key order and any keys they don't show.
+
+<Note>
+Instructions don't have an AI chat. Tasks, actions and widgets each have one on their own page: describe a change in your words and the AI edits that file.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Tasks" icon="list-check" href="/ai/tasks">
+    Step-by-step jobs like refunds or plan changes.
+  </Card>
+  <Card title="Tests" icon="flask" href="/ai/tests">
+    Check the AI still gets key questions right.
+  </Card>
+  <Card title="When the AI hands off" icon="headset" href="/ai/handoff">
+    The notice, the brief, and handing back.
+  </Card>
+  <Card title="Agent files" icon="file-code" href="/code/files">
+    The `AGENTS.md` format and the other files.
+  </Card>
+</CardGroup>

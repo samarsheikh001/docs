@@ -1,0 +1,200 @@
+---
+title: Run evals in CI
+description: Test every change to the agent config in pull requests with jun eval, and push it live when it merges.
+icon: github
+---
+
+Once the agent config is in git, CI can do what you'd do by hand: run `jun eval` on every pull request, and run `jun push` when the change merges. This page sets that up with GitHub Actions. Any CI that runs Node.js works the same way.
+
+## Before you start
+
+- The config folder (here `support-agent/`) is committed in your copy of the Jun Desk repository, with its `.jun-version` file. See [Agent as code](/code/overview#keep-it-in-git).
+- You have an API token for CI. Create one in **Settings → Developer → API tokens** and name it after its use (`GitHub Actions`). The token acts as the person who created it: `eval` works for any member, `push` needs an owner or admin. If that person leaves the workspace, the token stops working.
+
+## Add the secrets
+
+In your GitHub repository, open **Settings → Secrets and variables → Actions** and add:
+
+| Name | Value |
+|---|---|
+| `JUN_DESK_URL` | Your desk's address, like `https://support.acme.com` |
+| `JUN_DESK_TOKEN` | The `jun_…` token |
+
+With both set, the CLI skips `jun login` and its `~/.jun/desk.json` file.
+
+## The workflow
+
+Save this as `.github/workflows/support-agent.yml`:
+
+```yaml .github/workflows/support-agent.yml
+name: Support agent
+
+on:
+  pull_request:
+    paths: ["support-agent/**"]
+  push:
+    branches: [main]
+    paths: ["support-agent/**"]
+
+concurrency:
+  group: support-agent-${{ github.ref }}
+
+env:
+  JUN_DESK_URL: ${{ secrets.JUN_DESK_URL }}
+  JUN_DESK_TOKEN: ${{ secrets.JUN_DESK_TOKEN }}
+
+jobs:
+  eval:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test the agent config
+        run: npm run jun -- eval support-agent
+
+  push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Make it live
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          note="$(printf '%s\n' "$COMMIT_MESSAGE" | head -n 1 | cut -c 1-200)"
+          npm run jun -- push support-agent -m "$note"
+```
+
+What it does:
+
+- **On a pull request** that touches `support-agent/`, it runs your test cases and replays recent real conversations against the branch's files. The job fails if a test case fails or errors. The log shows each case and each replayed answer that would change.
+- **On a merge to `main`**, it pushes the folder as a new live version, with the commit's first line as the version note (notes over 500 characters are refused, so the step cuts it).
+
+The CLI needs Node.js 22.18 or later; `node-version: 22` installs the latest 22.x.
+
+<Note>
+  The commit message goes through an environment variable, not straight into the shell script, so a message with quotes or `$( )` can't run as a command.
+</Note>
+
+## Choosing what fails the build
+
+`jun eval` exits with code 1 when:
+
+- a test case fails,
+- a test case or a replayed conversation errors,
+- the run can't start: the config has errors, the token is wrong, or the desk's AI provider isn't usable,
+- with `--fail-on-change`, any replayed answer changes in substance.
+
+Otherwise it exits with 0. A changed replay is often the point of a pull request ("the refund window is now 30 days"), so the workflow above reports changes without failing on them. Add `--fail-on-change` for changes that shouldn't alter any answer, such as rewording or reorganising files.
+
+Other flags that suit CI:
+
+| Flag | Use it to |
+|---|---|
+| `--sample <n>` | Replay more or fewer conversations (0–50, default 20). `--sample 0` runs only your test cases |
+| `--mock-tools` | Use each action's `mock:` response instead of calling your API. Actions without `mock:` return an error to the AI |
+| `--no-cases` | Replay only |
+| `--json` | Machine-readable output (below) |
+
+<Warning>
+  Without `--mock-tools`, actions call your real API, including `POST` requests. Give actions that change things a `mock:` and use `--mock-tools` in CI, or point them at a staging API.
+</Warning>
+
+Model answers vary a little from run to run even at temperature 0, and `criteria` and the replay comparison are judged by a model. Keep `criteria` concrete ("offers at most the 50% discount") rather than about tone, so a pass means the same thing every time.
+
+## JSON output
+
+`--json` prints one JSON object per line (NDJSON), in this order: one `start`, then `case`, `replay` and `error` events as they finish, then one `done`.
+
+```sh
+npm run -s jun -- eval support-agent --json > eval.ndjson
+```
+
+`-s` (silent) stops npm from printing its own `> jun` banner lines into the output. `npx jun` or `node packages/cli/src/index.ts` don't print one.
+
+<ResponseField name="start" type="object">
+  `{ "type": "start", "liveVersion": 12, "cases": 5, "conversations": 20 }`. `liveVersion` is `null` while the desk uses the built-in default config.
+</ResponseField>
+<ResponseField name="case" type="object">
+  One test case: `file`, `name`, `pass`, `failures` (strings like `expected outcome handoff, got answer`) and `result`.
+</ResponseField>
+<ResponseField name="replay" type="object">
+  One replayed conversation: `conversationId`, `question` (the customer's first message), `verdict` (`same` or `changed`), `why`, and the `live` and `candidate` replies.
+</ResponseField>
+<ResponseField name="error" type="object">
+  `{ "type": "error", "scope": "evals/basics.yaml: greeting", "message": "…" }`. Any error makes the exit code 1.
+</ResponseField>
+<ResponseField name="done" type="object">
+  `{ "type": "done", "cases": { "passed": 4, "failed": 1 }, "replay": { "same": 19, "changed": 1, "errors": 0 } }`.
+</ResponseField>
+
+A reply (`result`, `live`, `candidate`) has:
+
+<ResponseField name="outcome" type="answer | handoff | escalate | action">
+  What the reply did.
+</ResponseField>
+<ResponseField name="reply" type="string">
+  The reply's text. Handoffs read `(hands off: <reason>)`; cards, proposed website actions and flagged problems are described in parentheses.
+</ResponseField>
+<ResponseField name="tools" type="string[]">
+  The actions called.
+</ResponseField>
+<ResponseField name="action" type="object">
+  The website action proposed, with its inputs: `{ "name": "add_to_cart", "input": { "size": "M" } }`.
+</ResponseField>
+<ResponseField name="widgets" type="string[]">
+  The widgets shown.
+</ResponseField>
+
+For example, to keep the full results as a build artifact:
+
+```yaml
+      - name: Test the agent config
+        shell: bash
+        run: npm run -s jun -- eval support-agent --json | tee eval.ndjson
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval
+          path: eval.ndjson
+```
+
+<Note>
+  In a pipe, the step's exit code is the last command's (`tee`) unless the shell uses `pipefail`. Setting `shell: bash` explicitly makes GitHub Actions run the step with `-eo pipefail`, so a failing eval still fails the step.
+</Note>
+
+## When a push is refused
+
+The push job fails, and nothing changes on the desk, when:
+
+- **The config has errors.** The log lists each one. Since the pull request ran `eval` on the same files, this is rare.
+- **Someone saved on the Agent page since the folder's `.jun-version`.** The push won't overwrite their edits. Pull them into a branch, merge, and merge that:
+
+  ```sh
+  npm run jun -- pull support-agent
+  git diff support-agent        # see what was changed on the desk
+  git commit -am "Bring in desk edits"
+  ```
+
+  Pushes from git never conflict with each other, only with desk saves.
+
+Don't add `--force` to the CI push: it would silently discard edits people make on the desk.
+
+<CardGroup cols={2}>
+  <Card title="jun CLI" icon="terminal" href="/code/cli">
+    Every command and flag.
+  </Card>
+  <Card title="Tests" icon="flask" href="/ai/tests">
+    Writing test cases.
+  </Card>
+</CardGroup>

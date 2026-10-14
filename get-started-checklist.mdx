@@ -1,0 +1,94 @@
+---
+title: "Get started checklist"
+description: "The six setup steps the desk walks you through after setup, and how each one ticks itself off."
+icon: "list-check"
+---
+
+Right after you create the owner account, the desk opens on **Get started** at `/welcome`. It shows one step at a time, with **Back**, **Skip** and **Next**, a progress ring ("2 of 6 done") and the list of steps under the card.
+
+Every step is worked out from what's actually set up, not from what you clicked. Doing the same thing in **Settings**, on the **Knowledge** page or with the `jun` CLI ticks it off too. The page refreshes every few seconds, so a crawl or a first install that finishes in the background shows up on its own.
+
+## The steps
+
+| # | Step | Ticks off when | Optional |
+|---|---|---|---|
+| 1 | **Create your account** | Always done: you're signed in with a passkey. | |
+| 2 | **Add your docs** | At least one knowledge source has finished indexing. | |
+| 3 | **Set up the AI assistant** | The AI is turned on. | |
+| 4 | **Make the widget yours** | The widget has a brand colour, a logo (light or dark) or a greeting. | Yes |
+| 5 | **Put it on your site** | The loader has run on a site other than the desk, or you pressed **I've added it**. | |
+| 6 | **Invite your team** | The workspace has a second member or any invite. | Yes |
+
+`/welcome` opens on the first step that isn't done. Each step has its own address (`/welcome/knowledge`, `/welcome/ai` and so on), so ticking one off doesn't jump the page ahead while you read.
+
+### 1. Create your account
+
+Done by the time you see the page. It reminds you to keep your setup token safe: it's how you get back in if you lose every passkey. See [First sign-in](/deploy/first-sign-in).
+
+### 2. Add your docs
+
+Paste your help center or docs site URL and press **Add website**. The desk reads its sitemap, crawls the pages in the background and re-syncs daily. Crawling takes a minute or two; the step ticks off once pages are indexed.
+
+Files (PDF, DOCX, Markdown, text) and snippets are on the **Knowledge** page. See [Knowledge](/ai/knowledge).
+
+### 3. Set up the AI assistant
+
+Choose where replies come from, then press **Turn on the AI**:
+
+- **Workers AI**: built in, runs on your Cloudflare account, no key needed.
+- **OpenAI**: your own API key. Add it as the `OPENAI_API_KEY` secret (in Cloudflare, open the Worker → **Settings** → **Variables and Secrets**, or run `npx wrangler secret put OPENAI_API_KEY`), then reload the page.
+- **ChatGPT sign-in**: replies use your own ChatGPT plan. It's listed first and preselected while it's offered, and signing in turns the AI on without a second click.
+
+<Warning>
+ChatGPT sign-in is only for a private desk you use yourself. OpenAI's terms cover plan usage for your own use, not a desk answering the public. Use Workers AI or an OpenAI API key for a desk your customers talk to.
+</Warning>
+
+Once it's on, the step shows the provider and model, with a **Change** link. The model, the monthly reply cap and per-task models are in **Settings → AI**. See [Models](/ai/models).
+
+### 4. Make the widget yours
+
+Pick a colour and press **Use this colour**. Logo, greeting and launcher side are on the **Chat widget** page; business hours are in **Settings → Inbox**. See [Appearance](/widget/appearance).
+
+### 5. Put it on your site
+
+The step shows your snippet with a **Copy** button:
+
+```html
+<script src="https://your-desk.example.com/widget.js" data-key="wk_…" defer></script>
+```
+
+Put it in your site's `<head>`, before your own scripts. The step ticks itself off the first time the loader connects from an origin other than the desk itself, and then shows "Seen on `https://…`". The desk's own demo page doesn't count.
+
+If your site is a staging site, or nobody has loaded it yet, press **I've added it**. That marks the step done and moves to the next one. The **demo page** link opens `/demo.html?key=wk_…` on your desk so you can try the widget straight away.
+
+Allowed websites and identity settings are on the **Chat widget → Install** tab. See [Install the widget](/widget/install).
+
+### 6. Invite your team
+
+Press **Create an invite link**. You get a link to send to one teammate; it works once, for 7 days, and makes them an agent. To invite an admin, or to manage people and roles, use **Settings → Team**. See [Team](/inbox/team).
+
+The last step's button is **Go to the inbox**.
+
+## Leaving and coming back
+
+Leaving Get started never hides it. The link under the steps says **Go to the inbox, finish later from the sidebar** (or **All set, go to the inbox** when everything is done).
+
+Until every step is done, owners and admins see a **Getting started** card at the bottom of the sidebar:
+
+- the percentage done,
+- each step with a blue tick when done, or a ring of dots while it's open,
+- a tile for the next open step, such as **Add your docs** or **Copy the snippet**,
+- an **×** to hide the card.
+
+Click a step to open its page. With the sidebar collapsed, the card becomes a **Get started** icon with "Get started (N of 6)" as its tooltip.
+
+The **×** hides the card for the whole workspace, for good. You can still open Get started at `/welcome`. Agents never see the card.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    The whole path from the Deploy button to a first chat.
+  </Card>
+  <Card title="Install the widget" icon="code" href="/widget/install">
+    Snippet options, allowed websites and the JavaScript API.
+  </Card>
+</CardGroup>

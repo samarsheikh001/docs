@@ -1,0 +1,165 @@
+---
+title: "Models and AI settings"
+description: "Turn the AI on, pick where its replies come from, choose models per job and cap its monthly replies in Settings → AI."
+icon: "microchip"
+---
+
+Everything about which model the AI uses lives in **Settings → AI**, in the **AI replies** card. How the AI talks and when it hands over are on the [Instructions](/ai/instructions) page instead.
+
+Owners and admins can change these settings. Agents can see them.
+
+## Turn the AI on
+
+<Steps>
+  <Step title="Open Settings → AI">
+    The card's header shows how many replies the AI has sent this month against your cap, for example `120 / 2000 replies this month`.
+  </Step>
+  <Step title="Switch on Answer new chats with AI">
+    When it's on, the AI answers new website chats from your [Knowledge](/ai/knowledge), with citations, and hands off to your team when it can't help.
+  </Step>
+  <Step title="Pick a model provider and save">
+    Workers AI works with no setup. See [Providers](#providers) for the others.
+  </Step>
+</Steps>
+
+The **Get started** page's AI step does the same thing in one screen and turns the AI on when you finish it.
+
+### What "off" means
+
+- A new chat started while the AI is off goes straight to your team, and round robin assigns it if you use it (see [Assignment](/inbox/assignment)).
+- A chat the AI was already answering is handed to your team on the visitor's next message. The visitor sees the usual handoff notice, and the reason is "AI replies are turned off." [Reports](/inbox/reports) don't count this as the AI handing off.
+- The AI chats on the Agent page (editing a task, action or widget by chat) need the AI on. They say "Turn on the AI first" otherwise.
+
+## Providers
+
+The provider is workspace-wide: every AI job runs on it.
+
+<Tabs>
+  <Tab title="Workers AI (default)">
+    **Workers AI (built in, no key needed)** runs on Cloudflare's own models through the Worker's AI binding. Nothing to sign up for.
+
+    The default model is `@cf/mistralai/mistral-small-3.1-24b-instruct`. It was picked because it's fast, follows the rules and calls tools well in the project's own benchmark (`scripts/bench-models.ts`).
+
+    <Warning>
+    Use the Workers Paid plan for the AI. On the Free plan a Worker gets 10 ms of CPU per request, and reading a model's streamed answer takes far more, so AI replies and the Agent page's AI chats fail now and then with Cloudflare's error 1102. See [Costs and limits](/deploy/costs-and-limits).
+    </Warning>
+  </Tab>
+  <Tab title="OpenAI API key">
+    **OpenAI (API key)** uses your own OpenAI account.
+
+    1. Set the key as a Worker secret:
+
+       ```sh
+       npx wrangler secret put OPENAI_API_KEY
+       ```
+
+    2. In **Settings → AI**, pick **OpenAI (API key)** and save.
+
+    Until the secret is set, the card says so under the provider list, and any AI reply hands the chat to your team with the reason "AI unavailable: OPENAI_API_KEY isn't set."
+
+    The default model is `gpt-6.1-sol`. Requests are sent with `store: false`.
+
+    To route requests through [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) (for logs, caching or rate limits), set `OPENAI_BASE_URL` to your gateway's OpenAI endpoint as another Worker secret. See [Secrets](/reference/secrets).
+  </Tab>
+  <Tab title="Sign in with ChatGPT">
+    **ChatGPT sign-in (your plan)** spends the signed-in person's own ChatGPT plan instead of an API key.
+
+    <Warning>
+    Only for a desk you run for yourself. OpenAI's terms cover ChatGPT plan usage for your own use, not for a desk answering the public. For a desk that serves customers, use Workers AI or an OpenAI API key.
+    </Warning>
+
+    1. Pick **ChatGPT sign-in (your plan)** as the provider.
+    2. Press **Sign in with ChatGPT** and approve in OpenAI's page.
+    3. Finish the sign-in. How depends on where the desk runs:
+
+       - **Local (`npm run dev`)**: the sign-in returns to the desk on `127.0.0.1` by itself.
+       - **Deployed desk**: OpenAI's flow only returns to `127.0.0.1`, so the new tab ends on a page that doesn't load, at an address like `http://127.0.0.1:1455/auth/callback?code=…`. Copy that whole address, paste it into the box under the button and press **Finish**.
+
+    Finishing the sign-in switches the workspace's provider to ChatGPT. The card then shows **Connected as** with the account's email. **Reconnect** signs in again, and **Disconnect** revokes the token and forgets it.
+
+    The default model is `gpt-6-luna`, a small, fast model. Use **Suggested for ChatGPT** under [Model per job](#model-per-job) to keep it on the fast jobs.
+
+    The sign-in uses OpenAI's documented flow, and the desk refreshes the token on its own. If the token stops working, AI replies fail and chats go to your team, like any [AI error](/ai/handoff).
+  </Tab>
+</Tabs>
+
+<Note>
+Knowledge search always uses Workers AI, whatever the provider: `@cf/baai/bge-m3` embeds your docs and the visitor's question, and `@cf/baai/bge-reranker-base` reranks the results. If embedding fails, keyword search still finds answers. See [Knowledge](/ai/knowledge#how-search-works).
+</Note>
+
+## Choose a model
+
+**Model** is optional. Leave it empty to use the provider's default, shown as the placeholder. Type any model id the provider serves to use that one instead (up to 100 letters, digits and `. : / @ - _`).
+
+| Provider | Default model |
+|---|---|
+| Workers AI | `@cf/mistralai/mistral-small-3.1-24b-instruct` |
+| OpenAI | `gpt-6.1-sol` |
+| ChatGPT sign-in | `gpt-6-luna` |
+
+The [Instructions](/ai/instructions) page shows the model that replies to visitors, read-only, with this month's reply count.
+
+## Model per job
+
+Every AI call names its job. Open **Advanced: model per task** to give a job its own model from the same provider, for example a small fast model for nudges.
+
+| Field | Job | What it does |
+|---|---|---|
+| Replies to visitors | `answer` | The AI's replies in the widget. [Tests](/ai/tests) and task test chats use it too. |
+| Handoff briefs | `brief` | The short note your team gets when a chat is handed off. |
+| Follow-up questions | `followups` | Up to three questions shown under an answer from your knowledge. |
+| Nudges and openers | `nudge` | One line when a visitor gets stuck, and AI-written page openers. |
+| Issue drafts | `draft` | GitHub or Linear issues drafted from a conversation. |
+| Topic labels | `topics` | The topic each chat gets once it goes quiet. |
+| Eval grading | `judge` | Grades test replies against your criteria, and compares replays. |
+| Suggested questions | `suggestions` | Drafts the chat widget's suggested questions from your knowledge. |
+| Agent page editing | `editor` | Changes a widget, action or task when you ask in its AI chat. |
+
+How a job's model is picked:
+
+1. The model you typed for that job, if any.
+2. Else the job's own default for the provider. Only **Agent page editing** has one: `gpt-6-astra` on OpenAI and ChatGPT, because it writes whole files. Its field shows this as the placeholder.
+3. Else the workspace model above.
+
+If the provider rejects a job's model as unknown (a typo, or a model your account doesn't serve), that call is retried once on the workspace model, so a typo doesn't break nudges or briefs.
+
+<Tip>
+On ChatGPT sign-in, **Suggested for ChatGPT** fills in `gpt-6-luna` for the fast jobs (nudges, topics, briefs and follow-up questions) and leaves the rest on their defaults.
+</Tip>
+
+## Monthly reply cap
+
+**Monthly reply cap** limits how many replies the AI sends to visitors in a calendar month (UTC). The default is 2,000. Any whole number from 0 to 1,000,000 works; 0 stops the AI replying at all.
+
+Only the AI's replies in live chats count toward the cap. Briefs, topics, follow-up questions, tests and editing don't.
+
+When the cap is reached:
+
+- The AI never goes silent. Its next chat is handed to your team, and the visitor sees "Our assistant isn't available right now, but a teammate will reply right here."
+- The Agent page's AI chats stop until next month.
+- Topic labels and suggested-question drafts are skipped, nudges and AI-written page openers fall back to a fixed line, and issue drafts use a template.
+
+The counter resets at the start of each month.
+
+## Usage
+
+The card's header and the [Instructions](/ai/instructions) page show this month's replies against the cap. The desk also adds up input and output tokens per month for visitor replies, topic labels, suggested-question drafts, task test chats and Agent page edits.
+
+## Keep it in git
+
+Below the AI replies card, **Keep it in git** has the commands to pull the agent's files into a checkout of the repo, run the tests and push them back. See [Agent as code](/code/overview) and the [CLI](/code/cli).
+
+<CardGroup cols={2}>
+  <Card title="Add your knowledge" icon="book" href="/ai/knowledge">
+    Give the AI your docs, files and snippets to answer from.
+  </Card>
+  <Card title="Write the instructions" icon="pen-to-square" href="/ai/instructions">
+    Set its tone and when it hands over.
+  </Card>
+  <Card title="When the AI hands off" icon="headset" href="/ai/handoff">
+    Every reason a chat goes to your team.
+  </Card>
+  <Card title="Secrets" icon="key" href="/reference/secrets">
+    `OPENAI_API_KEY`, `OPENAI_BASE_URL` and action keys.
+  </Card>
+</CardGroup>

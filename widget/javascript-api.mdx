@@ -1,0 +1,202 @@
+---
+title: JavaScript API
+description: Every method on window.JunDesk, the snippet's attributes, and the events the loader fires on your page.
+icon: brackets-curly
+---
+
+The loader (`widget.js`) puts one object on your page, `window.JunDesk`. This page lists everything on it. The loader is MIT-licensed and readable in the repo at `public/widget.js`.
+
+## Waiting for the loader
+
+With the [recommended snippet](/widget/install) (`defer`, in `<head>`, before your scripts), `window.JunDesk` exists by the time your own deferred scripts run. If your code can run earlier, or the snippet loads some other way, wait for the `jundesk:ready` event:
+
+```js
+function withJunDesk(fn) {
+  if (window.JunDesk) fn(window.JunDesk);
+  else window.addEventListener("jundesk:ready", () => fn(window.JunDesk), { once: true });
+}
+
+withJunDesk((jun) => jun.identify(userToken));
+```
+
+For one-off calls, optional chaining is enough: `window.JunDesk?.open()`. Every method is safe to call at any time; none of them throws into your page.
+
+## Script attributes
+
+| Attribute | Value | What it does |
+|---|---|---|
+| `src` | `https://<your-desk>/widget.js` | The loader. Your desk's address is taken from it. |
+| `data-key` | `wk_…` | Required. Your widget key, from **Chat widget → Install**. |
+| `data-user-token` | A JWT | Identifies the signed-in customer on load. Same as calling `identify()`. See [Identify users](/widget/identify-users). |
+| `data-consent` | `required` | Stores nothing and stays off the visitor list until `consent(true)`. See [Consent and privacy](/widget/consent-and-privacy). |
+| `data-capture` | `off` | Turns off error, request, rage-click and stuck capture (and the nudges that depend on them). See [Debug context](/widget/debug-context). |
+| `data-color` | `#rrggbb` | Overrides the desk's brand colour on this site. |
+
+## Methods
+
+### `JunDesk.open(options?)`
+
+Opens the chat. With an `intent`, opens a purpose-built chat defined by a task ([Intents](/widget/intents)).
+
+<ParamField path="options.intent" type="string">
+  The intent's name: lowercase letters, digits, `_` and `-`, up to 40 characters. Anything else opens a plain chat.
+</ParamField>
+
+<ParamField path="options.onExit" type="function">
+  Called once when the visitor clicks the intent's exit button, after the chat closes. Required when the intent has an `exit`; without it, a plain chat opens and a console warning explains why.
+</ParamField>
+
+```js
+JunDesk.open();
+JunDesk.open({ intent: "cancel", onExit: () => { location.href = "/billing/cancel"; } });
+```
+
+### `JunDesk.close()`
+
+Closes the chat. With the bar or island launcher, folds it back to its closed state.
+
+### `JunDesk.toggle()`
+
+Opens the chat if it's closed, closes it if it's open.
+
+### `JunDesk.identify(token)`
+
+Tells the desk who the signed-in customer is.
+
+<ParamField path="token" type="string | null" required>
+  A short-lived HS256 JWT your backend signed with the desk's identity secret. Passing `null` forgets the identity in the chat; use `logout()` on sign-out instead.
+</ParamField>
+
+The token goes to the desk over the loader's live connection and from the chat frame. If it's rejected, the frame logs `[Jun Desk] identify failed: <reason>` in the console and the visitor stays anonymous.
+
+### `JunDesk.logout()`
+
+Call it when the customer signs out of your app. Forgets this browser's chat identity (the next person starts fresh), drops the customer's user secrets on the desk, and starts a new visitor session. Takes no arguments.
+
+### `JunDesk.consent(granted)`
+
+<ParamField path="granted" type="boolean" required>
+  `true` when the visitor accepts, `false` when they decline or withdraw.
+</ParamField>
+
+Only matters with `data-consent="required"`. `true` lets the widget store its session and visitor token and connect to the visitor list. `false` disconnects and deletes what the chat frame stored. Consent isn't remembered across page loads: call it on every page where your consent tool says yes.
+
+### `JunDesk.reportError(error)`
+
+Adds your app's own description of a failure to the debug timeline, where the AI and your agents see it. It can also trigger a "Want a hand?" nudge.
+
+<ParamField path="error.message" type="string" required>
+  What went wrong, in your app's words. Masked and cut to 300 characters.
+</ParamField>
+
+<ParamField path="error.code" type="string">
+  An optional code for your team, like `import.row_invalid`. Letters, digits, `_`, `.` and `-`, up to 60 characters. Agents and issue drafts see it; the AI answering visitors doesn't.
+</ParamField>
+
+```js
+window.JunDesk?.reportError({ message: "Row 42: missing email", code: "import.row_invalid" });
+```
+
+Does nothing with `data-capture="off"`, before consent, or without a non-empty `message`.
+
+### `JunDesk.registerAction(action)`
+
+Registers a page action the AI can run for the visitor: a [WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api) tool plus Jun's extras. Returns a function that removes it.
+
+```js
+const remove = JunDesk.registerAction({
+  name: "export_csv",
+  description: "Download this month's usage as a CSV file",
+  risk: "auto",
+  execute: () => { startExport(); return "usage-2026-10.csv (18 rows)"; },
+});
+// Later, e.g. when the component unmounts:
+remove();
+```
+
+<ParamField path="action.name" type="string" required>The action's name, up to 64 characters.</ParamField>
+<ParamField path="action.description" type="string" required>What it does, in one line.</ParamField>
+<ParamField path="action.execute" type="(input, signal) => any" required>Runs it in the visitor's browser.</ParamField>
+<ParamField path="action.inputSchema" type="object">JSON Schema for the inputs.</ParamField>
+<ParamField path="action.annotations" type="object">WebMCP hints (`readOnlyHint`, `consequentialHint`).</ParamField>
+<ParamField path="action.pages" type="string[]">Paths it's offered on (`"/pricing"`, `"/plans/*"`).</ParamField>
+<ParamField path="action.key" type="string | number">One instance per item on screen.</ParamField>
+<ParamField path="action.element" type="Element | RefObject">Highlighted while it runs.</ParamField>
+<ParamField path="action.context" type="object | function">Small facts for the AI.</ParamField>
+<ParamField path="action.available" type="() => boolean">Checked before it's offered and before it runs.</ParamField>
+<ParamField path="action.undo" type="(result) => any">Adds an Undo button.</ParamField>
+<ParamField path="action.risk" type='"auto" | "confirm" | "human"' default="confirm">How it runs.</ParamField>
+<ParamField path="action.status" type="string">The line shown while it runs.</ParamField>
+<ParamField path="action.widget" type="string">A desk widget to show the result as.</ParamField>
+
+Without `name`, `description` or an `execute` function, it logs `Jun Desk: registerAction needs name, description and execute` and isn't registered. Registering the same `name` (and `key`) again replaces the older one, with a console warning. [Page actions](/widget/page-actions) explains every field, risk levels and multi-step runs.
+
+### `JunDesk.onWidgetAction(handler)`
+
+Listens for card buttons meant for your page. A [widget](/ai/widgets) card's action with ChatKit's `handler: "client"` never goes to the desk: it comes here. Returns a function that removes the listener.
+
+<ParamField path="handler" type="(action) => void" required>
+  Called with the action:
+</ParamField>
+
+<ResponseField name="type" type="string">The action's `type`, as written in the widget.</ResponseField>
+<ResponseField name="payload" type="any">The action's `payload`, if it has one.</ResponseField>
+<ResponseField name="values" type="object">The values of the card's form fields when it was pressed.</ResponseField>
+<ResponseField name="widget" type="string">The widget's name.</ResponseField>
+
+```js
+const stop = JunDesk.onWidgetAction((action) => {
+  if (action.type === "open_invoice") router.push(`/invoices/${action.payload.id}`);
+});
+```
+
+## Events
+
+The loader fires these on `window`.
+
+| Event | Type | When | `detail` |
+|---|---|---|---|
+| `jundesk:ready` | `Event` | Once, right after `window.JunDesk` is defined | None |
+| `jundesk:widget-action` | `CustomEvent` | A card action with `handler: "client"` was pressed | The same object `onWidgetAction` handlers get |
+
+`onWidgetAction` is a thin wrapper around `jundesk:widget-action`, so either works:
+
+```js
+window.addEventListener("jundesk:widget-action", (e) => console.log(e.detail.type, e.detail.values));
+```
+
+<Note>
+  `jundesk:ready` fires during the loader's own run. A listener added after that misses it, which is why the pattern above checks `window.JunDesk` first.
+</Note>
+
+## `document.modelContext`
+
+If the browser has no native WebMCP, the loader defines `document.modelContext` before your scripts run, so you can register tools in plain WebMCP:
+
+| Member | What it does |
+|---|---|
+| `registerTool(tool, { signal })` | Registers a tool. Throws if the name is taken or `name`/`description` is missing. Aborting `signal` removes it. |
+| `getTools()` | A promise of the registered tools. |
+| `executeTool(tool, input)` | Runs a tool by object or name. |
+| `addEventListener("toolchange", …)` | Fires when tools are added or removed. |
+| `polyfill` | `true` on the loader's stand-in. |
+
+In browsers with native WebMCP, the loader leaves `document.modelContext` alone and reads from it. [Page actions](/widget/page-actions) has the details.
+
+## Keyboard
+
+- With the island launcher, **`/`** anywhere on the page opens the chat, unless the visitor is typing in a field.
+- **Esc** closes the open chat window, and folds the bar or island back.
+
+## Internal members
+
+`JunDesk._q` and `JunDesk._a` are the loader's own plumbing for queued and registered page actions. Don't rely on them. The `postMessage` messages between the loader and the chat frame (`jun:*`) aren't a public API either: they can change in any release.
+
+<CardGroup cols={2}>
+  <Card title="Install" icon="code" href="/widget/install">
+    The snippet and where it goes.
+  </Card>
+  <Card title="Widget options reference" icon="sliders" href="/reference/widget-options">
+    Every setting in one table.
+  </Card>
+</CardGroup>

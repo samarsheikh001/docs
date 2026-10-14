@@ -1,0 +1,92 @@
+---
+title: Visitors
+description: See who's on your site right now, where they are and what they're looking at, and start a chat with one of them.
+icon: users
+---
+
+The **Visitors** page (`/visitors`, or `g` then `v`) shows everyone who has a page with your widget open, live. It updates as people arrive, move between pages and leave. The sidebar shows the number of live visitors next to **Visitors**.
+
+A visitor appears here when the widget's loader is on the page and has connected to your desk. There's no separate tracking script and no third-party analytics: the loader keeps one small live connection per browser session.
+
+## What the page shows
+
+### On your site now
+
+The top card puts every visitor on a 3D globe, with these numbers beside it:
+
+| Number | Meaning |
+|---|---|
+| **On your site now** | Live visitors |
+| **Countries** | Countries they're in |
+| **Signed in** | Visitors the desk knows: identified by your site, or who have started a chat |
+| **In a chat** | Visitors with a conversation going |
+| **Median visit** | Typical time since their session started |
+
+**Top countries** lists up to five countries with the most visitors. Countries with someone on your site are tinted on the globe. Drag the globe to spin it (with a mouse; on touch screens a drag scrolls the page). Hovering a visitor in the list turns the globe to them.
+
+Locations come from Cloudflare's IP geolocation, rounded to about 10 km. The globe is drawn from one static map file served by your desk: no map tiles or map service are involved. It follows the desk's light or dark theme.
+
+### Pages and sources
+
+When there are visitors, two cards show:
+
+- **Pages they're on:** the pages people have open now, most first.
+- **Where they came from:** the referring site, or **Direct**.
+
+### Everyone on your site
+
+The list has one row per browser session, so a visitor with your site open in three tabs is one row. Verified customers come first, then the rest by how long they've been on the site. Each row shows:
+
+- **Who.** A signed-in customer's name and email with a ✓ when your site verified them; an anonymous visitor as `Visitor #1234`. **In a chat** marks someone with a conversation going.
+- **Where.** City and country, and their browser and OS.
+- **The page.** Its title and address, and where they came from (**Direct visit** or the referring site).
+- **Time.** How long since their session started, and how many pages they've viewed.
+
+Query values in addresses are masked by the loader, so they show as `…`.
+
+<Note>
+Signed-in customers show who they are only when your site sends an identity token. See [Identify signed-in users](/widget/identify-users).
+</Note>
+
+A visitor disappears from the list when they close the page. A browser that stops answering (a laptop that went to sleep, a dropped connection) is dropped after about 75 seconds.
+
+If your widget runs in [consent mode](/widget/consent-and-privacy), visitors appear only after they've given consent: before that, the loader opens no live connection.
+
+## Start a chat with a visitor
+
+You can open the conversation yourself, for example when someone has been on the pricing page for a while.
+
+<Steps>
+  <Step title="Press Start chat">
+    On the visitor's row, press **Start chat**. The button isn't shown for someone already in a chat.
+  </Step>
+  <Step title="Write your opening message">
+    A field opens with a suggestion like `Hi Dana! Can I help you with anything on Pricing?` (using their first name and the page title when known). Edit it (up to 1,000 characters) and press **Send**.
+  </Step>
+  <Step title="They see it on their page">
+    The visitor gets a card on the page they're on with your message, signed `<your name> from <workspace>`. The row now reads **Invite sent**. If they've left the site already, you see **This visitor has left the site.**
+  </Step>
+</Steps>
+
+If the visitor answers within 30 minutes, the conversation starts with your message as its first message. It's assigned to you, it's handled by your team rather than the AI, and round robin leaves it alone. If they ignore the card, nothing is created. If the widget is already open on their side, the card isn't shown.
+
+## Contact details
+
+The visitor list is about who is on your site right now. The details of a customer you're talking to live in the conversation's side panel, under **Customer**:
+
+- **Verified customers** (identified by your site): name, email, user ID and the attributes your site sends, like plan or company. They come from your app and can't be edited in the desk.
+- **Anonymous visitors**: press **Edit** to add a name or email when they tell you. The desk validates the email.
+- **Other conversations (N)** lists the same customer's other chats.
+
+See [The inbox](/inbox/overview#the-side-panel) for the rest of the side panel.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Identify signed-in users" icon="id-card" href="/widget/identify-users">
+    Show who your signed-in customers are.
+  </Card>
+  <Card title="Consent and privacy" icon="shield" href="/widget/consent-and-privacy">
+    What the loader stores and when.
+  </Card>
+</CardGroup>

@@ -1,0 +1,162 @@
+---
+title: "Local development"
+description: "Run Jun Desk on your machine, run the tests, and find your way around the code."
+icon: "laptop-code"
+---
+
+The whole desk runs locally: Vite serves the dashboard and the widget, and the Worker runs in the real Workers runtime with local D1, R2, Queues and Durable Objects. Only Workers AI calls go to Cloudflare.
+
+## Run the desk
+
+You need Node 22.18 or later and a Cloudflare account (for Workers AI).
+
+<Steps>
+  <Step title="Clone and install">
+    ```sh
+    git clone https://github.com/samarsheikh001/jun.git
+    cd jun
+    npm install
+    ```
+  </Step>
+  <Step title="Set a local setup token">
+    ```sh
+    cp .dev.vars.example .dev.vars
+    ```
+
+    Open `.dev.vars` and set `SETUP_TOKEN` to any passphrase of 16 or more characters:
+
+    ```sh .dev.vars
+    SETUP_TOKEN=a-long-local-passphrase
+    ```
+  </Step>
+  <Step title="Sign in to Cloudflare for Workers AI">
+    Locally, Workers AI still calls Cloudflare, so Wrangler needs a login:
+
+    ```sh
+    npx wrangler login
+    ```
+
+    If your login can see more than one Cloudflare account, put the one to use in a `.env` file at the repo root (it's gitignored):
+
+    ```sh .env
+    CLOUDFLARE_ACCOUNT_ID=your-account-id
+    ```
+  </Step>
+  <Step title="Start the dev server">
+    ```sh
+    npm run dev
+    ```
+
+    This applies the D1 migrations to the local database, then starts Vite with the Worker. Open [http://localhost:5173](http://localhost:5173) and create the owner account with your local `SETUP_TOKEN`.
+  </Step>
+</Steps>
+
+<Note>
+The dev server listens on `127.0.0.1`, because Sign in with ChatGPT must return to a `127.0.0.1` loopback address. Open the desk as `http://localhost:5173` all the same: browsers don't allow passkeys on a bare IP address. The ChatGPT sign-in returns through `127.0.0.1` and lands you back on `localhost`.
+</Note>
+
+Local state (database, files, Durable Objects) lives in `.wrangler/`. Delete `.wrangler/state` to start over with a fresh desk.
+
+### Sign in with ChatGPT locally
+
+Locally, ChatGPT sign-in returns to the dev server by itself: in **Settings → AI**, choose **ChatGPT sign-in (your plan)**, press **Sign in with ChatGPT**, approve, and you're back on the desk. Replies spend your own ChatGPT plan. It's for your own use only, per OpenAI's terms. See [Models](/ai/models).
+
+### Try the widget
+
+`public/demo.html` is a test page that pretends to be a customer site. Open it with your widget key (from **Chat widget → Install**):
+
+```text
+http://localhost:5173/demo.html?key=wk_…
+```
+
+- **Pay invoice** calls a request that fails with a server error, so you can see debug context reach the AI and the inbox.
+- Add `&consent=required` to try consent mode, then run `JunDesk.consent(true)` in the browser console.
+
+<Tip>
+In development the widget frame runs on React. The built frame runs on Preact. After widget changes, check them on a build too: `npm run build`, then `npm run preview`.
+</Tip>
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Applies local D1 migrations, then runs Vite with the Worker in the Workers runtime |
+| `npm test` | Unit tests (`node --test` over `packages/`, `worker/`, `shared/` and `web/lib/`) |
+| `npm run typecheck` | Type-checks the packages, the Worker and the dashboard |
+| `npm run build` | Builds the dashboard, the widget frame and the Worker into `dist/`, and minifies the loader |
+| `npm run preview` | Serves the built output |
+| `npm run deploy` | Builds, migrates and deploys to your Cloudflare account |
+| `npm run db:migrate` | Applies D1 migrations to the remote database only |
+| `npm run cf-typegen` | Regenerates `worker-configuration.d.ts` after you change `wrangler.jsonc` |
+| `npm run jun -- <command>` | Runs the `jun` CLI from the checkout. See [CLI](/code/cli) |
+
+## End-to-end tests
+
+The end-to-end suites drive a real dev server: they create the owner with a software passkey, open widget sockets, wait for real AI answers and run the `jun` CLI. They run on their own server and database, so your own local desk isn't wiped.
+
+<Steps>
+  <Step title="Log in to ChatGPT for the AI (once)">
+    The suites answer with real AI through your ChatGPT login:
+
+    ```sh
+    npm run jun -- login chatgpt
+    ```
+
+    To use Workers AI instead, set `E2E_AI_PROVIDER=workers-ai` when you run the tests.
+  </Step>
+  <Step title="Start a separate server">
+    ```sh
+    npx wrangler d1 migrations apply DB --local --persist-to .wrangler/e2e-state
+    JUN_STATE_DIR=.wrangler/e2e-state npx vite --port 5174
+    ```
+
+    `JUN_STATE_DIR` gives Vite its own local state folder; `--persist-to` points the migrations at the same one.
+  </Step>
+  <Step title="Run the suites">
+    In another terminal:
+
+    ```sh
+    BASE_URL=http://localhost:5174 npm run test:e2e
+    ```
+  </Step>
+</Steps>
+
+`npm run test:e2e` runs these suites in order: `e2e-auth`, `e2e-chat`, `e2e-ai`, `e2e-debug`, `e2e-agent`, `e2e-visitors`, `e2e-polish`, `e2e-inbox`, `e2e-metrics`, `e2e-issues`, `e2e-knowledge`, `e2e-assignment`, `e2e-topics`, `e2e-notifications`, `e2e-openers`, `e2e-actions` and `e2e-widgets`. You can run one on its own, for example `BASE_URL=http://localhost:5174 node scripts/e2e-chat.ts`.
+
+The tests read `SETUP_TOKEN` from the environment or from `.dev.vars`. `e2e-agent` and `e2e-visitors` call httpbin.org as a stand-in for your API. Crawl tests use a public URL, because the local Worker can't fetch its own dev server.
+
+`scripts/bench-models.ts` compares Workers AI chat models on five support questions; run it against the e2e server. `scripts/upgrade-check.ts` checks an upgrade from an older version; see [Upgrade](/deploy/upgrade).
+
+## Project layout
+
+| Path | What |
+|---|---|
+| `worker/` | The Worker: the Hono API under `/api` (`worker/routes/`), sign-in (`worker/auth/`), the `Conversation` and `WorkspaceHub` Durable Objects |
+| `worker/ai/` | The AI: knowledge crawl and indexing, search, the `KnowledgeIndex` Durable Object, model providers, the agent config parser, actions, one AI reply (`run.ts`), evals |
+| `web/` | The React dashboard, served as the Worker's static assets |
+| `web/widget/`, `widget.html` | The chat frame inside the widget's iframe |
+| `public/widget.js` | The embeddable loader (plain JavaScript, MIT). The build minifies it |
+| `public/demo.html` | The demo customer page |
+| `shared/` | Code shared by the Worker, dashboard and widget: protocol types, masking rules, business hours, widgets, metrics |
+| `migrations/` | D1 migrations (`NNNN_name.sql`) |
+| `packages/llm` | The model provider layer (web-standard APIs only, so it runs on Node and Workers) |
+| `packages/cli` | The `jun` CLI |
+| `packages/widget-react` | `useJunAction`, a React hook for page actions (MIT) |
+| `scripts/` | Deploy, end-to-end tests, upgrade check, model benchmark |
+| `docs/` | Research, the feature backlog, decisions and the build plan |
+| `wrangler.jsonc` | Bindings, Durable Objects, the queue and the cron |
+
+`packages/` TypeScript runs directly on Node with type stripping, with no build step: use only erasable syntax (no enums or namespaces) and `.ts` extensions on relative imports. [`CLAUDE.md`](https://github.com/samarsheikh001/jun/blob/main/CLAUDE.md) in the repo has the full conventions.
+
+## Contributing
+
+Run `npm test`, `npm run typecheck` and the end-to-end suites before you open a pull request. Outside contributions will need a contributor licence agreement (CLA); the agreement and its bot aren't set up yet, so open an issue before starting a large change. See [CONTRIBUTING.md](https://github.com/samarsheikh001/jun/blob/main/CONTRIBUTING.md).
+
+<CardGroup cols={2}>
+  <Card title="How it works" icon="diagram-project" href="/how-it-works">
+    The architecture behind the code.
+  </Card>
+  <Card title="Deploy to Cloudflare" icon="cloud" href="/deploy/cloudflare">
+    Ship your local checkout to your account.
+  </Card>
+</CardGroup>

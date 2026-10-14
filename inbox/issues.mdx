@@ -1,0 +1,165 @@
+---
+title: Issues in GitHub and Linear
+description: Connect GitHub or Linear, then turn a conversation into an issue with steps to reproduce, failing requests and browser details, drafted by the AI and filed by you.
+icon: bug
+---
+
+When a customer reports a bug, **Create issue** in the conversation's header drafts an issue for your engineers from the chat and what the customer's browser recorded. You check and edit the draft, pick GitHub or Linear, and file it. The conversation keeps a link to the issue.
+
+<Note>
+The AI never files issues on its own. It only writes a draft when a teammate presses **Create issue**, and nothing reaches GitHub or Linear until that teammate presses **Create in GitHub** or **Create in Linear**.
+</Note>
+
+## Connect a tracker
+
+Owners and admins connect trackers in **Settings → Issue trackers**. You can connect GitHub, Linear or both. Each card shows **Connected** or **Not set up**, where its credential comes from, and where issues go.
+
+Credentials can come from two places:
+
+- **A Worker secret**, `GITHUB_TOKEN` or `LINEAR_API_KEY`. It always wins over one pasted in Settings. The card then shows **✓ from the Worker secret `GITHUB_TOKEN`** and has no field to edit. See [Secrets](/reference/secrets).
+- **Pasted in Settings.** The token is kept in the workspace's Durable Object storage, not the database, and is never shown again: the card shows only its last four characters (**✓ saved (•••• a1b2)**). Paste a new one to replace it, or press **Remove**.
+
+<Tabs>
+  <Tab title="GitHub">
+    Issues go to one repository.
+
+    <Steps>
+      <Step title="Create a token">
+        On GitHub, create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new). Under **Repository access**, choose **Only select repositories** and pick the repository. Under **Permissions**, set **Issues** to **Read and write**.
+      </Step>
+      <Step title="Add the token">
+        Paste it in **Token** and press **Save**, or set it as the Worker secret `GITHUB_TOKEN` instead:
+
+        ```bash
+        npx wrangler secret put GITHUB_TOKEN
+        ```
+      </Step>
+      <Step title="Set the repository">
+        Enter it as `owner/name` (for example `acme/web-app`; a `github.com` URL works too) and press **Save**.
+      </Step>
+      <Step title="Test connection">
+        Press **Test connection**. On success it reads `Connected to acme/web-app (private).` If issues are turned off for the repository, it says so; turn them on in the repository's settings.
+      </Step>
+    </Steps>
+
+    <Warning>
+    The test can only check that the token can read the repository. GitHub checks the **Issues: Read and write** permission when an issue is created, so a token without it fails at that point.
+    </Warning>
+  </Tab>
+  <Tab title="Linear">
+    Issues go to one team.
+
+    <Steps>
+      <Step title="Create an API key">
+        In Linear, go to **Settings → Security & access → Personal API keys** and create a key that can create issues in the team you want.
+      </Step>
+      <Step title="Add the key">
+        Paste it in **API key** and press **Save**, or set it as the Worker secret `LINEAR_API_KEY` instead:
+
+        ```bash
+        npx wrangler secret put LINEAR_API_KEY
+        ```
+
+        Saving tests the key straight away and loads your teams.
+      </Step>
+      <Step title="Pick the team">
+        Choose the team in **Team**. If the list is empty, press **Test connection**; it reads `Connected as <you>. N teams available.` Choose **No team (Linear off)** to stop filing to Linear.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<Tip>
+To file to GitHub Enterprise Server or another Linear endpoint, set the Worker variable `GITHUB_API_URL` or `LINEAR_API_URL`. The card then shows the address it uses under **API**.
+</Tip>
+
+Agents see the same cards without the fields, with the note that an owner or admin can change them.
+
+## Create an issue
+
+Any teammate can file an issue once a tracker is connected.
+
+<Steps>
+  <Step title="Press Create issue">
+    Open the conversation and press **Create issue** in the header (or choose **Create issue** in the command palette). Until a tracker is connected, the button is disabled and a **Set up** link next to it opens **Settings → Issue trackers**.
+  </Step>
+  <Step title="Wait for the draft">
+    The dialog shows **Drafting from the conversation and the visitor's browser…** for a few seconds. With both trackers connected, a GitHub / Linear switch at the top picks where it goes (the desk remembers your last choice in this browser). The line under it shows the repository or team.
+  </Step>
+  <Step title="Check and edit">
+    Edit the **Title** and the **Description** (Markdown). For GitHub, **Labels** is a comma-separated list, `bug` by default; GitHub applies only labels that already exist in the repository. Tick the screenshots to include, if the conversation has any.
+  </Step>
+  <Step title="File it">
+    Press **Create in GitHub** or **Create in Linear**. The issue is filed exactly as written.
+  </Step>
+</Steps>
+
+After filing:
+
+- A toast shows **Created acme/web-app#123** (or the Linear key, like `ENG-42`) as a link.
+- The conversation gets an internal note, `Issue created: acme/web-app#123 — <title>`, which teammates with the conversation open see live.
+- An **Issues** bar under the header links every issue filed from the conversation.
+
+Pressing **Create** twice, or retrying after a network error, never files two issues: each dialog files at most once.
+
+## What goes in the draft
+
+The draft has the same sections for GitHub and Linear. The AI writes only the story; everything factual comes straight from what the widget recorded, so the model can't invent a request or an error.
+
+| Section | Written by | Content |
+|---|---|---|
+| Title | The AI | What the customer couldn't do and the symptom, up to about 80 characters |
+| **Summary** | The AI | 2 to 4 sentences: what they tried, what went wrong, what the browser recorded |
+| **Steps to reproduce** | The AI | Up to 8 steps from the pages visited and the requests the browser made, marked as inferred from the session, not a recording |
+| **Expected vs actual** | The AI | One or two sentences each, quoting the failing request or error when there is one |
+| **Failing requests** | The desk | A table of failed requests: time, method and URL, status, duration |
+| **Errors** | The desk | The latest 10 JavaScript errors (with the top stack frame) and errors your app reported |
+| **Environment** | The desk | Page, browser, OS, screen, locale, when it was recorded, the user agent; for a verified customer, their company and plan if your site sends them |
+| Footer | The desk | A link back to the conversation in your desk |
+
+The AI is told to use only these facts, to write `Unknown` for anything it doesn't know, and not to name the customer. It reads the conversation (customer, AI and team messages, plus internal notes and the AI's handoff brief, marked as team notes) and the browser's recorded events. The customer's name and email are never sent to the model or put in the issue.
+
+If the AI can't write a draft, you get a template built from the same facts, with a note saying why:
+
+- **AI is off, so this is a template from the conversation and browser details.**
+- **The monthly AI cap is reached, so this is a template.**
+- **The AI couldn't write a draft just now (it failed or took too long), so this is a template.** The draft waits at most 15 seconds.
+- **The AI's draft wasn't usable, so this is a template.**
+
+The template's title is the customer's first message, its steps come from the page trail and the first failure, and **Actual** quotes your app's error, the failing request, the JavaScript error or the unresponsive button, in that order. The **Create issue** button always works, AI or not.
+
+The draft uses the `draft` AI job, so you can give it its own model. Its tokens count toward your usage, but a draft isn't a reply, so it doesn't use up the monthly reply cap. See [Models](/ai/models).
+
+## Masking
+
+Issue text goes through the same masking as the debug context:
+
+- The browser details were masked in the visitor's browser and again on the server when they were stored (emails, tokens, query values; request bodies are never captured).
+- The conversation is masked before the model sees it.
+- The model's answer is masked again, in case it echoed something.
+- When you press **Create**, the title and description you edited are masked once more on the server before they're sent, so an email or token pasted into the description doesn't reach the tracker.
+
+See [Debug context](/widget/debug-context) for what is captured and what is masked.
+
+## Screenshots
+
+If images were attached to the conversation (by the customer, a teammate, or in a note), the dialog lists them under **Screenshots** with checkboxes. You can include up to 10. Where they end up depends on the tracker:
+
+| Tracker | How images are added | Ticked by default |
+|---|---|---|
+| Linear | Uploaded to Linear with the issue: only your Linear workspace can see them. | The latest 10 |
+| GitHub, private repository | Added as links to your desk's file URLs. Anyone with a link can open that image. | The latest 10 |
+| GitHub, public repository (or the check failed) | Added as links, with a warning that anyone who can see the repository can open them. | None |
+
+GitHub has no API for uploading images to an issue, which is why images there are links to your desk. The links are long random addresses, but they aren't behind a sign-in. If an image fails to upload to Linear, the issue is still filed and the toast says how many images couldn't be attached.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Debug context" icon="magnifying-glass" href="/widget/debug-context">
+    What the widget records in the customer's browser.
+  </Card>
+  <Card title="Secrets" icon="key" href="/reference/secrets">
+    Set `GITHUB_TOKEN` and `LINEAR_API_KEY` as Worker secrets.
+  </Card>
+</CardGroup>
