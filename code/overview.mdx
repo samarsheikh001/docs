@@ -14,8 +14,8 @@ A config is a folder with these files. Only these paths count; anything else in 
 
 ```text
 support-agent/
-├── AGENTS.md                      # instructions: tone, rules, guardrails
-├── README.md                      # optional, for your team
+├── instructions.md                # instructions: tone, rules, guardrails
+├── desk.yaml                      # the desk's settings: AI switches, chat widget, hours, assignment
 ├── website-actions.yaml           # optional: how each action on your website runs
 ├── tasks/
 │   └── refund.md                  # a task (procedure)
@@ -27,14 +27,17 @@ support-agent/
     └── basics.yaml                # tests
 ```
 
+`jun pull` also writes `AGENTS.md`, `CLAUDE.md` and `README.md`: a generated guide to these files for coding AIs and people, never pushed (see [Edit with your own AI](#edit-with-your-own-ai)).
+
 | File | Called on the desk | What it holds |
 |---|---|---|
-| `AGENTS.md` | **Instructions** | How the AI talks to customers, plus `maxReplies` and `handoffTopics` in the frontmatter |
+| `instructions.md` | **Instructions** | How the AI talks to customers, plus `maxReplies` and `handoffTopics` in the frontmatter |
 | `tasks/<name>.md` | **Tasks** | A procedure in plain language: when it applies and the steps. Can open a chat for a purpose with `intent:` |
 | `actions/<name>.yaml` | **Actions** | An HTTP request the AI may make: address, inputs, headers, which fields it reads |
 | `widgets/<name>.widget` | **Widgets** | A card in OpenAI's ChatKit widget format, filled with an action's result |
 | `tests/<name>.yaml` | **Tests** | Customer messages and what a good reply does |
 | `website-actions.yaml` | **Actions → On your website** | Whether each action on your website runs on its own, after the customer confirms, or by a person |
+| `desk.yaml` | **Chat widget**, **Settings → AI**, **Business hours**, **Assignment** | The desk's settings that are plain choices. A key you leave out is left as it is. See [desk.yaml](/code/files#desk-settings) |
 
 Every key of every file is in the [file format reference](/code/files). For what each part does from the desk's side, see [Instructions](/ai/instructions), [Tasks](/ai/tasks), [Actions](/ai/actions), [Widgets](/ai/widgets) and [Tests](/ai/tests).
 
@@ -50,7 +53,10 @@ Every save is a new version: a save on the Agent pages, and every `jun push`. Pr
 
 - the version number, and **Live** on the one the AI uses now,
 - the note it was saved with (`jun push -m "…"`, or the note in the save bar),
-- **Pushed from git** or **Saved**, who did it and when.
+- **Pushed from git** or **Saved**, who did it and when,
+- the files it changed.
+
+Saving on the Chat widget page, **Settings → AI**, **Business hours** or **Assignment** saves a version too, with the change in `desk.yaml` (notes like "Chat widget settings").
 
 **Restore** on an older version copies it into your draft. Nothing changes for customers until you save that draft, which makes a new version. Nothing is ever overwritten, so restoring can always be undone the same way.
 
@@ -87,7 +93,7 @@ Once the folder is in git, a change looks like any other code change.
 
 <Steps>
   <Step title="Edit">
-    Change files in a branch. For example, add a rule to `AGENTS.md` or a step to `tasks/refund.md`.
+    Change files in a branch. For example, add a rule to `instructions.md` or a step to `tasks/refund.md`.
   </Step>
   <Step title="Test">
     ```sh
@@ -120,14 +126,42 @@ Run `jun pull`, look at the diff with `git diff`, keep what you want, commit, an
   A push replaces the whole config with what's in the folder. A file you deleted locally is deleted on the desk. `--force` skips the check above and discards the desk edits; they stay in **History** if you need them back.
 </Warning>
 
-Going the other way, a desk save always starts from the latest version. If someone had the Agent page open with unsaved edits while you pushed, their save bar says the config changed and offers **Load theirs (drops your edits)** or **Keep mine**. Whatever they save shows up in your next `jun pull`.
+One exception: changes made only on the settings pages (in `desk.yaml`) don't stop a push. If your folder didn't change `desk.yaml` since your pull, the push keeps the desk's `desk.yaml` and goes through; if it did, it stops as above.
+
+Going the other way, a desk save starts from the version the page loaded. If someone saved in between and the two saves changed different files (for example, you edited the instructions while someone changed the widget's colour), your files are saved on top of theirs. If both changed the same file, the save bar says the config changed and offers **Load theirs (drops your edits)** or **Keep mine**. Whatever they save shows up in your next `jun pull`.
+
+## Edit with your own AI
+
+A pulled folder is ready for a coding AI such as Claude Code, Codex or Cursor. Besides the config, `jun pull` writes `AGENTS.md`: a guide that tells the coding AI what the folder is, every file and key, the rules (never put a key in a file), and the loop of eval, fix and push. Claude Code reads `CLAUDE.md`, which imports the same guide. The support AI's own instructions are in `instructions.md`, so the coding AI never mistakes them for its own.
+
+<Steps>
+  <Step title="Create a token and pull">
+    Create an API token in **Settings → Developer → API tokens**, then from your checkout:
+    ```sh
+    npm run jun -- login https://your-desk.example.com
+    npm run jun -- pull support-agent
+    ```
+  </Step>
+  <Step title="Open the folder in your coding AI">
+    Open `support-agent/` in Claude Code, Codex or Cursor and ask for the change in your words: "add a task for refund requests over $100 that hands off to billing", "add an action that looks up the customer's plan".
+  </Step>
+  <Step title="Test">
+    Have it run `npm run jun -- eval support-agent --mock-tools` and fix what fails. Add a test case for the new behaviour.
+  </Step>
+  <Step title="Push">
+    Review the diff, then `npm run jun -- push support-agent -m "…"`. A push goes live at once.
+  </Step>
+</Steps>
+
+The guide files are rewritten on every pull, so don't edit them. Put rules for the support AI in `instructions.md` or a task.
 
 ## What stays out of the files
 
 Some things are deliberately not in the config, so they can't end up in git:
 
 - **Keys for actions.** An action's file names a key as `{secrets.NAME}`; the value is a Worker secret `JUN_SECRET_NAME` or a key pasted on the action's page. See [Secrets and settings](/reference/secrets).
-- **The model and provider.** Those are set in **Settings → AI**. See [Models](/ai/models).
+- **The provider and its credentials.** Choose the provider, paste keys and sign in to ChatGPT in **Settings → AI**. Whether the AI is on, the model, the per-job models and the monthly cap are in `desk.yaml`. See [Models](/ai/models).
+- **Logos, people and notifications.** Logos are uploaded on the Chat widget page; team members, invites and each person's notification settings stay on the desk.
 - **Knowledge.** Your docs, files and snippets live on the **Knowledge** page. See [Knowledge](/ai/knowledge).
 
 <CardGroup cols={2}>

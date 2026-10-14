@@ -11,8 +11,8 @@ The agent-config format is MIT-licensed.
 ## Folder layout
 
 ```text
-AGENTS.md                    required
-README.md                    optional, ignored by the AI
+instructions.md              required
+desk.yaml                    optional: the desk's settings
 website-actions.yaml         optional
 tasks/<name>.md              tasks
 actions/<name>.yaml          actions (.yml works too)
@@ -30,17 +30,19 @@ tests/<name>.yaml            tests (.yml works too)
 | Actions | at most 20 |
 | Widgets | at most 20 |
 
-Any other path is an error: `Unknown file. Allowed: AGENTS.md, README.md, website-actions.yaml, tasks/<name>.md, actions/<name>.yaml, tests/<name>.yaml, widgets/<name>.widget (lowercase names).`
+Any other path is an error: `Unknown file. Allowed: instructions.md, desk.yaml, website-actions.yaml, tasks/<name>.md, actions/<name>.yaml, tests/<name>.yaml, widgets/<name>.widget (lowercase names).`
 
 <Note>
-  Configs from before October 2026 used `skills/<name>/SKILL.md`, `tools/` and `evals/`. The desk still accepts those paths from `jun push` and stores them in the layout above; `jun pull` moves your local files.
+  Configs from before October 2026 used `skills/<name>/SKILL.md`, `tools/` and `evals/`, and kept the instructions in `AGENTS.md`. The desk still accepts those paths from `jun push` and stores them in the layout above; `jun pull` moves your local files. An `AGENTS.md` counts as the instructions only when there's no `instructions.md`.
 </Note>
 
-## AGENTS.md
+`jun pull` and `jun init` also write three generated files that aren't config: `AGENTS.md` (a guide to this format for coding AIs), `CLAUDE.md` (`@AGENTS.md`, for Claude Code) and `README.md`. `jun push` never sends them and the desk doesn't store them. See [Edit with your own AI](/code/overview#edit-with-your-own-ai).
+
+## instructions.md
 
 The AI's instructions. Optional YAML frontmatter sets guardrails; the Markdown body is how the AI talks to customers and what it must and mustn't do. This is the starter:
 
-```markdown AGENTS.md
+```markdown instructions.md
 ---
 # Guardrails. Remove a line to use the default.
 maxReplies: 8            # AI replies per conversation before a person takes over
@@ -407,9 +409,164 @@ A website-action case:
 
 A message that asks for a person ("can I talk to a real person") hands off straight away, as on the live desk, without calling the model.
 
-## README.md
+## Desk settings
 
-Free text for your team, kept with the config. The AI never reads it.
+`desk.yaml` holds the desk's settings that are plain choices: the AI's switches, the chat widget, business hours and assignment. With it, a whole desk can be set up from git, or copied to another desk with `jun pull` and `jun push`.
+
+```yaml desk.yaml
+ai:
+  enabled: true
+  model: default            # or a model id; default = the provider's default
+  models: { editor: gpt-6-astra }   # optional: a model per job
+  monthlyReplyCap: 2000     # 0 = no limit
+chat:                       # the chat widget (the Chat widget page)
+  name: Acme                # "" = your workspace's name
+  color: "#5b4cff"
+  launcher: island          # island | bar | card | button
+  island: { surface: dark, glow: true }
+  button: logo              # logo | text
+  theme: auto               # auto | light | dark
+  rounding: 16              # 0 to 24
+  position: right
+  sound: true
+  greeting: Hi! How can we help?
+  replyTime: Usually replies in a few minutes
+  placeholder: Ask anything…
+  suggestedQuestions: [How much does it cost?, How do I invite my team?]
+  askForRating: true        # "How did we do?" when a chat is resolved
+  allowedWebsites: [acme.com, "*.acme.com"]   # [] = any website
+  offerHelpOnErrors: true
+  openers:                  # after: seconds on the page; no message = the AI writes it
+    - page: /pricing
+      after: 20
+      hint: help choosing a plan
+hours:
+  enabled: true
+  timeZone: Europe/London
+  days: { monday: "09:00-17:30", friday: "09:00-16:00" }   # days not listed are closed
+  awayMessage: Thanks! We're away and will reply here {when}.
+inbox:
+  assignment: { mode: round_robin, capacity: 5 }   # manual | round_robin; 0 = no limit
+```
+
+How it works:
+
+- **A key you leave out is left as it is.** So is a whole section, and so is everything when the folder has no `desk.yaml`. A partial file only changes what it names.
+- **Saving it changes the desk.** When a version is saved (`jun push`, the Agent page, or **Code** on the Chat widget page), the keys whose value changed since the previous version go live. Visitors see widget changes within a minute.
+- **The settings pages write it too.** Saving on the Chat widget page, **Settings → AI**, **Business hours** or **Assignment** saves a new version with the changed keys edited in place: your comments and key order stay. A key the file doesn't have is added when its setting changes.
+- **Every desk has one.** Until it's saved, the desk writes it from the current settings when you open the Agent page's **Code** view or run `jun pull`.
+
+Keys are checked like every other file: an unknown key or a value out of range is an error that names the key, like `chat.launcher: Launcher must be button, card, bar or island.`
+
+### `ai`
+
+<ParamField path="ai.enabled" type="boolean">
+  The AI answers new chats. `false`: every new chat goes to your team.
+</ParamField>
+<ParamField path="ai.model" type="string">
+  The model every AI job uses, from your provider. `default` (or empty) uses the provider's default. Letters, digits and `. : / @ - _`, up to 100 characters.
+</ParamField>
+<ParamField path="ai.models" type="map">
+  A model per job, over `ai.model`: `answer`, `brief`, `nudge`, `draft`, `topics`, `judge`, `suggestions`, `followups`, `editor`. The map is replaced as a whole; `{}` clears every override. See [Models](/ai/models).
+</ParamField>
+<ParamField path="ai.monthlyReplyCap" type="integer">
+  AI replies a month. From 0 (no limit) to 1,000,000.
+</ParamField>
+
+### `chat`
+
+The chat widget, as on the [Appearance](/widget/appearance) page and the **Install** tab.
+
+<ParamField path="chat.name" type="string">
+  The name in the chat header. Up to 80 characters; `""` uses your workspace's name.
+</ParamField>
+<ParamField path="chat.color" type="string">
+  The brand colour, a six-digit hex colour like `"#5b4cff"` (quote it: `#` starts a comment in YAML).
+</ParamField>
+<ParamField path="chat.launcher" type="island | bar | card | button">
+  The closed state. See [Launchers](/widget/launchers).
+</ParamField>
+<ParamField path="chat.island.surface" type="dark | page">
+  The island's colour: near-black on every page, or following the theme.
+</ParamField>
+<ParamField path="chat.island.glow" type="boolean">
+  The island's turning multi-colour border.
+</ParamField>
+<ParamField path="chat.button" type="logo | text">
+  What the round button shows: your logo (a chat bubble until you upload one) or "Chat with us".
+</ParamField>
+<ParamField path="chat.theme" type="auto | light | dark">
+  `auto` follows each visitor's system setting.
+</ParamField>
+<ParamField path="chat.rounding" type="integer">
+  Corner rounding, from 0 to 24.
+</ParamField>
+<ParamField path="chat.position" type="left | right">
+  The side of the page.
+</ParamField>
+<ParamField path="chat.sound" type="boolean">
+  A soft chime for new replies.
+</ParamField>
+<ParamField path="chat.greeting" type="string">
+  Up to 200 characters. Empty uses the default words.
+</ParamField>
+<ParamField path="chat.replyTime" type="string">
+  Under the name in the header. Up to 80 characters.
+</ParamField>
+<ParamField path="chat.placeholder" type="string">
+  The message box's placeholder. Up to 60 characters.
+</ParamField>
+<ParamField path="chat.suggestedQuestions" type="string[]">
+  Up to 4, each up to 80 characters.
+</ParamField>
+<ParamField path="chat.askForRating" type="boolean">
+  Ask "How did we do?" when a conversation is resolved.
+</ParamField>
+<ParamField path="chat.allowedWebsites" type="string[]">
+  The websites that may show the chat, like `acme.com` or `"*.acme.com"`. `[]` means any website. See [Install](/widget/install).
+</ParamField>
+<ParamField path="chat.offerHelpOnErrors" type="boolean">
+  Offer help when something breaks on the page. Page openers show only while this is on.
+</ParamField>
+<ParamField path="chat.openers" type="list">
+  Page openers, at most 10. Each has `page` (a path pattern: `/pricing`, `/docs/*`, `*`), `after` (seconds on the page, 5 to 600), and either `message` (fixed text, up to 140 characters) or no message, so the AI writes the line, with an optional `hint` of what to offer (up to 200 characters). The list is replaced as a whole.
+</ParamField>
+
+### `hours`
+
+<ParamField path="hours.enabled" type="boolean">
+  Use business hours. `false`: the desk counts as always open.
+</ParamField>
+<ParamField path="hours.timeZone" type="string">
+  A time zone name, like `Europe/London`, `America/New_York` or `UTC`.
+</ParamField>
+<ParamField path="hours.days" type="map">
+  Open days, `monday` to `sunday`, each `"HH:MM-HH:MM"` in 24-hour time (`"24:00"` for midnight). Days not listed are closed. The map is replaced as a whole.
+</ParamField>
+<ParamField path="hours.awayMessage" type="string">
+  Sent once per closed period to visitors writing to your team. `{when}` becomes the next opening. Up to 500 characters.
+</ParamField>
+
+### `inbox`
+
+<ParamField path="inbox.assignment.mode" type="manual | round_robin">
+  Who gets a chat that needs a person. See [Assignment](/inbox/assignment).
+</ParamField>
+<ParamField path="inbox.assignment.capacity" type="integer">
+  With round robin, the most open chats a teammate is given. From 0 (no limit) to 100.
+</ParamField>
+
+### Not in the file
+
+- **Logos.** Images are uploaded on the Chat widget page.
+- **Keys and secrets**: the identity secret, issue-tracker tokens, action keys, the OpenAI key and the ChatGPT sign-in. They never go in a file that may end up in git.
+- **The AI provider.** It depends on those credentials; choose it in **Settings → AI**.
+- **People**: team members, invites and passkeys, and each person's notification settings.
+- **Knowledge sources** and the **install snippet**.
+
+## README.md, AGENTS.md and CLAUDE.md
+
+Generated by `jun pull` and `jun init`, and rewritten on every pull: a guide to the files for people (`README.md`) and coding AIs (`AGENTS.md`, and `CLAUDE.md`, which imports it). They aren't config: `jun push` skips them, and the desk drops them if an older CLI sends them. Versions saved with a `README.md` before October 2026 read without it.
 
 <CardGroup cols={2}>
   <Card title="jun CLI" icon="terminal" href="/code/cli">

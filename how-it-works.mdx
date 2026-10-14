@@ -58,13 +58,13 @@ All of these are created by the Deploy button or by `wrangler deploy`. See [Depl
 
     - the AI is turned on,
     - the visitor didn't ask for a person,
-    - the AI hasn't reached `maxReplies` in this conversation (8 by default, set in `AGENTS.md`),
+    - the AI hasn't reached `maxReplies` in this conversation (8 by default, set in `instructions.md`),
     - the workspace hasn't reached its monthly reply cap (2,000 by default, in **Settings → AI**).
 
     If any check fails, it hands off instead (next section).
   </Step>
   <Step title="Search, then answer">
-    The turn searches your knowledge with hybrid search: vectors in the `KnowledgeIndex` object and keywords in D1's full-text index, merged and reranked. It then runs the model with your `AGENTS.md`, tasks, actions, the masked debug context, the verified customer (if any) and the page's actions. The model may call up to 5 tools in a turn.
+    The turn searches your knowledge with hybrid search: vectors in the `KnowledgeIndex` object and keywords in D1's full-text index, merged and reranked. It then runs the model with your `instructions.md`, tasks, actions, the masked debug context, the verified customer (if any) and the page's actions. The model may call up to 5 tools in a turn.
 
     The reply streams to the visitor word by word, with citations already resolved to source chips. The finished reply is saved with the id `ai:<seq>`, so a retried alarm can never answer the same message twice.
   </Step>

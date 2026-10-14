@@ -6,7 +6,7 @@ icon: "pen-to-square"
 
 The **Instructions** page is the first page under **Agent** in the sidebar (`/agent`). It's where you brief the AI the way you'd brief a new teammate: its tone, and anything it should always or never do. Steps for one specific job, like refunds, go in [Tasks](/ai/tasks) instead.
 
-Behind the page is one file, `AGENTS.md`. The text you write is its body; the handover settings are its frontmatter. See [Agent files](/code/files) for the file format.
+Behind the page is one file, `instructions.md`. The text you write is its body; the handover settings are its frontmatter. See [Agent files](/code/files) for the file format.
 
 ## The page
 
@@ -20,7 +20,7 @@ Owners and admins can edit. Agents see the page read-only.
 
 Write short, plain rules. A new desk starts with these:
 
-```markdown AGENTS.md
+```markdown instructions.md
 ---
 # Guardrails. Remove a line to use the default.
 maxReplies: 8            # AI replies per conversation before a person takes over
@@ -106,7 +106,7 @@ Before the first save, History says "Nothing saved yet. The AI uses the built-in
 
 The **Form / Code** switch at the top of the page shows the same settings as files, exactly as `jun pull` and `jun push` see them. Your choice is remembered in this browser.
 
-On Instructions, Code shows `AGENTS.md`, plus any other file that isn't a task, action, widget or test (such as a `README.md`) through a file picker. Edits in either view go into the same draft.
+On Instructions, Code shows `instructions.md`, plus any other file that isn't a task, action, widget or test (such as `desk.yaml`) through a file picker. Edits in either view go into the same draft.
 
 If a file can't be read by the form (broken YAML in the frontmatter, say), the form says so and sends you to Code to fix it. Forms change single fields and keep your comments, key order and any keys they don't show.
 
@@ -125,6 +125,6 @@ Instructions don't have an AI chat. Tasks, actions and widgets each have one on 
     The notice, the brief, and handing back.
   </Card>
   <Card title="Agent files" icon="file-code" href="/code/files">
-    The `AGENTS.md` format and the other files.
+    The `instructions.md` format and the other files.
   </Card>
 </CardGroup>

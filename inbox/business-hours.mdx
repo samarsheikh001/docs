@@ -60,6 +60,8 @@ It's sent at most once per closed period in a conversation. If the visitor write
 Notes don't count as replies here. A teammate leaving a note doesn't stop the away message; a teammate answering the visitor does.
 </Note>
 
+Your hours are also in `desk.yaml` under `hours`, so you can keep them in git; saving here updates the file. See [desk.yaml](/code/files#desk-settings).
+
 ## Effect on the AI
 
 Business hours don't switch the AI off. While a conversation is with the AI, it answers as usual at any hour and no away message is sent. If the AI hands off outside your hours, the visitor gets the handoff notice and then your away message, so they know when a person will reply.

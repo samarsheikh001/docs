@@ -63,6 +63,8 @@ If nobody is online, or everyone is at the limit, the conversation stays in **Un
 Assigning someone by hand always wins. Round robin only touches unassigned conversations, so it never moves a conversation someone already has.
 </Note>
 
+The choice is also in `desk.yaml` as `inbox.assignment` (`mode`, `capacity`); saving here updates the file. See [desk.yaml](/code/files#desk-settings).
+
 ## Presence
 
 A teammate counts as **online** while they have the desk open in a browser tab. The desk keeps a live connection per tab and pings it every 30 seconds; a tab that hasn't answered for 75 seconds counts as gone, so a laptop that went to sleep or a closed tab doesn't keep someone online.

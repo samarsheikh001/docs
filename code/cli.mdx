@@ -81,9 +81,8 @@ npm run jun -- init support-agent
 ```
 
 ```text
-Created support-agent/ with 9 files:
-  README.md
-  AGENTS.md
+Created support-agent/ with 11 files:
+  instructions.md
   tasks/refund.md
   tasks/cancellation.md
   actions/apply_save_offer.yaml.example
@@ -91,6 +90,9 @@ Created support-agent/ with 9 files:
   widgets/order.widget.example
   tests/basics.yaml
   tests/cancellation.yaml
+  AGENTS.md  (guide, rewritten by jun pull)
+  CLAUDE.md  (guide, rewritten by jun pull)
+  README.md  (guide, rewritten by jun pull)
 ```
 
 The `.example` files aren't part of the config until you rename them (drop `.example`); `push` and `eval` skip them. `init` refuses a folder that isn't empty. It doesn't contact the desk, so it works before `login`.
@@ -100,14 +102,19 @@ The `.example` files aren't part of the config until you rename them (drop `.exa
 Downloads the desk's live config into the folder (default `support-agent`).
 
 ```text
-Pulled 7 files (version 12) from Acme into support-agent/.
+Pulled 7 config files (version 12) from Acme into support-agent/.
 ```
 
 - Writes every config file, creating folders as needed.
 - Deletes config files in the folder that no longer exist on the desk. Files that aren't config files (your own notes, `.example` files) are left alone.
 - Writes the version to `.jun-version`, which `push` uses to detect desk edits made since. Commit it.
+- Writes the guide files `AGENTS.md`, `CLAUDE.md` and `README.md` (see [Edit with your own AI](/code/overview#edit-with-your-own-ai)). They're generated, rewritten on every pull, and never pushed. A file of one of those names that you wrote yourself is kept, with a note.
 
-If nothing was ever saved, you get the built-in default `AGENTS.md` and the message says `built-in default config`.
+If nothing was ever saved, you get the built-in default `instructions.md` and the message says `built-in default config`.
+
+A folder from before October 2026 kept the instructions in `AGENTS.md`. `pull` moves them to `instructions.md` and puts the guide in `AGENTS.md`.
+
+You also get `desk.yaml`, the desk's settings. If no version has it yet, the desk writes it from the current settings. See [desk.yaml](/code/files#desk-settings).
 
 ### `jun push [dir]`
 
@@ -124,12 +131,12 @@ npm run jun -- push support-agent -m "Refund window is now 30 days"
   Push even if someone saved on the Agent page since your last pull. Their edits are discarded from the live config (they remain in **History**).
 </ParamField>
 
-What it sends is every config file in the folder. A file you deleted locally is deleted on the desk. Other files are listed as `(skipped <path>: not a config file)` and not sent. `AGENTS.md` must exist.
+What it sends is every config file in the folder. A file you deleted locally is deleted on the desk. A `desk.yaml` changes the desk's settings: the keys whose value changed since the previous version go live. Deleting `desk.yaml` changes no setting. The guide files (`AGENTS.md`, `CLAUDE.md`, `README.md`) are never sent. Other files are listed as `(skipped <path>: not a config file)` and not sent. `instructions.md` must exist; in a folder from before October 2026 without one, `AGENTS.md` is sent as `instructions.md`.
 
 On success:
 
 ```text
-Pushed version 13 to Acme: 2 procedures, 1 tools, 5 eval cases. It's live now.
+Pushed version 13 to Acme: 2 tasks, 1 actions, 5 test cases. It's live now.
 ```
 
 If the config has errors, nothing changes and each problem is listed:
@@ -139,7 +146,7 @@ Not pushed: the config has errors.
   ✘ actions/lookup_order.yaml: {order} isn't an input. Add it under input:, {user.id} (signed-in customer), or {secrets.NAME}.
 ```
 
-If someone saved on the desk since your `.jun-version`, the push stops and tells you to `pull`, merge with git, and push again (or use `--force`). See [Agent as code](/code/overview#when-someone-edited-on-the-desk).
+If someone saved on the desk since your `.jun-version`, the push stops and tells you to `pull`, merge with git, and push again (or use `--force`). Changes made only on the settings pages (in `desk.yaml`) don't stop it, as long as your folder didn't change `desk.yaml` too. See [Agent as code](/code/overview#when-someone-edited-on-the-desk).
 
 ### `jun eval [dir]`
 
@@ -289,7 +296,7 @@ A multi-turn chat in the terminal. An empty line or Ctrl+C ends it.
 
 <CardGroup cols={2}>
   <Card title="File format" icon="file-code" href="/code/files">
-    Every key in `AGENTS.md`, tasks, actions, widgets and tests.
+    Every key in `instructions.md`, tasks, actions, widgets and tests.
   </Card>
   <Card title="Evals in CI" icon="github" href="/code/ci">
     A GitHub Actions workflow for pull requests and merges.

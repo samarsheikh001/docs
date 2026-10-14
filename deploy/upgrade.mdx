@@ -14,7 +14,7 @@ Everything you have keeps working across an upgrade:
 - conversations and messages, contacts, and visitors' tokens (so a visitor's browser still finds its chats),
 - the widget key, so the snippet on your site doesn't change,
 - knowledge sources, their indexed chunks and vectors,
-- the agent config (`AGENTS.md`, tasks, actions, widgets, tests) and its version history,
+- the agent config (`instructions.md`, tasks, actions, widgets, tests) and its version history,
 - settings and keys kept in Durable Object storage: issue tracker keys, action keys, the Web Push key.
 
 Sessions survive too, so teammates stay signed in.
@@ -85,7 +85,7 @@ npm run db:migrate
 
 ## Migrations
 
-Migrations are SQL files in `migrations/`, numbered in order (`0001_init.sql`, `0002_conversations.sql`, …). Wrangler records which ones have run in the database, so each runs once. Some migrations move data into a new shape; for example, the AI's old free-text guidance became `AGENTS.md` and visitors' tokens moved to their own table.
+Migrations are SQL files in `migrations/`, numbered in order (`0001_init.sql`, `0002_conversations.sql`, …). Wrangler records which ones have run in the database, so each runs once. Some migrations move data into a new shape; for example, the AI's old free-text guidance became the agent's instructions file (`instructions.md`) and visitors' tokens moved to their own table.
 
 Durable Object classes have their own migrations in `wrangler.jsonc` (`"tag": "v1"`, `"v2"`, …). Wrangler applies them as part of the deploy.
 
@@ -100,7 +100,7 @@ It seeds:
 - a knowledge snippet,
 - a visitor's conversation with a teammate's reply.
 
-After the upgrade it verifies that the owner gets back in (through `/recover`) to the same workspace, the old conversation and widget key are intact, the visitor's old token still works, knowledge is still searchable, the old guidance became `AGENTS.md`, the AI answers a new question from the old knowledge, and Get started and the live visitor socket work on the old data.
+After the upgrade it verifies that the owner gets back in (through `/recover`) to the same workspace, the old conversation and widget key are intact, the visitor's old token still works, knowledge is still searchable, the old guidance became `instructions.md`, the AI answers a new question from the old knowledge, and Get started and the live visitor socket work on the old data.
 
 <Steps>
   <Step title="Run the old version and seed it">
