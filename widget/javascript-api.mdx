@@ -67,7 +67,7 @@ Tells the desk who the signed-in customer is.
   A short-lived HS256 JWT your backend signed with the desk's identity secret. Passing `null` forgets the identity in the chat; use `logout()` on sign-out instead.
 </ParamField>
 
-The token goes to the desk over the loader's live connection and from the chat frame. If it's rejected, the frame logs `[Jun Desk] identify failed: <reason>` in the console and the visitor stays anonymous.
+The token goes to the desk over the loader's live connection and from the chat frame. If it's rejected, the frame logs `[Jun] identify failed: <reason>` in the console and the visitor stays anonymous.
 
 ### `JunDesk.logout()`
 
@@ -129,7 +129,7 @@ remove();
 <ParamField path="action.status" type="string">The line shown while it runs.</ParamField>
 <ParamField path="action.widget" type="string">A desk widget to show the result as.</ParamField>
 
-Without `name`, `description` or an `execute` function, it logs `Jun Desk: registerAction needs name, description and execute` and isn't registered. Registering the same `name` (and `key`) again replaces the older one, with a console warning. [Page actions](/widget/page-actions) explains every field, risk levels and multi-step runs.
+Without `name`, `description` or an `execute` function, it logs `Jun: registerAction needs name, description and execute` and isn't registered. Registering the same `name` (and `key`) again replaces the older one, with a console warning. [Page actions](/widget/page-actions) explains every field, risk levels and multi-step runs.
 
 ### `JunDesk.onWidgetAction(handler)`
 

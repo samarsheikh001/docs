@@ -76,7 +76,7 @@ document.querySelector("#cancel-subscription").addEventListener("click", () => {
 This is a hard rule in the widget: **a flow with an exit is never a trap**.
 
 - The exit button is always on screen, outside the scrolling chat, for the whole conversation.
-- It's one click. There's no "are you sure" step from Jun Desk.
+- It's one click. There's no "are you sure" step from Jun.
 - The click closes the chat and calls your `onExit` right away. It never waits on the desk.
 - If the intent has an `exit` but `JunDesk.open()` got no `onExit` function, the widget opens a **plain chat** instead and logs a console warning: `intent "cancel" has an exit ("Cancel anyway") but JunDesk.open() got no onExit function: opening a plain chat.`
 

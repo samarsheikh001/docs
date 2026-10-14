@@ -4,11 +4,11 @@ description: "The Cloudflare pieces behind one desk, and how a visitor's message
 icon: "diagram-project"
 ---
 
-A Jun Desk install is one Cloudflare Worker and the resources it binds to. Nothing runs outside your Cloudflare account unless you choose an outside AI provider or an issue tracker.
+A Jun install is one Cloudflare Worker and the resources it binds to. Nothing runs outside your Cloudflare account unless you choose an outside AI provider or an issue tracker.
 
 ## The pieces
 
-| Piece | What it does in Jun Desk |
+| Piece | What it does in Jun |
 |---|---|
 | **Worker** (`worker/index.ts`) | Serves the dashboard and the widget frame as static assets, and the JSON API under `/api` (built with [Hono](https://hono.dev)). It authenticates every request and socket upgrade. |
 | **Durable Object `Conversation`** | One per conversation. Holds the live sockets, gives each message its sequence number, writes through to D1 and runs the AI's turns. |

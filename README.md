@@ -1,6 +1,6 @@
-# Jun Desk docs
+# Jun docs
 
-Documentation for [Jun Desk](https://github.com/samarsheikh001/jun), the open-source AI support desk you deploy to your own Cloudflare account. Built with [Mintlify](https://mintlify.com).
+Documentation for [Jun](https://github.com/samarsheikh001/jun), the open-source AI support desk you deploy to your own Cloudflare account. Built with [Mintlify](https://mintlify.com).
 
 ## Preview locally
 

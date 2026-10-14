@@ -4,14 +4,14 @@ description: Reference for every jun command, flag, environment variable and fil
 icon: terminal
 ---
 
-`jun` is Jun Desk's command-line tool. It does two separate jobs:
+`jun` is Jun's command-line tool. It does two separate jobs:
 
 - **Agent as code**: talk to your deployed desk with an API token: `login <url>`, `init`, `pull`, `push`, `eval`.
-- **Local LLM tools** for developing Jun Desk itself: `login chatgpt`, `logout`, `whoami`, `models`, `ask`, `chat`.
+- **Local LLM tools** for developing Jun itself: `login chatgpt`, `logout`, `whoami`, `models`, `ask`, `chat`.
 
 ## Install and run
 
-The CLI isn't published to npm. It's part of the Jun Desk repository (`packages/cli`, AGPL-3.0) and runs straight from the source on Node.js 22.18 or later, with no build step.
+The CLI isn't published to npm. It's part of the Jun repository (`packages/cli`, AGPL-3.0) and runs straight from the source on Node.js 22.18 or later, with no build step.
 
 ```sh
 git clone https://github.com/samarsheikh001/jun   # or your own copy of it
@@ -219,7 +219,7 @@ When both are set, the desk commands use them and ignore `~/.jun/desk.json`. See
 
 ## Local LLM tools
 
-These commands are for working on Jun Desk itself, for example to run the end-to-end tests with real AI. They don't touch your desk.
+These commands are for working on Jun itself, for example to run the end-to-end tests with real AI. They don't touch your desk.
 
 <Warning>
   Sign in with ChatGPT uses your own ChatGPT plan. OpenAI's terms cover plan usage for your own use, not serving the public. Use it for local development and your own desk only.

@@ -1,10 +1,10 @@
 ---
 title: "Deploy to Cloudflare"
-description: "Deploy Jun Desk with the Deploy button or from the command line, and what each route creates in your account."
+description: "Deploy Jun with the Deploy button or from the command line, and what each route creates in your account."
 icon: "cloud"
 ---
 
-Jun Desk deploys as one Cloudflare Worker with its own database, bucket, queue and Durable Objects. You can deploy it with the Deploy button or from a checkout of the repo.
+Jun deploys as one Cloudflare Worker with its own database, bucket, queue and Durable Objects. You can deploy it with the Deploy button or from a checkout of the repo.
 
 <Tip>
 Use the [Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/) ($5/month per account) for the AI. On Free, a Worker gets 10 ms of CPU per request, and reading a model's streamed answer takes far more, so AI replies fail now and then with error 1102. The inbox, widget and visitors run on Free. See [Costs and limits](/deploy/costs-and-limits).
@@ -35,7 +35,7 @@ Resource IDs aren't in `wrangler.jsonc` on purpose: the button and `wrangler dep
   <Step title="Fill in the form">
     The form shows:
 
-    - **A repository name** for your copy of Jun Desk in your GitHub account.
+    - **A repository name** for your copy of Jun in your GitHub account.
     - **A name for each resource**: the Worker, the D1 database, the R2 bucket and the queue. Keep the defaults for your first desk.
     - **`SETUP_TOKEN`**: any passphrase of 16 or more characters. You enter it once to create the owner account, and again only to recover access.
   </Step>
@@ -51,7 +51,7 @@ The repo the button creates stays connected to the Worker through [Workers Build
 
 ### A second desk in the same account
 
-If this Cloudflare account already has a Jun Desk, give the new one its own names on the form, for example `jun-trial`, `jun-trial-files` and `jun-trial-crawl`.
+If this Cloudflare account already has Jun installed, give the new one its own names on the form, for example `jun-trial`, `jun-trial-files` and `jun-trial-crawl`.
 
 <Warning>
 With the default names, the new Worker binds to the existing `jun-desk` database, `jun-desk-files` bucket and `jun-desk-crawl` queue. It then shares the first desk's conversations and files.

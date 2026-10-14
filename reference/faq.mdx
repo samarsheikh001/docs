@@ -5,14 +5,14 @@ icon: circle-question
 ---
 
 <AccordionGroup>
-  <Accordion title="What does Jun Desk cost?">
+  <Accordion title="What does Jun cost?">
     The software is free and open source. You pay Cloudflare for what your desk uses, on your own account.
 
     The inbox, widget and visitor list run on the Workers Free plan. For the AI, use the Workers Paid plan ($5 a month per account): on Free, AI replies fail now and then with error 1102 because of its 10 ms CPU limit. Workers AI usage beyond Cloudflare's free allocation is billed by Cloudflare; if you use OpenAI, OpenAI bills you for that. See [Costs and limits](/deploy/costs-and-limits).
   </Accordion>
 
   <Accordion title="Who has my data?">
-    You. Conversations, contacts, files, knowledge and settings live in your Cloudflare account's D1 database, R2 bucket and Durable Objects. There's no Jun Desk server, account or telemetry. Data leaves your account only for the AI provider you choose (Workers AI stays on Cloudflare), the APIs your actions call, your docs sites when crawled, GitHub or Linear when a teammate files an issue, and push services for notifications. See [Security](/reference/security#what-leaves-your-account).
+    You. Conversations, contacts, files, knowledge and settings live in your Cloudflare account's D1 database, R2 bucket and Durable Objects. There's no Jun server, account or telemetry. Data leaves your account only for the AI provider you choose (Workers AI stays on Cloudflare), the APIs your actions call, your docs sites when crawled, GitHub or Linear when a teammate files an issue, and push services for notifications. See [Security](/reference/security#what-leaves-your-account).
   </Accordion>
 
   <Accordion title="Which AI does it use? Do I need an API key?">
@@ -24,7 +24,7 @@ icon: circle-question
   </Accordion>
 
   <Accordion title="Can I run it somewhere other than Cloudflare?">
-    No. Jun Desk is built on Cloudflare Workers, Durable Objects, D1, R2, Queues and Workers AI. `npm run dev` runs the same code locally for development. See [Local development](/deploy/local-development).
+    No. Jun is built on Cloudflare Workers, Durable Objects, D1, R2, Queues and Workers AI. `npm run dev` runs the same code locally for development. See [Local development](/deploy/local-development).
   </Accordion>
 
   <Accordion title="Can one desk serve several products or companies?">
@@ -53,7 +53,7 @@ icon: circle-question
   </Accordion>
 
   <Accordion title="Is it ready for production?">
-    Jun Desk is a v1 release candidate: everything documented here works and is tested end to end, and there are rough edges. Report problems on [GitHub](https://github.com/samarsheikh001/jun/issues).
+    Jun is a v1 release candidate: everything documented here works and is tested end to end, and there are rough edges. Report problems on [GitHub](https://github.com/samarsheikh001/jun/issues).
   </Accordion>
 
   <Accordion title="What's the licence?">

@@ -47,7 +47,7 @@ All attributes go on the same `<script>` tag. The full list with every `JunDesk.
 
 | Attribute | What it does |
 |---|---|
-| `data-key="wk_…"` | Required. Your widget key. Without it the loader logs `Jun Desk: no data-key` and stops. |
+| `data-key="wk_…"` | Required. Your widget key. Without it the loader logs `Jun: no data-key` and stops. |
 | `data-consent="required"` | Stores nothing and stays off your live visitor list until you call `JunDesk.consent(true)`. See [Consent and privacy](/widget/consent-and-privacy). |
 | `data-capture="off"` | Turns off error, request, rage-click and "stuck" capture, and with it the "something broke" nudges. |
 | `data-color="#0f766e"` | Overrides the brand colour from the desk on this site only. Must be a six-digit hex colour. |
@@ -114,7 +114,7 @@ The check rides on the loader's live connection. With `data-consent="required"`,
 
 If nothing appears:
 
-- Open the browser console. `Jun Desk: no data-key` means the attribute is missing.
+- Open the browser console. `Jun: no data-key` means the attribute is missing.
 - Check the network tab for `widget.js` and `/api/widget/<key>/config`. A 404 on `config` means the key doesn't match this desk.
 - If you set **Allowed websites**, check your site's hostname is on the list (see below).
 

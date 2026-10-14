@@ -12,7 +12,7 @@ Your page tells the AI what can be done right here: add to cart, change plan, ex
 
 ## The standard: WebMCP
 
-Page actions use [WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api), the browser API for exposing a page's tools to AI agents, rather than a Jun-only format. Tools you register for Chrome's own agent work with Jun Desk with no extra code, and actions you register with Jun Desk are visible to other WebMCP agents too.
+Page actions use [WebMCP](https://developer.chrome.com/docs/ai/webmcp/imperative-api), the browser API for exposing a page's tools to AI agents, rather than a Jun-only format. Tools you register for Chrome's own agent work with Jun with no extra code, and actions you register with Jun are visible to other WebMCP agents too.
 
 <Warning>
   WebMCP is a W3C draft in a Chrome origin trial, and it changes every few releases. Between Chrome 153 and 156, for example, it moved from `navigator` to `document`, deprecated JSON-string inputs, and dropped `window.ontool*`. Check Chrome's [imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api) and [declarative API](https://developer.chrome.com/docs/ai/webmcp/declarative-api) docs before relying on a detail. This page describes the loader as of October 2026.

@@ -1,6 +1,6 @@
-# Jun Desk documentation
+# Jun documentation
 
-The documentation site for [Jun Desk](https://github.com/samarsheikh001/jun), built on [Mintlify](https://mintlify.com). Pages are MDX files with YAML frontmatter (`title`, `description`, optional `icon`); navigation lives in `docs.json`. Preview with `npx mint dev` (http://localhost:3000) and check links with `npx mint broken-links`.
+The documentation site for [Jun](https://github.com/samarsheikh001/jun), built on [Mintlify](https://mintlify.com). Pages are MDX files with YAML frontmatter (`title`, `description`, optional `icon`); navigation lives in `docs.json`. Preview with `npx mint dev` (http://localhost:3000) and check links with `npx mint broken-links`.
 
 The product's source is the `jun` repo (locally `../jun-desk-2`). Every claim here must match what the code does today: read the code, its `README.md` and `CLAUDE.md` before writing, and never document a feature from `docs/features.md` that isn't built.
 
@@ -10,7 +10,7 @@ People who run a B2B SaaS and want a support desk on their own Cloudflare accoun
 
 ## Terminology
 
-- **Jun Desk** (the product), **the desk** (one deployed install), **workspace** (one desk's data).
+- **Jun** (the product), **the desk** (one deployed install), **workspace** (one desk's data).
 - **Widget** = the chat on the customer's site; **loader** = `widget.js`; **launcher** = the bubble, bar or island.
 - **Visitor** before they're known, **contact** once identified, **customer** in general prose.
 - **Teammate** / **agent** for people answering in the inbox; **the AI** for the AI agent.

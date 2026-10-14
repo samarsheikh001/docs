@@ -8,7 +8,7 @@ icon: wrench
 
 <AccordionGroup>
   <Accordion title='The Deploy button stops at "could not push contents of source repo to destination repo"'>
-    Cloudflare created your GitHub repository with only `README.md` and `wrangler.jsonc` and couldn't copy the rest. GitHub refused the copy: its push protection blocks a push that contains something shaped like a key. Jun Desk's own files no longer contain any, so this normally happens only with a fork that adds one.
+    Cloudflare created your GitHub repository with only `README.md` and `wrangler.jsonc` and couldn't copy the rest. GitHub refused the copy: its push protection blocks a push that contains something shaped like a key. Jun's own files no longer contain any, so this normally happens only with a fork that adds one.
 
     Either deploy from the command line instead (below), or push the code into the repository Cloudflare created, keeping its `wrangler.jsonc`. `git push` prints which file GitHub objects to.
 
@@ -74,7 +74,7 @@ icon: wrench
   <Accordion title="The launcher doesn't appear">
     Open your site's browser console and check, in order:
 
-    1. **`Jun Desk: no data-key`** in the console: the tag has no `data-key`. Copy the snippet again from **Chat widget → Install**.
+    1. **`Jun: no data-key`** in the console: the tag has no `data-key`. Copy the snippet again from **Chat widget → Install**.
     2. **The tag is an ordinary `<script src>` tag.** The loader finds its own tag through `document.currentScript`, which doesn't exist for `type="module"` scripts or code that `eval`s it. Don't bundle `widget.js`; load it from your desk.
     3. **Your site's Content Security Policy** blocks the desk. The console shows `Refused to load the script…` or `Refused to connect…`. Allow your desk's origin in `script-src`, `connect-src` (with `wss://` too), `frame-src` and `img-src`. See [Widget options](/reference/widget-options#what-the-loader-loads).
     4. **The tag is in the page.** Check the served HTML (View Source), not just your template: some frameworks drop tags they don't manage.
@@ -195,7 +195,7 @@ icon: wrench
 
 <AccordionGroup>
   <Accordion title="No push notifications on iPhone or iPad">
-    Safari allows Web Push only for web apps on the Home Screen. Open the desk in Safari, tap **Share → Add to Home Screen**, open Jun Desk from the Home Screen, and turn notifications on in **Settings → Notifications** there.
+    Safari allows Web Push only for web apps on the Home Screen. Open the desk in Safari, tap **Share → Add to Home Screen**, open Jun from the Home Screen, and turn notifications on in **Settings → Notifications** there.
   </Accordion>
 
   <Accordion title="Notifications don't arrive while the desk is open">

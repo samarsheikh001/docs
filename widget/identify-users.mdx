@@ -82,7 +82,7 @@ A token is rejected, and the visitor stays anonymous, when:
 | No `sub` | `Identity tokens need a sub (user id) claim.` |
 | No identity secret on the desk | `Identity verification isn't set up for this desk (Settings → Install).` |
 
-The chat frame logs these as `[Jun Desk] identify failed: …`. Bad `attributes` (not an object) or bad `secrets` also reject the token.
+The chat frame logs these as `[Jun] identify failed: …`. Bad `attributes` (not an object) or bad `secrets` also reject the token.
 
 ## Server examples
 

@@ -286,7 +286,7 @@ An action with `"handler": "client"` goes to your page instead (`JunDesk.onWidge
 
 ### The Jinja subset
 
-Templates run in Jun Desk's own Jinja interpreter. It's lenient where real API data is: a missing field is undefined, and `undefined | tojson` is `null`. It supports `{{ }}`, `if`/`elif`/`else`, `for` with `loop`, `set`, slices, `~`, `and`/`or`/`not`, `is` tests and inline `if … else`.
+Templates run in Jun's own Jinja interpreter. It's lenient where real API data is: a missing field is undefined, and `undefined | tojson` is `null`. It supports `{{ }}`, `if`/`elif`/`else`, `for` with `loop`, `set`, slices, `~`, `and`/`or`/`not`, `is` tests and inline `if … else`.
 
 Filters: `abs`, `attr`, `batch`, `capitalize`, `center`, `count`, `d`, `default`, `dictsort`, `e`, `escape`, `first`, `float`, `indent`, `int`, `items`, `join`, `last`, `length`, `list`, `lower`, `map`, `max`, `min`, `reject`, `rejectattr`, `replace`, `reverse`, `round`, `safe`, `select`, `selectattr`, `sort`, `string`, `sum`, `title`, `tojson`, `trim`, `truncate`, `unique`, `upper`, `wordcount`.
 
