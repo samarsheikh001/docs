@@ -43,6 +43,10 @@ Owners and admins see **Update to vX.Y.Z** in the desk's sidebar when a release 
 If the workflow can't open pull requests in your repo, it opens an issue with a link to the pull request instead. To let it open them itself, turn on **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** in your repo.
 </Note>
 
+<Note>
+Cloudflare may show a failed **Workers Builds** check on the pull request. That's its branch preview (`wrangler preview`), which needs separate preview resources Jun doesn't set up, not the update: the build runs before it, and merging runs the normal deploy. To stop branch builds, open your Worker in the Cloudflare dashboard → **Settings → Build → Branch control** and turn off **Builds for non-production branches**.
+</Note>
+
 ### A copy made before the workflow
 
 Copies made before Update Jun existed don't have it yet. Add it once:
