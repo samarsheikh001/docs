@@ -1,10 +1,10 @@
 ---
 title: "Upgrade"
-description: "Pull a new version of Jun into your copy and deploy it, with database migrations applied first."
+description: "Each Jun release arrives in your copy as a pull request; merging deploys it, with database migrations applied first."
 icon: "arrows-rotate"
 ---
 
-You upgrade by pulling the new version into your copy of the repo and deploying it. `npm run deploy` applies new D1 migrations **before** it deploys the new Worker, so new code never runs against an old schema.
+Jun ships as versioned [releases](https://github.com/samarsheikh001/jun/releases). Your copy of the repo gets each one as a pull request; merging it deploys. Deploying applies database migrations **before** the new Worker goes live, so new code never runs against an old schema.
 
 ## What carries over
 
@@ -19,43 +19,55 @@ Everything you have keeps working across an upgrade:
 
 Sessions survive too, so teammates stay signed in.
 
-## Upgrade a Deploy button install
+## Update with a pull request
 
-The Deploy button created a repo in your GitHub account and connected it to the Worker with Workers Builds. Pushing to that repo deploys.
+Every copy of Jun has a GitHub Actions workflow, **Update Jun** (`.github/workflows/update-jun.yml`). Once a day it checks for a new release. When there is one, it opens a pull request in your repo, or updates the one already open, so you never get more than one.
 
 <Steps>
-  <Step title="Clone your copy">
-    ```sh
-    git clone https://github.com/<you>/<your-repo>.git jun-desk
-    cd jun-desk
-    ```
-  </Step>
-  <Step title="Pull the new version">
-    ```sh
-    git pull https://github.com/samarsheikh001/jun main
-    ```
+  <Step title="Review the pull request">
+    It's called **Update Jun to vX.Y.Z** and links the release notes. The new version is merged into your files:
 
-    If Git reports a conflict in `wrangler.jsonc`, keep your resource names (the Worker `name`, `database_name`, `bucket_name` and queue names) and take everything else from the new version, such as new bindings or Durable Object migrations.
+    - files you never changed take the new version,
+    - your own changes stay,
+    - your Worker, database, bucket and queue names in `wrangler.jsonc` are kept,
+    - a file both you and Jun changed in the same place is listed under **Resolve before merging**, with `<<<<<<<` markers to edit on the `jun-update` branch.
   </Step>
-  <Step title="Push">
-    ```sh
-    git push
-    ```
+  <Step title="Merge it">
+    A Deploy button install redeploys on its own: Workers Builds runs `npm run deploy` for the push. Follow it in the Cloudflare dashboard under the Worker's **Deployments**. A command-line install: pull `main`, then run `npm install && npm run deploy`.
+  </Step>
+</Steps>
 
-    Workers Builds runs the build and `npm run deploy`, which migrates the database and then deploys. Follow it in the Cloudflare dashboard under the Worker's **Deployments**.
+Owners and admins see **Update to vX.Y.Z** in the desk's sidebar when a release is out, and the version under **Settings → General**. To check right away, open your repo's **Actions → Update Jun → Run workflow**.
+
+<Note>
+If the workflow can't open pull requests in your repo, it opens an issue with a link to the pull request instead. To let it open them itself, turn on **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** in your repo.
+</Note>
+
+### A copy made before the workflow
+
+Copies made before Update Jun existed don't have it yet. Add it once:
+
+<Steps>
+  <Step title="Add the workflow">
+    In your repo on GitHub, choose **Add file → Create new file**, name it `.github/workflows/update-jun.yml`, and paste [the workflow from the Jun repo](https://github.com/samarsheikh001/jun/blob/main/.github/workflows/update-jun.yml). Commit it to `main`.
+  </Step>
+  <Step title="Run it">
+    **Actions → Update Jun → Run workflow.** The first pull request brings every file up to the release, keeping your resource names.
   </Step>
 </Steps>
 
 <Warning>
-Keep your own `wrangler.jsonc` names. If an upgrade puts the default names back on a desk that uses others, the Worker binds to a different (possibly another desk's) database, bucket and queue.
+Don't `git pull` the Jun repo into a copy made by the Deploy button. The button's copy starts from its own first commit, with no history in common with Jun, so Git refuses the merge ("refusing to merge unrelated histories"). The workflow merges file by file instead.
 </Warning>
 
-## Upgrade a command-line install
+The workflow never changes files under `.github/workflows/`: GitHub doesn't let a workflow edit workflows. When a release changes `update-jun.yml`, the pull request says so; copy the new file by hand.
 
-From your checkout:
+## Upgrade a clone by hand
+
+A clone of the Jun repo (not a Deploy button copy) shares its history, so you can also pull a release yourself:
 
 ```sh
-git pull https://github.com/samarsheikh001/jun main
+git pull https://github.com/samarsheikh001/jun v0.2.0
 npm install && npm run deploy
 ```
 
