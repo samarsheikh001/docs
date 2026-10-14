@@ -65,7 +65,7 @@ npm run jun -- login https://your-desk.example.com
   The desk's address, starting with `https://` (or `http://` for a local desk).
 </ParamField>
 <ParamField path="--token" type="string">
-  The API token. Without it, the CLI uses `JUN_DESK_TOKEN` if set, or asks: `API token (Settings → API tokens):`.
+  The API token. Without it, the CLI uses `JUN_DESK_TOKEN` if set, or asks: `API token (Settings → Developer → API tokens):`.
 </ParamField>
 
 The CLI checks the token against the desk and prints `Logged in to <workspace> at <url> as <you>.` It saves the URL, token, workspace and your name in `~/.jun/desk.json`, readable only by you (mode 600). Logging in again replaces it; one desk at a time.

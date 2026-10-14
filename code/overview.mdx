@@ -132,6 +132,10 @@ Going the other way, a desk save starts from the version the page loaded. If som
 
 ## Edit with your own AI
 
+<Tip>
+**The easiest route: [connect your AI over MCP](/code/mcp).** Every desk serves an MCP server, so Claude Code, Cursor or Codex can change the agent directly, with no checkout or CLI: each change is checked, saved as a version and can be restored. Use the folder below when you want the agent in git, reviewed in pull requests.
+</Tip>
+
 A pulled folder is ready for a coding AI such as Claude Code, Codex or Cursor. Besides the config, `jun pull` writes `AGENTS.md`: a guide that tells the coding AI what the folder is, every file and key, the rules (never put a key in a file), and the loop of eval, fix and push. Claude Code reads `CLAUDE.md`, which imports the same guide. The support AI's own instructions are in `instructions.md`, so the coding AI never mistakes them for its own.
 
 <Steps>

@@ -72,7 +72,7 @@
       },
       {
         "group": "Agent as code",
-        "pages": ["code/overview", "code/cli", "code/files", "code/ci"]
+        "pages": ["code/overview", "code/cli", "code/mcp", "code/files", "code/ci"]
       },
       {
         "group": "Reference",

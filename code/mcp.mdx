@@ -1,0 +1,112 @@
+---
+title: Connect your AI (MCP)
+description: Let Claude Code, Cursor, Codex or Claude Desktop change your support agent through the desk's MCP server. No checkout, no CLI.
+icon: plug
+---
+
+Every Jun desk serves an [MCP](https://modelcontextprotocol.io) server at `/mcp`. Connect your own AI to it and ask in plain words: it reads your agent, writes tasks and actions, builds cards, runs the tests and makes the change live. Each change is checked like a save on the desk and kept as a version you can restore.
+
+It's the easiest way to [edit with your own AI](/code/overview#edit-with-your-own-ai): nothing to clone or install, and the AI works on the live agent with the same checks the Agent page uses.
+
+## Connect
+
+<Steps>
+  <Step title="Create an API token">
+    In **Settings → Developer → API tokens**, create a token. It acts as you, for this workspace's agent only. Copy it: it's shown once.
+  </Step>
+  <Step title="Add the server to your AI">
+    Your MCP address is your desk's address plus `/mcp`, like `https://support.acme.com/mcp`. **Settings → Developer → Connect your AI** shows these snippets with your address (and the token you just created) filled in.
+
+    <Tabs>
+      <Tab title="Claude Code">
+        ```sh
+        claude mcp add --transport http jun https://support.acme.com/mcp \
+          --header "Authorization: Bearer jun_…"
+        ```
+        Then `claude mcp list` should show `jun … ✔ Connected`.
+      </Tab>
+      <Tab title="Cursor">
+        In `.cursor/mcp.json` (this project) or `~/.cursor/mcp.json` (every project):
+        ```json
+        {
+          "mcpServers": {
+            "jun": {
+              "url": "https://support.acme.com/mcp",
+              "headers": { "Authorization": "Bearer jun_…" }
+            }
+          }
+        }
+        ```
+      </Tab>
+      <Tab title="Codex">
+        In `~/.codex/config.toml`:
+        ```toml
+        [mcp_servers.jun]
+        url = "https://support.acme.com/mcp"
+        bearer_token_env_var = "JUN_DESK_TOKEN"
+        ```
+        and in the shell you start Codex from: `export JUN_DESK_TOKEN=jun_…`.
+      </Tab>
+      <Tab title="Claude Desktop">
+        Claude Desktop's own connectors sign in with OAuth, which the desk doesn't offer yet. Until then, use a local bridge such as [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) in `claude_desktop_config.json`:
+        ```json
+        {
+          "mcpServers": {
+            "jun": {
+              "command": "npx",
+              "args": ["mcp-remote", "https://support.acme.com/mcp", "--header", "Authorization: Bearer jun_…"]
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Ask">
+    Try: *"Add a refund task that looks up the order with our orders API (here's the curl command from our docs: …), test it, and make it live."*
+  </Step>
+</Steps>
+
+## What you can ask for
+
+The AI gets a guide to the agent's files when it connects, and these tools. Tools that change something save a new version that's **live at once**; each takes `dryRun: true` to show the result without saving, and `message` for the version's line in History.
+
+| Group | Tools |
+|---|---|
+| The agent | `get_agent` (everything at a glance), `read_file`, `write_file`, `delete_file`, `check` (problems, no save), `history`, `restore`, `connections` |
+| Instructions | `get_instructions`, `update_instructions` (the body, `maxReplies`, `handoffTopics`) |
+| Tasks | `list_tasks`, `get_task`, `create_task`, `update_task`, `delete_task`, `task_uses` (its actions, whether they're set up, their cards) |
+| Actions | `list_actions`, `get_action`, `create_action`, `action_from_curl` (from your API docs), `update_action`, `delete_action`, `try_action` (one real call), `action_status`, `set_key` |
+| Widgets | `list_widgets`, `get_widget`, `create_widget` (blank, your template, or a gallery one), `update_widget`, `delete_widget`, `widget_templates`, `get_widget_template`, `preview_widget` (problems, an outline of the card, what each button does, a link to see it), `widget_from_data` (a card from an example result) |
+| Tests | `list_tests`, `get_tests`, `add_test_case`, `update_test_case`, `delete_test_case`, `run_tests` (the test cases; `replay: true` also replays recent conversations), `test_chat` (chat as a customer, press card buttons) |
+| Your website | `website_actions` (what your site offers the agent), `set_website_action` (auto, confirm or human, and the line shown while it runs) |
+| Desk settings | `get_desk_settings`, `update_desk_settings` (the AI's switches, the chat widget, business hours, assignment; applied at once) |
+
+It can also read these resources: the [file format](/code/files) (`jun://guide/files`), ChatKit's widget authoring guide (`jun://guide/chatkit-widgets`), the Jinja filters widget templates can use (`jun://guide/jinja`) and every file of the live agent (`jun://file/<path>`).
+
+### Some things to ask
+
+- *"What does our agent do today? Anything broken?"*
+- *"When someone asks to cancel, offer the annual discount first, then hand off. Add a test for it."*
+- *"Here's our orders API: `curl https://api.acme.com/v2/orders/1042 -H 'Authorization: Bearer sk_live_…'`. Make an action that looks up an order, try it with order 1042, and show the result as a card."*
+- *"Start from the ride status template for our delivery tracker and show me what its buttons do."*
+- *"Change the chat widget's greeting to 'Hi! Ask us anything.' and close on Sundays."*
+- *"Run the tests. Fix what fails, but show me the change with a dry run first."*
+
+## Safety
+
+- **Keys are write-only.** `set_key` (and `action_from_curl`, for a key in the command) stores a key on the desk; no tool ever returns it. Files only ever say `{secrets.NAME}`, and answers mask keys a request carried.
+- **Nothing broken is saved.** Each change is checked like a save on the desk; when the files have problems, nothing is saved and the AI gets the problems file by file.
+- **Every change is a version.** History on the Agent page shows the AI's changes as *Changed by an AI (MCP)*, with who owns the token. `restore` (or History on the desk) brings any version back.
+- **Look before it's live.** `dryRun: true` shows the resulting file without saving; `test_chat` answers changes (POST actions) without making them unless you ask for `real: true`; `run_tests` with `mockTools: true` doesn't call your APIs. `try_action` does make a real call.
+- **Only the agent.** A token reaches the agent's config and its tests, nothing else: not the inbox, conversations, contacts or knowledge. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token in Settings → Developer at any time.
+
+Your AI client usually asks before it calls a tool; keep that on for tools that change things.
+
+## How it works
+
+The server is stateless MCP over Streamable HTTP (protocol versions 2025-11-25, 2025-06-18 and 2025-03-26): each request is one JSON-RPC message sent with `POST`, answered with JSON. It runs inside your desk's Worker, so it's on your Cloudflare account like the rest of Jun. A request without a valid token gets `401`.
+
+<Note>
+OAuth sign-in, for connectors in claude.ai and Claude Desktop without a bridge, is planned.
+</Note>
