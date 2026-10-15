@@ -63,7 +63,9 @@ In [`desk.yaml`](/code/files#desk-settings) it's `chat.pageControlConfirm`: `all
 
 The AI can follow a link or menu item to the page that has what the customer asked for, then go on there. "Turn my weekly emails off" can be: read the page, click **Email settings**, read the new page, choose **Off**, click **Save**. Each change still waits for the customer's Confirm, and the chat stays open across the page load.
 
-This works for single-page apps and for links that load a whole new page. The AI never reuses an element's number after the page changed: it reads the new page first.
+This works for single-page apps and for links that load a whole new page: after a page load the chat opens again by itself and the run goes on. The AI never reuses an element's number after the page changed: it reads the new page first. If what the customer asked for isn't on the page they're on, the AI looks behind the likely links (their name or avatar, Account, Profile, Settings) before handing the chat to your team.
+
+If the customer has your site open in several tabs, the steps run only in the tab they asked from.
 
 ## What it never sees or touches
 
