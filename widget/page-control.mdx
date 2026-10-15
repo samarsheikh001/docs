@@ -1,0 +1,81 @@
+---
+title: Page control
+description: Let the AI read the visitor's page and click, type, choose and scroll on it, without registering actions. One switch on the desk.
+icon: arrow-pointer
+---
+
+With page control on, the AI can see the page the visitor is on and use it for them: fill in a field, pick an option, press a button. Your site doesn't have to register anything. It works next to [page actions](/widget/page-actions), which stay the better choice when you have them.
+
+It's on by default. You can switch it off for all your sites, or leave out one site.
+
+## Turn it on or off
+
+It's under **Chat widget → Behaviour → Let the AI use your website**. Every site with your snippet follows the switch within a minute; you don't change the snippet. Switch it off there: the AI stops being offered these actions at once, even on pages that are already open.
+
+To leave one site out while it's on, add `data-page-control="off"` to that site's snippet:
+
+```html
+<script
+  src="https://your-desk.example.com/widget.js"
+  data-key="wk_…"
+  data-page-control="off"
+  defer
+></script>
+```
+
+While it's off, nothing extra loads. With [`data-consent="required"`](/widget/consent-and-privacy), it loads only after `JunDesk.consent(true)`. In [`desk.yaml`](/code/files#desk-settings) it's `chat.pageControl`.
+
+## What the AI can do
+
+Page control adds five page actions. They go through the same steps as any other page action: the visitor sees each step in the chat, changes wait for their **Confirm**, and every run is in the conversation's AI actions.
+
+| Action | What it does | Runs |
+|---|---|---|
+| `read_page` | Reads the page: its text, and the buttons, links and fields on it, each with a number | At once |
+| `click` | Clicks an element by its number | After the visitor confirms |
+| `type_text` | Types into a field by its number, replacing what was there | After the visitor confirms |
+| `choose_option` | Picks an option in a dropdown by its number | After the visitor confirms |
+| `scroll_page` | Scrolls up or down by one screen | At once |
+
+A request like "set my company name to Acme Ltd" goes like this: the AI reads the page, proposes typing into the field (the card says *Company name field · Acme Ltd*, never a number), and after the visitor confirms, proposes the click on **Save**. It reads the page again whenever something changed.
+
+If your page registers its own actions, the AI uses those first when one fits. To let clicks run without a confirm, or to send them to a person instead, set the action's risk in [`website-actions.yaml`](/ai/actions), like any other website action.
+
+## Across pages
+
+The AI can follow a link or menu item to the page that has what the customer asked for, then go on there. "Turn my weekly emails off" can be: read the page, click **Email settings**, read the new page, choose **Off**, click **Save**. Each change still waits for the customer's Confirm, and the chat stays open across the page load.
+
+This works for single-page apps and for links that load a whole new page. The AI never reuses an element's number after the page changed: it reads the new page first.
+
+## What it never sees or touches
+
+- The Jun widget itself.
+- Anything inside an element with `data-jun-private`.
+- Password fields, hidden inputs, card fields (`autocomplete="cc-…"`) and one-time-code fields.
+
+Put `data-jun-private` on anything else the AI shouldn't read or use, like an account number or an admin panel:
+
+```html
+<section data-jun-private>
+  <p>Card on file: 4242 4242 4242 4242</p>
+</section>
+```
+
+The AI is also told never to type passwords, card numbers or codes: it asks the visitor to type those themselves.
+
+## Privacy
+
+Normally the widget [never reads page text](/widget/debug-context). Page control changes that on the sites where you turn it on, and only when the AI calls `read_page` during a chat:
+
+- The text is masked in the browser and again on the desk, with the same rules as the debug context: email addresses, card-like numbers, tokens and keys become placeholders. The page address loses its query values.
+- One read is at most 12,000 characters. Longer pages are cut, and the AI can scroll and read again.
+- It can't run JavaScript on your page. It only reads, clicks, types, chooses and scrolls.
+- Reads go into the conversation, so your team sees what the AI saw.
+
+## Size and loading
+
+The loader fetches `GET /widget-page-control.js` from your desk once, on sites with the attribute (about 12 KB gzipped). Allow your desk's origin in `script-src` if your site has a CSP. See [Widget options](/reference/widget-options#what-the-loader-loads).
+
+## Credits
+
+Page control uses the DOM engine of [page-agent](https://github.com/alibaba/page-agent) by Alibaba, `@page-agent/page-controller`, under the MIT License. Only the part that reads and operates the page is included. page-agent's own AI, which runs in the browser with an API key, isn't used: Jun's AI on your desk makes the decisions.

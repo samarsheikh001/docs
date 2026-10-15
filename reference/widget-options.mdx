@@ -14,6 +14,7 @@ The widget is configured in two places. The `<script>` tag on your site carries 
   data-capture="off"
   data-color="#0f766e"
   data-theme="dark"
+  data-page-control="off"
   data-user-token="eyJhbGciOiJIUzI1NiIs…"
   defer
 ></script>
@@ -43,6 +44,10 @@ The widget is configured in two places. The `<script>` tag on your site carries 
 
 <ParamField path="data-theme" type='"light" | "dark" | "auto"'>
   The widget's theme on this site, over the desk's **Theme**: `light` or `dark` forces one, `auto` follows the visitor's system. Anything else is ignored. To follow your site's own light / dark switch, call `JunDesk.setTheme()` when it changes: see [JavaScript API](/widget/javascript-api).
+</ParamField>
+
+<ParamField path="data-page-control" type='"off"'>
+  Leaves this site out of [page control](/widget/page-control). Page control itself is a switch on the desk (**Chat widget → Behaviour → Let the AI use your website**, on by default): while it's on, the AI can read the page and click, type, choose and scroll on it for the visitor, with their confirm for anything that changes something, on every site without this attribute.
 </ParamField>
 
 <ParamField path="data-user-token" type="JWT">
@@ -82,6 +87,7 @@ Useful when your site sends a Content Security Policy, or when you check the net
 | `wss://…/api/widget/<key>/live` | On load (after consent): the live visitor connection | `connect-src` |
 | `/widget?key=<key>` in an iframe | When the chat opens; at once for the greeting card and the island | `frame-src` |
 | `GET /widget-actions.js` | The first time your page registers an action | `script-src` |
+| `GET /widget-page-control.js` | On load (after consent), only while page control is on and the snippet doesn't say `data-page-control="off"` | `script-src` |
 | Your logo | When the round button, greeting card or chat shows it | `img-src` |
 | `POST /api/widget/<key>/nudge` | When something fails on the page and the widget may offer help | `connect-src` |
 

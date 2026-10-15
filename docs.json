@@ -39,6 +39,7 @@
           "widget/consent-and-privacy",
           "widget/debug-context",
           "widget/page-actions",
+          "widget/page-control",
           "widget/intents",
           "widget/javascript-api"
         ]

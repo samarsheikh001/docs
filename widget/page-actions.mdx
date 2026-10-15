@@ -6,7 +6,7 @@ icon: wand-magic-sparkles
 
 Your page tells the AI what can be done right here: add to cart, change plan, export a CSV, book a slot. When a visitor asks for one, the AI picks it, the chat asks for anything it couldn't fill in, confirms, runs your function **in the visitor's browser with their own login**, and shows the result.
 
-- The AI can only pick from the list your page registered. It never reads the page or fills in forms itself.
+- The AI can only pick from the list your page registered. It never reads the page or fills in forms itself, unless you turn on [page control](/widget/page-control) for the site.
 - Your functions never leave the page. Only the name, description, input schema and the extras below are sent to the desk.
 - Each run is recorded in the conversation's AI actions, so agents see what happened.
 
@@ -230,6 +230,8 @@ With the [island](/widget/launchers#island), the whole run stays one live line (
 The loader sends up to 60 actions with each message: actions on screen first, then the rest in registration order, then other WebMCP tools. The desk picks up to 30 for each reply: words from the visitor's question that match an action's name, description or context count most, being on screen counts too, and registration order breaks ties.
 
 [Actions](/ai/actions) defined on the desk (`actions/*.yaml`) can be limited to pages the same way, with `pages: ["/orders/*"]`.
+
+With [page control](/widget/page-control) on, its five actions (`read_page`, `click` and the rest) are always offered as well, after your own.
 
 ## React
 
