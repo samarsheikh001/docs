@@ -41,6 +41,24 @@ A request like "set my company name to Acme Ltd" goes like this: the AI reads th
 
 If your page registers its own actions, the AI uses those first when one fits. To let clicks run without a confirm, or to send them to a person instead, set the action's risk in [`website-actions.yaml`](/ai/actions), like any other website action.
 
+## The customer sees what it will do
+
+While a click, typing or choice waits for the customer's **Confirm**, the element itself is ringed on the page in your brand colour, with a short label like *Type “Acme Ltd” · confirm in the chat*. If the chat covers it, the page scrolls it into view. When the customer confirms, a pointer moves from the chat to the element and clicks, then the highlight fades. Nothing on your page is changed by this: it's a layer on top that clicks pass through, and the AI never sees it.
+
+## Always allow
+
+By default each click, typing and choice asks for **Confirm**. The card also has **Always allow**: the customer confirms this step, and from then on page control acts without asking on your site, in their browser. Each step still shows in the chat and on the page. **Ask me first**, under the latest step, turns it back off.
+
+You choose how it asks under **Chat widget → Behaviour → Before it clicks, types or chooses**:
+
+| Choice | What customers get |
+|---|---|
+| **Ask, with Always allow** (default) | Each step asks for **Confirm**, and the card offers **Always allow** |
+| **Ask every time** | Each step asks for **Confirm**; no **Always allow** |
+| **Don't ask** | Steps run straight away; each still shows in the chat and on the page |
+
+In [`desk.yaml`](/code/files#desk-settings) it's `chat.pageControlConfirm`: `allow-always`, `every-time` or `never`. A risk you set for `click`, `type_text` or `choose_option` in [`website-actions.yaml`](/ai/actions) wins over it.
+
 ## Across pages
 
 The AI can follow a link or menu item to the page that has what the customer asked for, then go on there. "Turn my weekly emails off" can be: read the page, click **Email settings**, read the new page, choose **Off**, click **Save**. Each change still waits for the customer's Confirm, and the chat stays open across the page load.

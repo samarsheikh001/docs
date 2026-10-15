@@ -437,7 +437,8 @@ chat:                       # the chat widget (the Chat widget page)
   askForRating: true        # "How did we do?" when a chat is resolved
   allowedWebsites: [acme.com, "*.acme.com"]   # [] = any website
   offerHelpOnErrors: true
-  pageControl: false        # the AI may read and use your website (asks before changes)
+  pageControl: true         # the AI may read and use your website
+  pageControlConfirm: allow-always   # before it clicks, types or chooses: allow-always | every-time | never
   openers:                  # after: seconds on the page; no message = the AI writes it
     - page: /pricing
       after: 20
@@ -537,6 +538,9 @@ The chat widget, as on the [Appearance](/widget/appearance) page and the **Insta
 </ParamField>
 <ParamField path="chat.pageControl" type="boolean">
   Let the AI read and use your website: [page control](/widget/page-control). On by default. A site's snippet can still leave itself out with `data-page-control="off"`.
+</ParamField>
+<ParamField path="chat.pageControlConfirm" type='"allow-always" | "every-time" | "never"'>
+  Before page control clicks, types or chooses: ask with an **Always allow** button (the default), ask every time, or don't ask. See [Page control](/widget/page-control#always-allow).
 </ParamField>
 <ParamField path="chat.openers" type="list">
   Page openers, at most 10. Each has `page` (a path pattern: `/pricing`, `/docs/*`, `*`), `after` (seconds on the page, 5 to 600), and either `message` (fixed text, up to 140 characters) or no message, so the AI writes the line, with an optional `hint` of what to offer (up to 200 characters). The list is replaced as a whole.
