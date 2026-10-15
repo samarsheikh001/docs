@@ -17,7 +17,7 @@ Identity only ever comes from a token the desk verifies. Nothing the page's Java
 
 <Steps>
   <Step title="Create the identity secret">
-    Go to **Chat widget → Install** and press **Create identity secret** on the **Identify signed-in customers** card. Only owners and admins see this card.
+    Go to **Chat widget → Behaviour** and press **Create identity secret** on the **Identify signed-in customers** card. Only owners and admins see this card.
 
     The secret starts with `jis_`. Use **Show** and **Copy** to get it, and store it on your server, for example as `JUN_IDENTITY_SECRET`. Never put it in front-end code.
   </Step>
@@ -80,7 +80,7 @@ A token is rejected, and the visitor stays anonymous, when:
 | No `exp`, or it has passed | `Identity tokens need an exp (expiry) claim.` / `Identity token has expired.` |
 | `nbf` in the future | `Identity token isn't valid yet.` |
 | No `sub` | `Identity tokens need a sub (user id) claim.` |
-| No identity secret on the desk | `Identity verification isn't set up for this desk (Settings → Install).` |
+| No identity secret on the desk | `Identity verification isn't set up for this desk (Chat widget → Behaviour → Identify signed-in customers).` |
 
 The chat frame logs these as `[Jun] identify failed: …`. Bad `attributes` (not an object) or bad `secrets` also reject the token.
 

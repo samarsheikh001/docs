@@ -10,9 +10,9 @@ The widget is one `<script>` tag. It loads a small loader (`widget.js`) from you
 
 <Steps>
   <Step title="Open the Install tab">
-    In the desk, go to **Chat widget → Install** (`/appearance/install`). The **Install the chat widget** card shows the snippet with your desk's address and your widget key filled in. Press **Copy**.
+    In the desk, go to **Chat widget → Install** (`/appearance/install`). The **Install the chat widget** card shows the snippet with your desk's address and your widget key filled in. Press **Copy**, or **Send to a developer** to copy the snippet with a few plain lines on where it goes and how to check it.
 
-    The **Get started** checklist's **Put it on your site** step shows the same snippet.
+    Until the widget is on a site, the sidebar's **Chat widget** entry has a small dot and opens on this tab, and the page header says **Not on your site yet**. The **Get started** checklist's **Put it on your site** step shows the same snippet.
   </Step>
   <Step title="Paste it into your site's head">
     Put it inside `<head>`, before your own scripts:
@@ -24,6 +24,8 @@ The widget is one `<script>` tag. It loads a small loader (`widget.js`) from you
     `data-key` is your widget key. It is public by design: anyone can read it from your page source. Use [Allowed websites](#limit-which-websites-can-use-the-widget) to stop other sites reusing it.
   </Step>
   <Step title="Deploy your site and open a page">
+    On a site builder or framework, **Where to paste it** on the same tab says where the head code goes in Webflow, WordPress, Shopify and Next.js.
+
     The widget appears within a second or so (the loader waits up to 1.5 seconds for your colour and mode settings, so it never flashes in the default colour).
   </Step>
 </Steps>
@@ -108,9 +110,9 @@ For React, `useJunAction` from `packages/widget-react` registers page actions wh
 
 ### Install detection
 
-The **Put it on your site** step in Get started ticks itself the first time the loader connects from a site other than the desk itself, and shows **Seen on** with that origin. The demo page doesn't count, because it runs on the desk's own origin.
+The first time the loader connects from a site other than the desk itself, the desk notes that site. The Install tab's **Waiting for your site…** line turns into **Seen on** with that site (it checks every few seconds while the tab is open), the header on every tab of **Chat widget** shows **Live on** that site, the sidebar dot goes away, and the **Put it on your site** step in Get started ticks itself. The demo page doesn't count, because it runs on the desk's own origin.
 
-The check rides on the loader's live connection. With `data-consent="required"`, nothing connects until a visitor consents, so the step may not tick on its own. Press **I've added it** to tick it by hand.
+The check rides on the loader's live connection. With `data-consent="required"`, nothing connects until a visitor consents, so the step may not tick on its own. Press **I've added it** (on the Install tab or in Get started) to mark it by hand.
 
 If nothing appears:
 
@@ -120,7 +122,7 @@ If nothing appears:
 
 ## Limit which websites can use the widget
 
-Because the key is public, anyone could copy your snippet onto their own site. Under **Chat widget → Install → Allowed websites**, list your domains, separated by commas or spaces:
+Because the key is public, anyone could copy your snippet onto their own site. Under **Chat widget → Behaviour → Allowed websites**, list your domains, separated by commas or spaces:
 
 ```text
 acme.com, *.acme.com

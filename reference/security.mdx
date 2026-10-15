@@ -47,7 +47,7 @@ Tokens for the `jun` CLI (`jun_…`) are created in **Settings → Developer →
 
 ### Widget key and allowed websites
 
-The widget key (`wk_…`) is public: it's in your page source. On its own it lets anyone show your chat. List your sites under **Chat widget → Install → Allowed websites** to stop that:
+The widget key (`wk_…`) is public: it's in your page source. On its own it lets anyone show your chat. List your sites under **Chat widget → Behaviour → Allowed websites** to stop that:
 
 - The chat frame is served with a `frame-ancestors` policy naming only those sites (and the desk), so browsers refuse to show it anywhere else.
 - The live visitor connection and the "want a hand?" request check the browser's `Origin` header against the list.
@@ -60,7 +60,7 @@ Each browser that chats gets a random visitor token. The desk stores only its ha
 
 ### Identified customers
 
-The widget knows who a customer is only from a token your backend signs: an HS256 JWT with the workspace's identity secret (**Chat widget → Install → Identify signed-in customers**). Never from JavaScript on the page.
+The widget knows who a customer is only from a token your backend signs: an HS256 JWT with the workspace's identity secret (**Chat widget → Behaviour → Identify signed-in customers**). Never from JavaScript on the page.
 
 - Only `HS256` is accepted: never `none`, never a key named inside the token.
 - `exp` is required, `nbf` is honoured, with 60 seconds of clock skew. `sub` is the user's id.
