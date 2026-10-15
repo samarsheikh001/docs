@@ -13,6 +13,7 @@ The widget is configured in two places. The `<script>` tag on your site carries 
   data-consent="required"
   data-capture="off"
   data-color="#0f766e"
+  data-theme="dark"
   data-user-token="eyJhbGciOiJIUzI1NiIs…"
   defer
 ></script>
@@ -40,6 +41,10 @@ The widget is configured in two places. The `<script>` tag on your site carries 
   Overrides the brand colour from the desk, on this site only. Must be a six-digit hex colour; anything else is ignored. The desk works out a readable text colour for it, as it does for the colour set on the desk.
 </ParamField>
 
+<ParamField path="data-theme" type='"light" | "dark" | "auto"'>
+  The widget's theme on this site, over the desk's **Theme**: `light` or `dark` forces one, `auto` follows the visitor's system. Anything else is ignored. To follow your site's own light / dark switch, call `JunDesk.setTheme()` when it changes: see [JavaScript API](/widget/javascript-api).
+</ParamField>
+
 <ParamField path="data-user-token" type="JWT">
   Says who the signed-in customer is: a short-lived HS256 token your backend signs with the desk's identity secret. Same as calling `JunDesk.identify(token)` once the loader has run. See [Identify users](/widget/identify-users).
 </ParamField>
@@ -56,9 +61,9 @@ These aren't attributes. Change them on the desk and every site with the snippet
 
 | Setting | Where |
 |---|---|
-| Colour, logo (and a logo for dark surfaces), corner rounding, light/dark theme, button style | **Chat widget → Look** |
-| Mode: island or chat window (greeting card, button, left or right side) | **Chat widget → Look** |
-| Greeting and suggested questions | **Chat widget → Look** |
+| Colour, logo (and a logo for dark surfaces), corner rounding, light/dark theme, button style | **Appearance** |
+| Mode: island or chat window (greeting card, button, left or right side) | **Appearance** |
+| Greeting and suggested questions | **Appearance** |
 | Allowed websites, identity secret, page openers | **Chat widget → Behaviour** |
 | Business hours and away message | **Settings → Inbox** |
 

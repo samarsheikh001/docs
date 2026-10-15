@@ -1,14 +1,14 @@
 ---
 title: Appearance
-description: Every option on the Chat widget's Look tab, the live preview, and the parts of the widget that react to your hours, your team and resolved chats.
+description: Every option on the Appearance page, the live preview, and the parts of the widget that react to your hours, your team and resolved chats.
 icon: palette
 ---
 
-You change how the widget looks on the desk, not in your snippet. Go to **Chat widget → Look** (`/appearance`). Owners and admins can edit; agents see the page read-only.
+You change how the widget looks on the desk, not in your snippet. Go to **Appearance** in the sidebar (`/appearance`). Owners and admins can edit; agents see the page read-only.
 
 ## The live preview
 
-The right side of the Look tab is the real widget, running in a frame with your unsaved changes. It isn't a mock-up, so it can't drift from what visitors get. Use **Chat** and **Closed** above the settings to switch between the open chat and the closed widget.
+The right side of the page is the real widget, running in a frame with your unsaved changes. It isn't a mock-up, so it can't drift from what visitors get. Use **Open** and **Closed** above the preview to switch between the open chat and the closed widget. **Discard** in the save bar puts back what's saved.
 
 <Warning>
   Messages you send in the preview start real conversations in your inbox.
@@ -20,7 +20,7 @@ Logos are the exception: they're saved as soon as you pick a file.
 
 ## Form or Code
 
-The **Form / Code** switch at the top of the Look tab works like the Agent pages' switch. **Code** shows `desk.yaml`, the desk's settings as a file: these options, plus the AI's switches, business hours and assignment. Edit it and press **Save**: it's saved as a new version of the agent's files, the changed settings go live, and **Form** shows them. Problems are listed under the file and nothing is saved until they're fixed. Saving the form writes your changes into `desk.yaml` too. See [desk.yaml](/code/files#desk-settings).
+The **Form / Code** switch at the top of the page works like the Agent pages' switch. **Code** shows `desk.yaml`, the desk's settings as a file: these options, plus the AI's switches, business hours and assignment. Edit it and press **Save**: it's saved as a new version of the agent's files, the changed settings go live, and **Form** shows them. Problems are listed under the file and nothing is saved until they're fixed. Saving the form writes your changes into `desk.yaml` too. See [desk.yaml](/code/files#desk-settings).
 
 ## Brand
 
@@ -29,7 +29,7 @@ The **Form / Code** switch at the top of the Look tab works like the Agent pages
 | **Name shown in the chat** | The name in the chat header and on the greeting card | Your workspace name. Up to 80 characters |
 | **Logo** | In the chat header, on the greeting card, and on the round button | None (the Jun mark in the chat, a chat bubble on the button) |
 | **Logo on dark backgrounds** | Used on dark surfaces instead of the logo above | Optional |
-| **Theme** | **Auto** follows each visitor's light or dark system setting; **Light** and **Dark** force one | Auto |
+| **Theme** | **Auto** follows each visitor's light or dark system setting; **Light** and **Dark** force one. A site can set its own: see [below](#follow-your-sites-theme) | Auto |
 | **Brand colour** | The button or island, the card's buttons and the send button | `#2f5bea`. Must be a six-digit hex colour |
 
 ### Logos
@@ -50,14 +50,18 @@ The widget picks readable text on your colour by itself: dark text (`#1c1c1a`) o
 
 To use a different colour on one site, add `data-color="#0f766e"` to that site's snippet. It overrides the desk's colour there only.
 
+### Follow your site's theme
+
+If your site has its own light / dark switch, let the widget follow it. Put `data-theme="dark"` (or `light`, or `auto` for the visitor's system) on the snippet for the first paint, and call `JunDesk.setTheme("dark")` or `setTheme("light")` whenever your switch changes. `setTheme(null)` goes back to the theme set here. See [JavaScript API](/widget/javascript-api#jundesk-settheme-theme).
+
 ## Mode and shape
 
 | Option | What it does | Default and limits |
 |---|---|---|
 | **Mode** | **Island** (a pill at the bottom centre) or **Chat window** (a button in the corner that opens a chat window) | Chat window |
-| **Island colour** | Only with **Island**: **Dark (like Dynamic Island)** or **Match the page theme** | Dark |
+| **Island colour** | Only with **Island**: **Dark** (near-black, like Dynamic Island) or **Match theme** | Dark |
 | **Neon border** | Only with **Island**: a slowly turning multi-colour glow | On |
-| **Show a greeting card** | Only with **Chat window**: a welcome card over the button; off shows just the round button | On |
+| **Greeting card** | Only with **Chat window**: a welcome card over the button; off shows just the round button | On |
 | **Button shows** | Only with **Chat window** and the greeting card off: **Company logo** or **"Chat with us"** on the round button | Company logo |
 | **Side of the page** | Only with **Chat window**: right or left corner | Right |
 | **Corner rounding** | The chat window, the island, message bubbles and buttons | 16px. Whole numbers from 0 to 24 |
@@ -105,7 +109,7 @@ When a conversation is resolved and someone (a teammate or the AI) has replied i
 
 ## Things that follow your settings elsewhere
 
-Some of what visitors see isn't on the Look tab.
+Some of what visitors see isn't on the Appearance page.
 
 ### Business hours
 
