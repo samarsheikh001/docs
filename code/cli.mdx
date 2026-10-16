@@ -46,7 +46,7 @@ Run `jun` with no command, or with `-h` / `--help`, to print the built-in help.
 
 The desk commands authenticate with a personal API token.
 
-- **Create one:** **Settings → Developer → API tokens**, enter a name (`laptop`, `GitHub Actions`) and press **Create token**. The token starts with `jun_` and is shown once.
+- **Create one:** **MCP → API tokens**, enter a name (`laptop`, `GitHub Actions`) and press **Create token**. The token starts with `jun_` and is shown once.
 - **What it can do:** it acts as you, in this workspace only, and only on the agent config (`/api/workspaces/<id>/agent…`) and the CLI's login check. It can't read conversations, change settings, or read or change action keys. A token from one workspace is refused by another (`wrong_workspace`).
 - **Role:** any member can `pull` and `eval`. `push` needs an owner or admin, the same as saving on the Agent page.
 - **Revoke:** the same card lists your tokens with when each was created and last used. **Revoke** deletes it at once.
@@ -65,7 +65,7 @@ npm run jun -- login https://your-desk.example.com
   The desk's address, starting with `https://` (or `http://` for a local desk).
 </ParamField>
 <ParamField path="--token" type="string">
-  The API token. Without it, the CLI uses `JUN_DESK_TOKEN` if set, or asks: `API token (Settings → Developer → API tokens):`.
+  The API token. Without it, the CLI uses `JUN_DESK_TOKEN` if set, or asks: `API token (MCP → API tokens):`.
 </ParamField>
 
 The CLI checks the token against the desk and prints `Logged in to <workspace> at <url> as <you>.` It saves the URL, token, workspace and your name in `~/.jun/desk.json`, readable only by you (mode 600). Logging in again replaces it; one desk at a time.

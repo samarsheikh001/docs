@@ -1,6 +1,6 @@
 ---
 title: Team and settings
-description: Invite teammates with single-use links, understand the owner, admin and agent roles, manage passkeys, and find your way around Settings.
+description: Run several websites from one desk with workspaces, invite teammates with single-use links, understand the owner, admin and agent roles, manage passkeys, and find your way around Settings.
 icon: user-plus
 ---
 
@@ -12,7 +12,7 @@ Each person has one of three roles.
 
 | Role | Who | Can |
 |---|---|---|
-| **Owner** | The person who set up the desk with the setup token | Everything an admin can, plus invite admins, make agents admins and remove admins. Nobody can change or remove the owner. |
+| **Owner** | The person who set up the desk with the setup token, or who created the workspace | Everything an admin can, plus invite admins, make agents admins and remove admins. Nobody can change or remove the owner. |
 | **Admin** | People the owner invites or promotes | Change the workspace's settings, the AI, knowledge and the chat widget; invite and remove agents |
 | **Agent** | People who answer chats | Work in the inbox and see the rest of the desk |
 
@@ -50,12 +50,14 @@ Your own role shows in **Settings → General** ("Owners and admins change works
   </Step>
   <Step title="They join">
     They open the link and see **Join \<your workspace\>**, "You've been invited as an agent." (or an admin). They enter their name and email and press **Create passkey and join**. Their browser or password manager creates a passkey, and they're signed in.
+
+    Someone who already has an account on this desk (in another workspace) presses **Join as \<their name\>** if they're signed in, or **Sign in to join** under the form. The workspace is added to their workspace menu; no new passkey.
   </Step>
 </Steps>
 
 Invite links work once and expire after 7 days. Pending invites are listed under **Pending invites** with who created them and when they expire; **Revoke** cancels one. Only a hash of each link is stored, so a lost link can't be shown again: create a new one.
 
-Someone opening a used, revoked or expired link sees **This invite link is invalid, used, or expired.** An email that already has an account on the desk can't join through an invite: they get **An account with that email already exists. Sign in instead.**
+Someone opening a used, revoked or expired link sees **This invite link is invalid, used, or expired.** Creating a new account with an email that's already on the desk gives **An account with that email already exists. Sign in with it to join.**
 
 <Tip>
 The invite link uses the address you created it from. If you use a [custom domain](/deploy/custom-domain), create invites from that address so passkeys are made for it: a passkey only works on the domain it was created for.
@@ -91,22 +93,30 @@ Settings opens as a dialog over the page you were on. Each section has its own a
 
 | Section | What's there | Who can change it |
 |---|---|---|
-| **General** | Your name and email, the workspace name and your role (read-only) | Nobody: there's no rename yet |
+| **General** | Your name and email, the workspace's name, your role, and **Delete workspace** | Rename: owners and admins. Delete: owners |
 | **AI** | AI replies on or off, the provider and model, the monthly cap, and keeping the agent in git. See [Models](/ai/models). | Owners and admins |
 | **Inbox** | [Assignment](/inbox/assignment), [Business hours](/inbox/business-hours), [Saved replies](/inbox/notes-and-replies#saved-replies), [Tags](/inbox/notes-and-replies#tags) and [Topics](/inbox/reports#topics) | Saved replies: everyone. The rest: owners and admins |
 | **Team** | Members, invites and pending invites | Owners and admins |
 | **Notifications** | Your own events, devices and sound. See [Notifications](/inbox/notifications). | Each person, for themselves |
 | **Issue trackers** | GitHub and Linear. See [Issues](/inbox/issues). | Owners and admins |
-| **Developer** | Your API tokens for the `jun` CLI. See [CLI](/code/cli). | Each person, for themselves |
 | **Passkeys** | Your passkeys | Each person, for themselves |
 
-The chat widget's look and install snippet are on the **Chat widget** page, not in Settings. See [Appearance](/widget/appearance) and [Install](/widget/install).
+The chat widget's look and install snippet are on the **Chat widget** page, not in Settings. Your API tokens for the `jun` CLI and your own AI are on the **MCP** page in the sidebar. See [MCP](/code/mcp). See [Appearance](/widget/appearance) and [Install](/widget/install).
 
 You can also jump to any settings section from the command palette (`Ctrl` `K`): type its name, for example **Settings: Team**.
 
-<Note>
-A desk shows one workspace. Its data model supports several workspaces, but the desk's interface works with the first one you're a member of.
-</Note>
+## Workspaces
+
+One desk can run several websites or products. Each one is a **workspace** with its own chat widget and widget key, inbox, AI agent and settings, knowledge, team, API tokens and notifications. Nothing is shared between them except the desk itself: its address, its Worker secrets (such as `JUN_SECRET_*` keys, `GITHUB_TOKEN`) and the setup token.
+
+- **Switch:** the workspace's name at the top of the sidebar opens a menu with your workspaces. Pick one to open it. The desk remembers it on this browser.
+- **Create:** owners see **New workspace** in that menu. Give it a name; you're its owner, and it opens on [Get started](/get-started-checklist) to add its docs, set up its AI and install its widget on its website.
+- **Rename:** **Settings → General → Workspace** (owners and admins). Customers see the name until the chat widget has its own.
+- **Delete:** **Settings → General → Delete workspace** (owners). Type its name to confirm. It deletes the workspace's conversations, contacts, knowledge, AI agent, widget and API tokens for good, and its widget stops working on your website. Teammates who were only in that workspace lose their account. You can't delete your only workspace.
+
+Teammates are per workspace: invite people from each workspace's **Settings → Team**. One person can be in several workspaces with one account and a different role in each. Notifications are per workspace too: turn them on in each workspace's **Settings → Notifications**. A notification opens its conversation in the right workspace.
+
+An API token belongs to the workspace it was made in, so the `jun` CLI and your own AI over [MCP](/code/mcp) work on that workspace. Make a token in each workspace you want to reach.
 
 ## Next steps
 

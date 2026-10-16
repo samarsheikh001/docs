@@ -10,12 +10,16 @@ It's the easiest way to [edit with your own AI](/code/overview#edit-with-your-ow
 
 ## Connect
 
+The quickest way is the **MCP** page in the desk's sidebar: pick your app (Claude Code, Cursor, Codex or Others) and press its one button. It creates an API token named after the app and then copies the command or configuration, or for Cursor opens Cursor's install prompt, with your address and the token filled in. The token is listed on the page's **API tokens** tab, where you can revoke it. Its value is shown only there, once.
+
+To set it up by hand instead:
+
 <Steps>
   <Step title="Create an API token">
-    In **Settings → Developer → API tokens**, create a token. It acts as you, for this workspace's agent only. Copy it: it's shown once.
+    On **MCP → API tokens**, create a token. It acts as you, for this workspace's agent only. Copy it: it's shown once.
   </Step>
   <Step title="Add the server to your AI">
-    Your MCP address is your desk's address plus `/mcp`, like `https://support.acme.com/mcp`. **Settings → Developer → Connect your AI** shows these snippets with your address (and the token you just created) filled in.
+    Your MCP address is your desk's address plus `/mcp`, like `https://support.acme.com/mcp`.
 
     <Tabs>
       <Tab title="Claude Code">
@@ -119,7 +123,7 @@ Knowledge isn't versioned: there's no History or `restore` for it, and **a remov
 - **Nothing broken is saved.** Each change is checked like a save on the desk; when the files have problems, nothing is saved and the AI gets the problems file by file.
 - **Every change is a version.** History on the Agent page shows the AI's changes as *Changed by an AI (MCP)*, with who owns the token. `restore` (or History on the desk) brings any version back.
 - **Look before it's live.** `dryRun: true` shows the resulting file without saving; `test_chat` answers changes (POST actions) without making them unless you ask for `real: true`; `run_tests` with `mockTools: true` doesn't call your APIs. `try_action` does make a real call.
-- **Only the agent and its knowledge.** A token reaches the agent's config, its tests and the knowledge tools, nothing else: not the inbox, conversations or contacts. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token in Settings → Developer at any time.
+- **Only the agent and its knowledge.** A token reaches the agent's config, its tests and the knowledge tools, nothing else: not the inbox, conversations or contacts. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token on MCP → API tokens at any time.
 
 Your AI client usually asks before it calls a tool; keep that on for tools that change things.
 
