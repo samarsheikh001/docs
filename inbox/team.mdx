@@ -109,7 +109,8 @@ You can also jump to any settings section from the command palette (`Ctrl` `K`):
 
 One desk can run several websites or products. Each one is a **workspace** with its own chat widget and widget key, inbox, AI agent and settings, knowledge, team, API tokens and notifications. Nothing is shared between them except the desk itself: its address, its Worker secrets (such as `JUN_SECRET_*` keys, `GITHUB_TOKEN`) and the setup token.
 
-- **Switch:** the workspace's name at the top of the sidebar opens a menu with your workspaces. Pick one to open it. The desk remembers it on this browser.
+- **Switch:** the workspace's name at the top of the sidebar opens a menu with your workspaces. Pick one to open it.
+- **Addresses:** every page lives under its workspace, `/w/<workspace>/…` (for example `/w/acme/inbox` or `/w/acme/settings/team`), so each browser tab stays on its own workspace and a copied link opens the right one. The `<workspace>` part comes from the name when the workspace is made and stays the same when you rename it. Addresses in these docs like `/agent` or `/settings/ai` are the part after it; typed without it, they open in the workspace you used last.
 - **Create:** owners see **New workspace** in that menu. Give it a name; you're its owner, and it opens on [Get started](/get-started-checklist) to add its docs, set up its AI and install its widget on its website.
 - **Rename:** **Settings → General → Workspace** (owners and admins). Customers see the name until the chat widget has its own.
 - **Delete:** **Settings → General → Delete workspace** (owners). Type its name to confirm. It deletes the workspace's conversations, contacts, knowledge, AI agent, widget and API tokens for good, and its widget stops working on your website. Teammates who were only in that workspace lose their account. You can't delete your only workspace.
