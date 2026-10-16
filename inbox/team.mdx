@@ -75,7 +75,7 @@ The **Members** card lists everyone with their email. For people below your role
 
 ## Passkeys
 
-Each person manages their own passkeys in **Settings → Passkeys** (**Your passkeys**).
+Each person manages their own passkeys in **Settings → Account** (**Your passkeys**).
 
 - **Add passkey** registers another one, for example on your phone or a second computer. Add at least one more so you can't get locked out.
 - Each passkey shows when it was added and last used. **synced** means your passkey provider backs it up and syncs it across your devices (iCloud Keychain, Google Password Manager, 1Password and similar).
@@ -91,15 +91,22 @@ If an agent or admin loses every passkey, they can't recover access themselves. 
 
 Settings opens as a dialog over the page you were on. Each section has its own address (`/settings/<section>`), so you can link to it. The **Theme** switch at the bottom of its menu cycles between system, light and dark.
 
+Its menu has three groups, and a line at the top of each section says which one you're in:
+
+- **Workspace · <name>**: this workspace only (its widget, inbox, AI and team). Every section from **General** to **Issue trackers**.
+- **You**: **Account**, yours in every workspace on the desk.
+- **This desk**: **Desk**, shared by all of its workspaces.
+
 | Section | What's there | Who can change it |
 |---|---|---|
-| **General** | Your name and email, the workspace's name, your role, and **Delete workspace** | Rename: owners and admins. Delete: owners |
+| **General** | The workspace's name, your role in it, and **Delete workspace** | Rename: owners and admins. Delete: owners |
 | **AI** | AI replies on or off, the provider and model, the monthly cap, and keeping the agent in git. See [Models](/ai/models). | Owners and admins |
 | **Inbox** | [Assignment](/inbox/assignment), [Business hours](/inbox/business-hours), [Saved replies](/inbox/notes-and-replies#saved-replies), [Tags](/inbox/notes-and-replies#tags) and [Topics](/inbox/reports#topics) | Saved replies: everyone. The rest: owners and admins |
 | **Team** | Members, invites and pending invites | Owners and admins |
 | **Notifications** | Your own events, devices and sound. See [Notifications](/inbox/notifications). | Each person, for themselves |
 | **Issue trackers** | GitHub and Linear. See [Issues](/inbox/issues). | Owners and admins |
-| **Passkeys** | Your passkeys | Each person, for themselves |
+| **Account** | Your name and email, the theme, and your passkeys | Each person, for themselves |
+| **Desk** | Jun's version and whether an update is out, and your workspaces (**All workspaces**, **New workspace**) | New workspace: owners |
 
 The chat widget's look and install snippet are on the **Chat widget** page, not in Settings. Your API tokens for the `jun` CLI and your own AI are on the **MCP** page in the sidebar. See [MCP](/code/mcp). See [Appearance](/widget/appearance) and [Install](/widget/install).
 
@@ -109,11 +116,12 @@ You can also jump to any settings section from the command palette (`Ctrl` `K`):
 
 One desk can run several websites or products. Each one is a **workspace** with its own chat widget and widget key, inbox, AI agent and settings, knowledge, team, API tokens and notifications. Nothing is shared between them except the desk itself: its address, its Worker secrets (such as `JUN_SECRET_*` keys, `GITHUB_TOKEN`) and the setup token.
 
+- **All workspaces:** with two or more, the desk's home page (`/`) lists them as cards: each one's widget logo, the website its widget is on (or **Not installed**), your role, its open chats, how many **Need a person**, and whether AI replies are on. Click a card to open that workspace. Reach it from **All workspaces** in the workspace menu or your account menu. With one workspace, `/` opens its inbox. The home's account menu has **Your account** and **This desk** (the same Settings sections, at `/settings/account` and `/settings/desk`).
 - **Switch:** the workspace's name at the top of the sidebar opens a menu with your workspaces. Pick one to open it.
 - **Addresses:** every page lives under its workspace, `/w/<workspace>/…` (for example `/w/acme/inbox` or `/w/acme/settings/team`), so each browser tab stays on its own workspace and a copied link opens the right one. The `<workspace>` part comes from the name when the workspace is made and stays the same when you rename it. Addresses in these docs like `/agent` or `/settings/ai` are the part after it; typed without it, they open in the workspace you used last.
-- **Create:** owners see **New workspace** in that menu. Give it a name; you're its owner, and it opens on [Get started](/get-started-checklist) to add its docs, set up its AI and install its widget on its website.
-- **Rename:** **Settings → General → Workspace** (owners and admins). Customers see the name until the chat widget has its own.
-- **Delete:** **Settings → General → Delete workspace** (owners). Type its name to confirm. It deletes the workspace's conversations, contacts, knowledge, AI agent, widget and API tokens for good, and its widget stops working on your website. Teammates who were only in that workspace lose their account. You can't delete your only workspace.
+- **Create:** owners see **New workspace** in that menu, on the home page and in **Settings → Desk**. Give it a name; you're its owner, and it opens on [Get started](/get-started-checklist) to add its docs, set up its AI and install its widget on its website.
+- **Rename:** **Settings → General**, the **Name** under **Workspace** (owners and admins). Customers see the name until the chat widget has its own.
+- **Delete:** **Settings → General → Delete workspace** (owners). Type its name to confirm. It deletes the workspace's conversations, contacts, knowledge, AI agent, widget and API tokens for good, and its widget stops working on your website. Teammates who were only in that workspace lose their account. You can't delete your only workspace. Afterwards you land on the home page, or in the one workspace that's left.
 
 Teammates are per workspace: invite people from each workspace's **Settings → Team**. One person can be in several workspaces with one account and a different role in each. Notifications are per workspace too: turn them on in each workspace's **Settings → Notifications**. A notification opens its conversation in the right workspace.
 

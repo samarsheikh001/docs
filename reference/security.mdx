@@ -14,7 +14,7 @@ Teammates sign in with passkeys (fingerprint, face, device PIN or a security key
 
 - **Owner:** created on the first visit, with the `SETUP_TOKEN` secret. Setup runs once; afterwards the setup page refuses.
 - **Teammates:** join through an invite link from **Settings → Team**. Each link carries a role (admin or agent), works once and expires after 7 days. The desk stores only a hash of the link's token.
-- **More devices:** each person adds passkeys under **Settings → Passkeys** while signed in.
+- **More devices:** each person adds passkeys under **Settings → Account** while signed in.
 - **Recovery:** if the owner loses every passkey, `/recover` with the setup token registers a new one for the owner's account. The setup token is compared in constant time.
 
 Because passkeys belong to a hostname, moving the desk to a new domain means new passkeys. See [Troubleshooting](/reference/troubleshooting).
