@@ -13,6 +13,10 @@ By default every visitor is anonymous. When your app knows who the customer is, 
 
 Identity only ever comes from a token the desk verifies. Nothing the page's JavaScript says about the user is trusted on its own.
 
+<Tip>
+**Let your AI set it up.** With the desk's [MCP server](/code/mcp#set-up-identity-with-your-ai) connected in the editor where your app's code is open, ask: *"Set up Jun identity verification for our app."* Your AI turns it on (`set_identity`), puts the secret in your server's environment, adds the signing function and the page code from the guide `jun://guide/identity`, and checks a real token with `check_identity_token`.
+</Tip>
+
 ## How it works
 
 <Steps>
@@ -35,6 +39,18 @@ Identity only ever comes from a token the desk verifies. Nothing the page's Java
 
     ```js
     window.JunDesk?.identify(userToken);
+    ```
+
+    The snippet loads with `defer`, so early in a page's life `window.JunDesk` may not exist yet. If your app can sign in before the loader has run, wait for its `jundesk:ready` event:
+
+    ```js
+    function junIdentify(token) {
+      if (window.JunDesk) window.JunDesk.identify(token);
+      else window.addEventListener("jundesk:ready", () => window.JunDesk.identify(token), { once: true });
+    }
+
+    // A single-page app: ask your server for a token for the signed-in user.
+    fetch("/api/jun-token").then((r) => r.json()).then(({ token }) => junIdentify(token));
     ```
   </Step>
   <Step title="Call logout when they sign out">
@@ -145,7 +161,39 @@ def jun_user_token(user):
         algorithm="HS256",
     )
 ```
+
+```ruby Ruby (jwt gem)
+require "jwt"
+
+def jun_user_token(user)
+  claims = {
+    sub: user.id.to_s,
+    email: user.email,
+    name: user.name,
+    attributes: { plan: user.plan },
+    exp: Time.now.to_i + 3600,
+  }
+  JWT.encode(claims, ENV.fetch("JUN_IDENTITY_SECRET"), "HS256")
+end
+```
+
+```php PHP (firebase/php-jwt)
+use Firebase\JWT\JWT;
+
+function jun_user_token($user) {
+    $claims = [
+        "sub" => (string) $user->id,
+        "email" => $user->email,
+        "name" => $user->name,
+        "attributes" => ["plan" => $user->plan],
+        "exp" => time() + 3600,
+    ];
+    return JWT::encode($claims, getenv("JUN_IDENTITY_SECRET"), "HS256");
+}
+```
 </CodeGroup>
+
+To check what your server makes, give a token to the MCP tool `check_identity_token`: it answers exactly as the chat would. Don't paste tokens into third-party decoder sites: a token with a `secrets` claim carries the customer's own key.
 
 Then hand the token to the page, for example by rendering it into the snippet's `data-user-token` attribute, or by returning it from an endpoint your front end calls before `JunDesk.identify(token)`.
 
@@ -197,6 +245,8 @@ On the **Identify signed-in customers** card:
 
 - **Rotate secret** creates a new one. Every token signed with the old secret stops working at once, so update your server first or right after.
 - **Turn off** removes the secret. Everyone becomes anonymous, and identify calls fail with "Identity verification isn't set up for this desk".
+
+Over the [MCP server](/code/mcp-tools#signed-in-customers), `set_identity` does the same with `turn: "rotate"` or `turn: "off"`, and refuses both until it's called with `confirm: true`.
 
 <CardGroup cols={2}>
   <Card title="Actions" icon="bolt" href="/ai/actions">

@@ -1,0 +1,151 @@
+---
+title: MCP tool reference
+description: Every tool the desk's MCP server offers, with its arguments, what it answers and who can use it.
+icon: wrench
+---
+
+This page lists every tool on the desk's [MCP server](/code/mcp), group by group. You rarely call them yourself: your AI picks them from what you ask. Use this page to know what's possible, to read what your AI did, or to write precise requests ("dry run it first", "only restore the refunds task").
+
+## Conventions
+
+- **Live at once.** A tool that changes the agent saves a new version, and the newest version is what customers get. Nothing is saved when the files have problems: the answer lists each file and what's wrong.
+- **`dryRun: true`** on any tool that changes the agent checks the change and shows the resulting file without saving it.
+- **`message`** on those tools sets the version's line in History (default: a line saying what the tool did, like *MCP: add task refunds*).
+- **Field edits keep your files tidy.** The typed tools (`update_task`, `update_action`, …) change only the fields you pass and keep comments, key order and keys they don't know. Passing `null` for a field removes it.
+- **Roles.** Any teammate's token can use the read tools. Changing anything, Try it, the test chat, set_key and the identity tools need an owner's or admin's token.
+
+## The agent
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `get_agent` | — | Everything at a glance: the live version, instructions summary, tasks, actions (and whether each is ready), widgets, tests, website actions, desk settings. Start here. |
+| `read_file` | `path`, `version` | One file's text, from the live version or an older one. |
+| `write_file` | `path`, `content`, `dryRun`, `message` | Writes a whole file. For anything the typed tools don't cover. |
+| `delete_file` | `path`, `dryRun`, `message` | Deletes a file. |
+| `check` | `files` (path → text, or `null` to delete) | Checks changes against the live files without saving: problems file by file. |
+| `history` | `limit` (default 20, at most 50) | The versions, newest first: number, when, who, from where (desk, CLI, MCP) and their message. |
+| `diff_versions` | `from`, `to`, `paths` | What changed between two versions, as a unified diff per file. `to` defaults to the live version and `from` to the one before it; `0` is the built-in default agent. Long diffs are cut at 40,000 characters. |
+| `restore` | `version`, `paths`, `dryRun`, `message` | Brings an old version back as a new version. With `paths`, only those files come back and everything else stays as it is now. |
+| `connections` | — | How the pieces link: which tasks use which actions, which action shows which card, which card buttons run which actions, and names used that don't exist. |
+
+## Instructions
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `get_instructions` | — | `instructions.md`: the persona and rules, `maxReplies` and `handoffTopics`. |
+| `update_instructions` | `body`, `maxReplies` (1–50, `null` for the default 8), `handoffTopics`, `dryRun`, `message` | Replaces the body and sets the two settings. |
+
+## Tasks
+
+A task is a procedure for one job, like refunds or changing plan. The AI picks it by its description.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_tasks` | — | Each task and when it applies. |
+| `get_task` | `name` | The whole task. |
+| `create_task` | `name`, `description`, `steps`, `intent`, `opening`, `replies`, `exit`, `dryRun`, `message` | A new `tasks/<name>.md`. `steps` is Markdown or a list (numbered for you); name an action with `@action_name`. `intent`, `opening`, `replies` and `exit` make it a chat your app opens with [`JunDesk.open({ intent })`](/widget/intents). |
+| `update_task` | `name` and any of the fields above | Changes only the fields you pass. |
+| `delete_task` | `name` | Deletes it. |
+| `task_uses` | `name` | The actions its steps use, whether each is set up, and the cards they show with what each button does. |
+
+## Actions
+
+An action is an HTTP request the AI may make: look something up, or change something with POST.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_actions` | — | Each action, its method and address, and whether it's ready. |
+| `get_action` | `name` | The whole file and its problems. |
+| `create_action` | `name`, `description`, `status`, `method`, `url`, `headers`, `query`, `body`, `input`, `pick`, `mock`, `pages`, `widget`, `widget_done`, `widget_failed`, `dryRun`, `message` | A new `actions/<name>.yaml`. See [Actions](/ai/actions) for every field. |
+| `action_from_curl` | `curl`, `description`, `name`, `status` | An action from a curl command in your API docs. A key in the command is stored on the desk and the file gets `{secrets.NAME}`. |
+| `update_action` | `name` and any field above | Changes only the fields you pass. |
+| `delete_action` | `name` | Deletes it. |
+| `try_action` | `name`, `input`, `customer`, `file` | **One real call**, like Try it on the action's page: the status, the result the AI would get and a card if it has one. `customer` stands in for the signed-in customer (`{ id, email, name, attributes, secrets }`); `file` tries an unsaved version. |
+| `action_status` | `name` | Whether each action is offered to the AI and what's missing (usually a key), plus the keys the desk has: names only, with the last 4 characters of a pasted one. |
+| `set_key` | `name`, `value`, `remove` | Stores a key an action uses as `{secrets.NAME}` (UPPER_SNAKE_CASE, up to 4,096 characters, at most 50 keys). **Write-only**: no tool returns it. A Worker secret `JUN_SECRET_<NAME>` wins over it. |
+
+<Note>
+An action that changes something (POST) needs a task step that says exactly what will change and waits for the customer's clear yes. The AI connected over MCP is told this rule.
+</Note>
+
+## Widgets
+
+Widgets are the cards a result is shown as, in [ChatKit's widget format](/ai/widgets).
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_widgets` | — | Each card, the actions that show it and its buttons. |
+| `get_widget` | `name` | The whole `.widget` file. |
+| `create_widget` | `name`, `fromTemplate`, `title`, `template`, `sample`, `jsonSchema`, `summary`, `states`, `aiFill`, `pageActions`, `dryRun`, `message` | A new card: blank, from your template, or from a gallery template (`fromTemplate: "flight_tracker"`). |
+| `update_widget` | `name` and any field above | Changes only the fields you pass. |
+| `delete_widget` | `name` | Deletes it. |
+| `widget_templates` | — | The gallery: 19 ChatKit Studio templates with their ids. |
+| `get_widget_template` | `id` | One template's file. |
+| `preview_widget` | `name`, `file`, `state`, `data`, `theme` (`light` or `dark`) | Renders the card and answers with a **picture** of it as customers see it, an outline of the card, what each control does, problems, and a link to it on the desk. `file` previews an unsaved card; `state` or `data` render other data than the sample. |
+| `widget_from_data` | `name`, `title`, `data`, `websiteAction`, `attachTo`, `dryRun`, `message` | A first card from an example result (what `try_action` returned, or a website action's result shape). `attachTo` makes an action show it. |
+
+## Tests
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_tests` | — | Every test case: file, name, the customer's message and what's expected. |
+| `get_tests` | `file` | One tests file. |
+| `add_test_case` | `file` (default `basics`), `name`, `message` or `messages`, `expect`, `intent`, `page`, `actions` | A new case. `expect` is `{ outcome: answer | handoff | escalate | action, tools, criteria, action, widget }`. |
+| `update_test_case` | `file`, `name`, `newName` and any field above | Changes one case. |
+| `delete_test_case` | `file`, `name` | Deletes one case. |
+| `run_tests` | `cases`, `files`, `mockTools`, `replay`, `sample` | Runs the cases with the real AI and reports each one. `files` tests unsaved changes; `mockTools: true` uses each action's `mock:` instead of calling your API; `replay: true` also replays recent real conversations and shows which answers would change. Reports progress while it runs. |
+| `test_chat` | `messages`, `turns`, `press`, `files`, `real`, `customer`, `page` | Chats with the agent as a customer: its replies, the actions it called, the cards it showed. Pass the returned `turns` back to continue, and `press` to press a card's button. **POST actions are pretended** unless `real: true`. `customer` chats as a signed-in customer. Reports progress while it runs. |
+
+## Your website
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `website_actions` | — | The [page actions](/widget/page-actions) your site has offered the agent: names, inputs, result shapes, risk, and what `website-actions.yaml` overrides. |
+| `set_website_action` | `name`, `run` (`auto`, `confirm`, `human` or `null`), `status`, `dryRun`, `message` | Overrides one website action's risk and the line shown while it runs. |
+
+## Desk settings
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `get_desk_settings` | — | `desk.yaml`: the AI's switches and models, the chat widget, business hours, assignment. |
+| `update_desk_settings` | `ai`, `chat`, `hours`, `inbox`, `dryRun`, `message` | Changes only the keys you pass, and applies them to the desk at once. `ai.models` and `hours.days` are replaced whole. |
+| `preview_chat` | `chat`, `open`, `page` (`light` or `dark`) | A **picture** of the chat widget as a visitor sees it: closed (the island, greeting card or button) or open, on a light or dark website. `chat` lays unsaved settings over the live look (the same keys as `update_desk_settings`' `chat`), so your AI can show you a colour before saving it. Nothing is saved. |
+
+## Signed-in customers
+
+Actions that use `{user.id}`, `{user.email}`, `{user.<attribute>}` or `{user.secrets.NAME}` run only for customers your website [identified](/widget/identify-users). These tools set that up. Owners and admins only.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `get_identity` | `reveal` | Whether identity verification is on, and each action that uses `{user.*}`. The secret's start and last 4 characters; the whole secret only with `reveal: true`. |
+| `set_identity` | `turn` (`on`, `rotate`, `off`), `confirm` | `on` creates the identity secret and shows it once (an existing one stays). `rotate` makes a new one: tokens signed with the old one stop working at once. `off` makes everyone anonymous. **`rotate` and `off` need `confirm: true`.** |
+| `check_identity_token` | `token` | Checks a token your server made, exactly as the chat will: what `{user.id}`, `{user.email}`, `{user.name}` and each attribute would be (user secrets by name only), or the reason it's refused (wrong secret, expired, no `sub`…). Nothing is stored. |
+
+The resource `jun://guide/identity` gives your AI the claims, signing code for Node, Python, Ruby and PHP, and the page code. See [Set up identity with your AI](/code/mcp#set-up-identity-with-your-ai).
+
+## Knowledge
+
+The websites and documents the AI answers from. Knowledge isn't versioned: no History, `diff_versions` or `restore`.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `list_knowledge` | — | Every source: id, type (website, page, file, text), URL or name, state (queued, crawling, indexing, ready, failed), pages and chunks, last sync, errors. |
+| `get_source` | `id` | One source in detail. A website: every page it read (URL, title, chunks, last change, up to 300) and the pages left out or blocked by robots.txt. A document: its text, up to 40,000 characters (the original for Markdown and text, what was indexed for PDF and DOCX). |
+| `add_website` | `url`, `maxPages` (1–2000) | Crawls a site, or one page with `maxPages: 1`. Runs in the background. |
+| `add_document` | `name`, `text` or `base64` + `filename` | Adds text, Markdown, or a PDF, DOCX, Markdown or text file up to 10 MB. Indexed in the background. |
+| `update_document` | `id`, `name`, `text` or `base64` + `filename` | Replaces a document's content in place (same id) and re-indexes it. The old content is gone. Websites change on the site: re-sync them instead. |
+| `resync_source` | `id` | Re-crawls a website or re-indexes a document now. |
+| `remove_source` | `id`, `confirm` | Deletes a source and everything indexed from it. **Needs `confirm: true`**; it can't be undone. |
+| `search_knowledge` | `query`, `limit` (1–10, default 5) | Runs a question through the support AI's own search and shows what it would get, with scores. |
+
+## Resources
+
+Besides tools, the server offers documents your AI can read:
+
+| URI | What |
+|---|---|
+| `jun://guide/files` | The [file format](/code/files): every file and key. |
+| `jun://guide/chatkit-widgets` | ChatKit Studio's guide for AIs that write widgets. |
+| `jun://guide/jinja` | The filters and tests widget templates can use. |
+| `jun://guide/identity` | Identifying signed-in customers: claims, server code, page code, checking. |
+| `jun://file/<path>` | Each file of the live agent, like `jun://file/tasks/refunds.md`. |

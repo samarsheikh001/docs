@@ -1,12 +1,12 @@
 ---
 title: Connect your AI (MCP)
-description: Let Claude Code, Cursor, Codex or Claude Desktop change your support agent through the desk's MCP server. No checkout, no CLI.
+description: Let Claude Code, Cursor, Codex or Claude Desktop build and change your support agent through the desk's MCP server. No checkout, no CLI.
 icon: plug
 ---
 
-Every Jun desk serves an [MCP](https://modelcontextprotocol.io) server at `/mcp`. Connect your own AI to it and ask in plain words: it reads your agent, writes tasks and actions, builds cards, runs the tests and makes the change live. Each change is checked like a save on the desk and kept as a version you can restore.
+Every Jun desk serves an [MCP](https://modelcontextprotocol.io) server at `/mcp`. Connect your own AI to it and ask in plain words: it reads your agent, writes tasks and actions, builds cards and looks at pictures of them, runs the tests, chats with the agent as a customer and makes the change live. Each change is checked like a save on the desk and kept as a version you can compare and restore.
 
-It's the easiest way to [edit with your own AI](/code/overview#edit-with-your-own-ai): nothing to clone or install, and the AI works on the live agent with the same checks the Agent page uses.
+It's the easiest way to [edit with your own AI](/code/overview#edit-with-your-own-ai): nothing to clone or install, and the AI works on the live agent with the same checks the Agent page uses. And because your AI usually has your app's code open too, it can do both sides of a job at once: the agent on the desk, and what your website needs (like [identifying signed-in customers](#set-up-identity-with-your-ai)).
 
 ## Connect
 
@@ -17,6 +17,8 @@ To set it up by hand instead:
 <Steps>
   <Step title="Create an API token">
     On **MCP → API tokens**, create a token. It acts as you, for this workspace's agent only. Copy it: it's shown once.
+
+    The token has your role. An owner's or admin's token can change things; a teammate with the agent role gets a token that can only read.
   </Step>
   <Step title="Add the server to your AI">
     Your MCP address is your desk's address plus `/mcp`, like `https://support.acme.com/mcp`.
@@ -27,7 +29,7 @@ To set it up by hand instead:
         claude mcp add --transport http jun https://support.acme.com/mcp \
           --header "Authorization: Bearer jun_…"
         ```
-        Then `claude mcp list` should show `jun … ✔ Connected`.
+        Then `claude mcp list` should show `jun … ✔ Connected`. After the desk is updated with new tools, run `/mcp` and reconnect to see them.
       </Tab>
       <Tab title="Cursor">
         In `.cursor/mcp.json` (this project) or `~/.cursor/mcp.json` (every project):
@@ -67,70 +69,202 @@ To set it up by hand instead:
     </Tabs>
   </Step>
   <Step title="Ask">
-    Try: *"Add a refund task that looks up the order with our orders API (here's the curl command from our docs: …), test it, and make it live."*
+    Try: *"What does our support agent do today? Anything broken?"* Then: *"Add a refund task that looks up the order with our orders API (here's the curl command from our docs: …), test it, and make it live."*
   </Step>
 </Steps>
 
-## What you can ask for
+<Tip>
+Several workspaces on one desk? A token belongs to one workspace. Create a token in each workspace you want your AI to work on, and add the server once per workspace under different names (`jun-acme`, `jun-beta`).
+</Tip>
 
-The AI gets a guide to the agent's files when it connects, and these tools. Tools that change something save a new version that's **live at once**; each takes `dryRun: true` to show the result without saving, and `message` for the version's line in History.
+## What your AI can do
 
-| Group | Tools |
+When it connects, your AI gets a short guide to how the agent works and its rules, plus about 60 tools. The [tool reference](/code/mcp-tools) lists every one with its arguments. In short:
+
+| Area | What it can do |
 |---|---|
-| The agent | `get_agent` (everything at a glance), `read_file`, `write_file`, `delete_file`, `check` (problems, no save), `history`, `restore`, `connections` |
-| Instructions | `get_instructions`, `update_instructions` (the body, `maxReplies`, `handoffTopics`) |
-| Tasks | `list_tasks`, `get_task`, `create_task`, `update_task`, `delete_task`, `task_uses` (its actions, whether they're set up, their cards) |
-| Actions | `list_actions`, `get_action`, `create_action`, `action_from_curl` (from your API docs), `update_action`, `delete_action`, `try_action` (one real call), `action_status`, `set_key` |
-| Widgets | `list_widgets`, `get_widget`, `create_widget` (blank, your template, or a gallery one), `update_widget`, `delete_widget`, `widget_templates`, `get_widget_template`, `preview_widget` (problems, an outline of the card, what each button does, a link to see it), `widget_from_data` (a card from an example result) |
-| Tests | `list_tests`, `get_tests`, `add_test_case`, `update_test_case`, `delete_test_case`, `run_tests` (the test cases; `replay: true` also replays recent conversations), `test_chat` (chat as a customer, press card buttons) |
-| Your website | `website_actions` (what your site offers the agent), `set_website_action` (auto, confirm or human, and the line shown while it runs) |
-| Desk settings | `get_desk_settings`, `update_desk_settings` (the AI's switches, the chat widget, business hours, assignment; applied at once) |
-
-It can also read these resources: the [file format](/code/files) (`jun://guide/files`), ChatKit's widget authoring guide (`jun://guide/chatkit-widgets`), the Jinja filters widget templates can use (`jun://guide/jinja`) and every file of the live agent (`jun://file/<path>`).
-
-### Knowledge
-
-The websites and documents the AI answers from (the desk's Knowledge page) have their own tools. They do exactly what the Knowledge page does, with the same limits.
-
-| Tool | What it does |
-|---|---|
-| `list_knowledge` | Every source: type (website, page, file, text), URL or name, state (queued, crawling, indexing, ready, failed), pages and chunks, last sync, errors |
-| `add_website` | Crawls a site, or one page with `maxPages: 1`. Answers at once; the crawl runs in the background |
-| `add_document` | Adds a document: `name` plus `text` (plain text or Markdown), or `base64` and `filename` for a PDF, DOCX, Markdown or text file up to 10 MB. Indexed in the background |
-| `resync_source` | Re-crawls a website or re-indexes a file, like the sync button |
-| `remove_source` | Deletes a source and everything indexed from it. Needs `confirm: true` |
-| `search_knowledge` | Runs a question through the same search the support AI uses and shows what it would find |
-
-Anyone's token can list and search; adding, re-syncing and removing need an owner's or admin's.
-
-<Warning>
-Knowledge isn't versioned: there's no History or `restore` for it, and **a removed source can't be brought back**. `remove_source` refuses until it's called with `confirm: true`, and the AI is told to ask you first.
-</Warning>
+| **The agent** | Read everything at a glance, read and write any file, check changes without saving, list versions, **compare any two versions**, restore a version or **just some of its files**, and see how the pieces connect. |
+| **Instructions** | The persona and rules, how many replies before a person takes over, topics always handed to a person. |
+| **Tasks** | Procedures for one job each (refunds, change plan), including chats your app opens for a task with [intents](/widget/intents). |
+| **Actions** | HTTP requests the AI may make, written from a curl command or field by field; one real call to try it; keys stored write-only. |
+| **Widgets** | Cards a result is shown as, from scratch, from your data or from the 19 ChatKit gallery templates, with a **picture** of each. |
+| **Tests** | Test cases, running them, replaying real conversations, and **chatting with the agent as a customer**, pressing its cards' buttons. |
+| **Your website** | The actions your site offers the agent, and how much each may do on its own. |
+| **Desk settings** | The AI's switches and models, the chat widget's look and texts, business hours, assignment; and a **picture of the chat widget** before you save a change. |
+| **Signed-in customers** | Turn identity verification on, and check the tokens your server signs. |
+| **Knowledge** | Add websites and documents, read what was indexed, replace a document, re-sync, remove, and search like the AI does. |
 
 ### Some things to ask
 
 - *"What does our agent do today? Anything broken?"*
 - *"When someone asks to cancel, offer the annual discount first, then hand off. Add a test for it."*
 - *"Here's our orders API: `curl https://api.acme.com/v2/orders/1042 -H 'Authorization: Bearer sk_live_…'`. Make an action that looks up an order, try it with order 1042, and show the result as a card."*
-- *"Start from the ride status template for our delivery tracker and show me what its buttons do."*
-- *"Change the chat widget's greeting to 'Hi! Ask us anything.' and close on Sundays."*
+- *"Start from the flight tracker template for our delivery tracker. Show me a picture in dark mode."*
+- *"Show me the chat widget in our brand teal on a dark page before you change anything."*
+- *"Change the greeting to 'Hi! Ask us anything.' and close on Sundays."*
 - *"Run the tests. Fix what fails, but show me the change with a dry run first."*
+- *"What changed in the agent since yesterday? Put the refunds task back the way it was in version 31, and leave the rest."*
 - *"Can the AI answer 'do you have an EU data center?' from our docs? If not, add our security page."*
+- *"Our returns policy document is out of date: here's the new text. Replace it."*
+- *"Let signed-in customers upgrade their plan from the chat."* (see [the full example](#example-a-plan-upgrade-button))
+
+## How a change goes live
+
+Your AI works on the **live** agent. There's no separate draft: each change is one new version, and customers get it as soon as it's saved.
+
+<Steps>
+  <Step title="It reads first">
+    `get_agent` shows everything at once; the AI reads the files it's about to change. Before writing a task that answers a question, it runs `search_knowledge`: if the knowledge already has the answer, no task is needed.
+  </Step>
+  <Step title="It changes only what it must">
+    The typed tools (`create_task`, `update_action`, `update_widget`, …) change only the fields they're given, and keep comments and anything else in the file. `write_file` is there for the rest.
+  </Step>
+  <Step title="Every change is checked">
+    The files are checked like a save on the Agent page. With problems, **nothing is saved**: the AI gets each file and what's wrong, and fixes it. Warnings (an action whose key isn't stored yet, a card button that leaves out an input its action needs) are saved with the change and shown to the AI.
+  </Step>
+  <Step title="It can look before saving">
+    `dryRun: true` on any change shows the resulting file without saving it. `run_tests` and `test_chat` take `files` to test unsaved changes. `preview_widget` and `preview_chat` draw unsaved cards and settings.
+  </Step>
+  <Step title="Saved and live">
+    A saved change is a version in History, marked *Changed by an AI (MCP)* with whose token it was. `diff_versions` shows what changed, and `restore` brings back an old version, or just some of its files, as a new version.
+  </Step>
+</Steps>
+
+The AI is told to ask you before it makes changes live unless you've said to go ahead, and to add a test case for each behaviour it adds or fixes. If two saves happen at once (you on the desk, your AI over MCP), the later one is retried on top of the newer version; it never silently overwrites yours.
+
+## Pictures
+
+Your AI can **see** what customers will see:
+
+- **`preview_widget`** draws a card the way the chat does, in light or dark, with its buttons live. It works on saved cards, unsaved files, named states and any data you give it.
+- **`preview_chat`** draws the chat widget on a desktop-sized website: the island, the chat window with its greeting card, or the round button, closed or open, on a light or dark page. Pass unsaved `chat` settings to see a new colour, mode or greeting before saving.
+
+The pictures come from [Cloudflare Browser Run](https://developers.cloudflare.com/browser-rendering/): the desk's Worker opens its own public `/shot` page in a headless browser and takes a screenshot. The card or settings travel in the page's address fragment, which never reaches a server or its logs. Nothing is saved.
+
+<Note>
+- Pictures need the `BROWSER` binding, which new desks have in `wrangler.jsonc`. No API token is needed. Browser Run's free allowance (10 minutes of browser time a day on the Workers Free plan) is plenty for previews.
+- A desk running on your own computer (`npm run dev`) gets no picture: Cloudflare's browser can't reach `localhost`. The tools still answer with the outline and problems, and say why there's no picture.
+- An AI client that can't show images still gets the text: what each control does, and the problems.
+</Note>
+
+## Long runs
+
+`run_tests` and `test_chat` call the real AI and can take a minute or more. If your client accepts streamed answers (Claude Code, Cursor and Codex do), the desk sends **progress** as it goes (*"PASS refund goes to a person"*, *"AI reply 2 written"*) and a keepalive every 15 seconds, so the call isn't timed out. Clients that only take JSON get the same answer at the end.
+
+## Set up identity with your AI
+
+Actions that act on the customer's own account use `{user.id}` (or `{user.email}`, `{user.plan}`, `{user.secrets.API_TOKEN}`). They run only for customers your website has [identified](/widget/identify-users): your server signs a short token saying who's signed in, with a secret only your server and the desk share, and the desk checks it. Without that, every visitor is anonymous and those actions don't run. That's on purpose: if the page could just say who the customer is, anyone could type someone else's id and act on their account.
+
+Setting it up has two halves. Your AI can do both, because it can reach the desk over MCP **and** your app's code:
+
+<Steps>
+  <Step title="Turn identity on (the desk)">
+    `set_identity` with `turn: "on"` creates the identity secret and shows it once. Your AI puts it in your app server's environment, like `JUN_IDENTITY_SECRET` in `.env` or your host's secret settings. It never goes in a file you commit, in page code or in an agent file. `get_identity` says whether it's on and which actions need it; `reveal: true` shows the secret again.
+  </Step>
+  <Step title="Sign a token on your server (your app)">
+    Your AI reads `jun://guide/identity` and adds a small function that signs a token for the signed-in user: HS256, `sub` = your user id (it becomes `{user.id}`), `exp` an hour ahead, optional `email`, `name`, `attributes` (like `plan`) and `secrets`. The guide has the code for Node, Python, Ruby and PHP.
+  </Step>
+  <Step title="Pass it to the chat (your pages)">
+    Server-rendered pages put the token on the snippet as `data-user-token`. Single-page apps fetch it from your server after sign-in and call `JunDesk.identify(token)`, and `JunDesk.logout()` on sign-out.
+  </Step>
+  <Step title="Check it">
+    Your AI runs your signing code (or a test that calls it) and hands the token to `check_identity_token`. The desk answers exactly as the chat would: *Accepted* with what `{user.id}`, `{user.email}` and each attribute will be, or the reason it's refused (*signature doesn't match*: the wrong secret; *expired*; *needs a sub*).
+  </Step>
+</Steps>
+
+Until your website sends tokens, test actions that use `{user.*}` with `try_action` or `test_chat` and a pretend `customer`: `{ "id": "u_123", "email": "sam@acme.test", "attributes": { "plan": "starter" } }`.
+
+<Warning>
+`set_identity` with `turn: "rotate"` makes a new secret, and every token signed with the old one stops working at once: identified customers become anonymous until your server uses the new one. `turn: "off"` makes everyone anonymous. Both refuse until they're called with `confirm: true`, and the AI is told to ask you first.
+</Warning>
+
+## Example: a plan upgrade button
+
+Here's what one request can turn into: *"Let signed-in customers upgrade their plan from the chat. Our billing API is `POST https://api.acme.com/v1/subscriptions` with `{ customer, plan }` and a Bearer key."*
+
+<Steps>
+  <Step title="Identity">
+    `get_identity` shows it's off, so the AI asks you, turns it on with `set_identity`, and adds the token endpoint and `JunDesk.identify` to your app (above).
+  </Step>
+  <Step title="The key">
+    It asks you for the billing key and stores it with `set_key` as `BILLING_API_KEY`. The key never appears in a file or an answer.
+  </Step>
+  <Step title="The action">
+    `create_action` writes `actions/upgrade_plan.yaml`:
+
+    ```yaml
+    description: Moves the signed-in customer to another plan. Only after they said yes.
+    status: Changing your plan
+    method: POST
+    url: https://api.acme.com/v1/subscriptions
+    headers:
+      Authorization: Bearer {secrets.BILLING_API_KEY}
+    body:
+      customer: "{user.id}"
+      plan: "{plan}"
+    input:
+      plan: { type: string, enum: [starter, pro, business], description: The plan to move to }
+    widget_done: You're on {{ plan | title }} now.
+    widget_failed: That didn't work. Nothing was changed.
+    ```
+
+    `{user.id}` comes from the verified token, never from the chat, so the change can only ever go to the account that's signed in.
+  </Step>
+  <Step title="The card">
+    `create_widget` makes a plan picker whose buttons run the action (`tool:upgrade_plan` with `{ "plan": "pro" }`), and `preview_widget` shows you a picture of it, light and dark.
+  </Step>
+  <Step title="The task">
+    `create_task` writes the procedure: show the plans card, say exactly what changes (new plan, new price, from when), and only run `@upgrade_plan` after a clear yes. A card button press counts as that yes.
+  </Step>
+  <Step title="Tests">
+    `add_test_case` adds *"I want to upgrade to Pro"* → the card is shown and nothing changes before a yes. `test_chat` with a pretend `customer` chats through it and presses Pro; the POST is pretended. `run_tests` runs the whole suite.
+  </Step>
+  <Step title="Live">
+    With your go-ahead it's saved. If anything goes wrong, `restore` puts the previous version back.
+  </Step>
+</Steps>
+
+<Tip>
+Your app already has an upgrade function in the page, and the customer is signed in there? Then the button can call it instead: register it as a [page action](/widget/page-actions) (`JunDesk.registerAction("upgrade_plan", …)`) and give the card a `page:upgrade_plan` button. It runs in the customer's own logged-in session in their browser, so it needs no identity token and no API key on the desk.
+</Tip>
+
+## Knowledge
+
+The websites and documents the AI answers from (the desk's Knowledge page) have their own tools, which do exactly what the Knowledge page does with the same limits: list, read a source (a website's pages, a document's text), add a website or document, replace a document, re-sync, remove and search. Crawls and indexing run in the background; the AI checks `list_knowledge` until a source is ready.
+
+Anyone's token can list, read and search; adding, replacing, re-syncing and removing need an owner's or admin's.
+
+<Warning>
+Knowledge isn't versioned: there's no History or `restore` for it. **A removed source or a replaced document can't be brought back.** `remove_source` refuses until it's called with `confirm: true`, and the AI is told to ask you first.
+</Warning>
 
 ## Safety
 
-- **Keys are write-only.** `set_key` (and `action_from_curl`, for a key in the command) stores a key on the desk; no tool ever returns it. Files only ever say `{secrets.NAME}`, and answers mask keys a request carried.
-- **Nothing broken is saved.** Each change is checked like a save on the desk; when the files have problems, nothing is saved and the AI gets the problems file by file.
-- **Every change is a version.** History on the Agent page shows the AI's changes as *Changed by an AI (MCP)*, with who owns the token. `restore` (or History on the desk) brings any version back.
-- **Look before it's live.** `dryRun: true` shows the resulting file without saving; `test_chat` answers changes (POST actions) without making them unless you ask for `real: true`; `run_tests` with `mockTools: true` doesn't call your APIs. `try_action` does make a real call.
-- **Only the agent and its knowledge.** A token reaches the agent's config, its tests and the knowledge tools, nothing else: not the inbox, conversations or contacts. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token on MCP → API tokens at any time.
+- **Keys are write-only.** `set_key` (and `action_from_curl`, for a key in the command) stores a key on the desk; no tool ever returns it. Files only ever say `{secrets.NAME}`, and answers mask keys a request carried. The identity secret is the one value the desk hands out, because your server needs it; it's shown only to owners and admins, as on the dashboard.
+- **Nothing broken is saved.** Each change is checked like a save on the desk; with problems, nothing is saved and the AI gets them file by file.
+- **Every change is a version.** History on the Agent page shows the AI's changes as *Changed by an AI (MCP)*, with who owns the token. `diff_versions` shows exactly what changed, and `restore` brings any version (or some of its files) back.
+- **Look before it's live.** `dryRun: true` shows the result without saving. `test_chat` pretends POST actions unless you ask for `real: true`. `run_tests` with `mockTools: true` doesn't call your APIs. `try_action` does make one real call.
+- **Changes customers feel need a yes.** A POST action needs a task step that says what changes and waits for the customer's clear yes. Removing knowledge and rotating or turning off identity need `confirm: true`.
+- **Only the agent, its knowledge and identity.** A token reaches the agent's config, its tests, the knowledge tools and identity verification, nothing else: not the inbox, conversations or contacts. Reading needs any teammate's token; changing needs an owner's or admin's. Revoke a token on MCP → API tokens at any time.
 
 Your AI client usually asks before it calls a tool; keep that on for tools that change things.
 
 ## How it works
 
-The server is stateless MCP over Streamable HTTP (protocol versions 2025-11-25, 2025-06-18 and 2025-03-26): each request is one JSON-RPC message sent with `POST`, answered with JSON. It runs inside your desk's Worker, so it's on your Cloudflare account like the rest of Jun. A request without a valid token gets `401`.
+- **Transport.** Stateless MCP over Streamable HTTP (protocol versions 2025-11-25, 2025-06-18 and 2025-03-26): each request is one JSON-RPC message, or a batch, sent with `POST`. Answers are JSON, or a short event stream for long tools when the client accepts one. There's no session; `GET` answers `405`.
+- **Auth.** `Authorization: Bearer jun_…`. A request without a valid token gets `401` with `WWW-Authenticate: Bearer`. Requests from a browser page on another site are refused by an `Origin` check.
+- **Where it runs.** Inside your desk's Worker, on your Cloudflare account like the rest of Jun. Changes go through the same functions as the Agent page, the CLI and the Knowledge page, so all three always agree.
+- **Errors.** A bad argument or a failed step comes back as a tool result marked as an error, with a sentence your AI can act on (*"There's no task refunds. list_tasks shows what there is."*).
 
 <Note>
-OAuth sign-in, for connectors in claude.ai and Claude Desktop without a bridge, is planned.
+Coming later: OAuth sign-in, for connectors in claude.ai and Claude Desktop without a bridge; and the desk settings the MCP doesn't reach yet (the AI provider and logo uploads), which stay on the dashboard.
 </Note>
+
+<CardGroup cols={2}>
+  <Card title="Tool reference" icon="wrench" href="/code/mcp-tools">
+    Every tool with its arguments.
+  </Card>
+  <Card title="Identify signed-in users" icon="id-badge" href="/widget/identify-users">
+    Tokens, claims and merging, in detail.
+  </Card>
+</CardGroup>
