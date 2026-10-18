@@ -156,7 +156,7 @@ The pictures come from [Cloudflare Browser Run](https://developers.cloudflare.co
 Cards your AI writes from nothing tend to look like it. So the MCP gives it a way to start well:
 
 - **Support templates.** `widget_templates` lists nine cards made for a support desk, ahead of ChatKit Studio's gallery. Pass `for` with what the card shows and the closest come first.
-- **A design guide.** `jun://guide/widget-design` gives the loop and the rules: one main button in your brand colour, status as a badge, values written the way people read them, every optional field guarded, no fixed colours.
+- **A design guide.** `jun://guide/widget-design` gives the loop and the rules, learned from ChatKit Studio's gallery: one thing the eye lands on first (a big number, a coloured band, a product picture or an icon on a tile), rows grouped on soft surfaces, colour that carries the status in light and dark, one main pill button in your brand colour.
 - **Its own eyes.** After each change, `preview_widget` returns a picture in light and dark and for each named state (empty, overdue, cancelled). Your AI is told to look before it calls a card done.
 
 <Frame caption="Six of the support templates, as preview_widget draws them.">
@@ -169,7 +169,7 @@ Cards your AI writes from nothing tend to look like it. So the MCP gives it a wa
 | `plan_picker` | The customer's plan beside the others, with prices and highlights | `tool:upgrade_plan` with the plan |
 | `order_status` | One order: progress from ordered to delivered, items, total | A tracking link |
 | `order_list` | Recent orders as a list | `tool:order_status` with the order, when one is picked |
-| `invoices` | Recent invoices, amount, date and status | Pay now on open ones, View on the rest |
+| `invoices` | What's due as a big number, then recent invoices | Pay now for what's due, a link per invoice |
 | `refund_request` | A form: a reason to choose and details | `tool:request_refund` with the order |
 | `usage_limits` | Usage against limits as bars, when it resets | `tool:upgrade_plan` |
 | `ticket_status` | A ticket or bug report: status, who has it, the latest update | A link to the ticket |
