@@ -174,13 +174,13 @@ Setting it up has two halves. Your AI can do both, because it can reach the desk
     `set_identity` with `turn: "on"` creates the identity secret and shows it once. Your AI puts it in your app server's environment, like `JUN_IDENTITY_SECRET` in `.env` or your host's secret settings. It never goes in a file you commit, in page code or in an agent file. `get_identity` says whether it's on and which actions need it; `reveal: true` shows the secret again.
   </Step>
   <Step title="Sign a token on your server (your app)">
-    Your AI reads `jun://guide/identity` and adds a small function that signs a token for the signed-in user: HS256, `sub` = your user id (it becomes `{user.id}`), `exp` an hour ahead, optional `email`, `name`, `attributes` (like `plan`) and `secrets`. The guide has the code for Node, Python, Ruby and PHP.
+    Your AI reads `jun://guide/identity` and adds a small function that signs a token for the signed-in user: HS256, `sub` = your user id (it becomes `{user.id}`), `exp` an hour ahead, optional `email`, `name`, `attributes` (like `plan`), `company` (the account they belong to) and `secrets`. The guide has the code for Node, Python, Ruby and PHP.
   </Step>
   <Step title="Pass it to the chat (your pages)">
     Server-rendered pages put the token on the snippet as `data-user-token`. Single-page apps fetch it from your server after sign-in and call `JunDesk.identify(token)`, and `JunDesk.logout()` on sign-out.
   </Step>
   <Step title="Check it">
-    Your AI runs your signing code (or a test that calls it) and hands the token to `check_identity_token`. The desk answers exactly as the chat would: *Accepted* with what `{user.id}`, `{user.email}` and each attribute will be, or the reason it's refused (*signature doesn't match*: the wrong secret; *expired*; *needs a sub*).
+    Your AI runs your signing code (or a test that calls it) and hands the token to `check_identity_token`. The desk answers exactly as the chat would: *Accepted* with what `{user.id}`, `{user.email}` and each attribute will be and the company it read, or the reason it's refused (*signature doesn't match*: the wrong secret; *expired*; *needs a sub*).
   </Step>
 </Steps>
 

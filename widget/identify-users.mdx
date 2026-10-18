@@ -7,6 +7,7 @@ icon: id-badge
 By default every visitor is anonymous. When your app knows who the customer is, your backend can sign a short token that says so. The widget sends it to the desk, the desk checks the signature, and from then on:
 
 - agents see a **verified** contact (a ✓ next to the name) with the name, email and attributes your app sent;
+- agents see the customer's [company](#company) and their team's other chats, and the AI knows which company they're from;
 - the customer's chats follow them across browsers and devices;
 - the AI's [actions](/ai/actions) can act on *their* account with `{user.id}`, `{user.email}`, `{user.name}` and `{user.<attribute>}`, which come from your token, never from the chat;
 - actions can call your API with the customer's own key through `{user.secrets.NAME}`.
@@ -74,6 +75,7 @@ The token travels two ways: over the loader's live connection (so the **Visitors
 | `email` | No | Shown to agents. Up to 320 characters. |
 | `name` | No | Shown to agents and used by the AI to greet the customer. Up to 200 characters. |
 | `attributes` | No | An object of facts about the customer, like `{ "plan": "pro", "seats": 12 }`. |
+| `company` | No | The customer's company (their account in your app), like `{ "id": "org_123", "name": "Acme", "attributes": { "plan": "enterprise" } }`. See [Company](#company). |
 | `secrets` | No | The customer's own keys for your API, like `{ "API_TOKEN": "…" }`. See [User secrets](#user-secrets). |
 
 The desk allows 60 seconds of clock skew on `exp` and `nbf`.
@@ -83,6 +85,33 @@ The desk allows 60 seconds of clock skew on `exp` and `nbf`.
 - Up to 50 keys. Each key must start with a letter or `_`, use only letters, digits and `_`, and be at most 40 characters. Other keys are skipped.
 - Values may be strings (cut to 500 characters), finite numbers or booleans. Anything else (objects, lists, `null`) is skipped.
 - Each verified token **replaces** the contact's attributes: your app is the source of truth. `name` and `email` are updated when present and kept when left out.
+
+### Company
+
+For B2B apps, say which company the customer belongs to:
+
+```json
+{
+  "sub": "u_123",
+  "exp": 1767225600,
+  "company": { "id": "org_123", "name": "Acme", "attributes": { "plan": "enterprise", "seats": 40 } }
+}
+```
+
+| Field | Required | What it does |
+|---|---|---|
+| `id` | Yes | Your app's id for the company, as a string or number (up to 200 characters). Same `id`, same company. |
+| `name` | No | Shown to agents and the AI. Up to 200 characters. |
+| `attributes` | No | Facts about the company. Same rules as the customer's [attributes](#attributes). |
+
+- The desk keeps one company per `id` in the workspace. Its name and attributes are **replaced** by the latest token that names it: your app is the source of truth.
+- A token without `company` unlinks the customer from their company.
+- Agents see a **Company** section in the conversation's side panel (name, company id, attributes, how many of its people have signed in) and **Their team's conversations**: the latest 10 chats from the company's other people. See [Contact details](/inbox/visitors#contact-details).
+- The AI sees the company's name and attributes with the customer's, like `company: Acme (plan: enterprise, seats: 40)`.
+
+<Note>
+Actions can't use `{company.*}` placeholders yet. To send a company fact to your API, put it in the customer's `attributes` too and use `{user.<attribute>}`.
+</Note>
 
 ### Rejected tokens
 
@@ -98,7 +127,7 @@ A token is rejected, and the visitor stays anonymous, when:
 | No `sub` | `Identity tokens need a sub (user id) claim.` |
 | No identity secret on the desk | `Identity verification isn't set up for this desk (Chat widget → Behaviour → Identify signed-in customers).` |
 
-The chat frame logs these as `[Jun] identify failed: …`. Bad `attributes` (not an object) or bad `secrets` also reject the token.
+The chat frame logs these as `[Jun] identify failed: …`. Bad `attributes` (not an object), a `company` that isn't an object or has no `id`, or bad `secrets` also reject the token.
 
 ## Server examples
 
@@ -113,6 +142,8 @@ const userToken = jwt.sign(
     email: user.email,
     name: user.name,
     attributes: { plan: user.plan, seats: user.seats },
+    // Optional: the company (account) the user belongs to.
+    company: { id: user.org.id, name: user.org.name, attributes: { plan: user.org.plan, seats: user.org.seats } },
     // Optional: the user's own key for your API, for actions that act as them.
     secrets: { API_TOKEN: user.apiToken },
   },
@@ -133,6 +164,7 @@ export function junUserToken(user) {
     email: user.email,
     name: user.name,
     attributes: { plan: user.plan },
+    company: { id: String(user.org.id), name: user.org.name, attributes: { plan: user.org.plan } },
     exp: Math.floor(Date.now() / 1000) + 60 * 60,
   });
   const signature = createHmac("sha256", process.env.JUN_IDENTITY_SECRET)
@@ -155,6 +187,11 @@ def jun_user_token(user):
             "email": user.email,
             "name": user.name,
             "attributes": {"plan": user.plan, "seats": user.seats},
+            "company": {
+                "id": str(user.org.id),
+                "name": user.org.name,
+                "attributes": {"plan": user.org.plan, "seats": user.org.seats},
+            },
             "exp": int(time.time()) + 3600,
         },
         os.environ["JUN_IDENTITY_SECRET"],
@@ -171,6 +208,7 @@ def jun_user_token(user)
     email: user.email,
     name: user.name,
     attributes: { plan: user.plan },
+    company: { id: user.org.id.to_s, name: user.org.name, attributes: { plan: user.org.plan } },
     exp: Time.now.to_i + 3600,
   }
   JWT.encode(claims, ENV.fetch("JUN_IDENTITY_SECRET"), "HS256")
@@ -186,6 +224,11 @@ function jun_user_token($user) {
         "email" => $user->email,
         "name" => $user->name,
         "attributes" => ["plan" => $user->plan],
+        "company" => [
+            "id" => (string) $user->org->id,
+            "name" => $user->org->name,
+            "attributes" => ["plan" => $user->org->plan],
+        ],
         "exp" => time() + 3600,
     ];
     return JWT::encode($claims, getenv("JUN_IDENTITY_SECRET"), "HS256");
@@ -209,7 +252,7 @@ What happens when a browser identifies depends on who it was before:
 |---|---|
 | Anonymous, and this user is new to the desk | The anonymous contact becomes the user. Their chats stay as they are. |
 | Anonymous, and this user already has a contact | The anonymous visitor's conversations move to the user's contact, and the anonymous contact is removed. |
-| Already this user | The profile is refreshed (name, email, attributes). |
+| Already this user | The profile is refreshed (name, email, attributes, company). |
 | Another identified user (a shared computer) | The browser gets a fresh link to this user. Nothing is merged. |
 
 Identified contacts never merge with each other, so one user can never inherit another user's history. Merged conversations update in agents' inboxes right away.

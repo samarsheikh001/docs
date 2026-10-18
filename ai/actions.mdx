@@ -149,7 +149,7 @@ Every `{placeholder}` in the address, query, headers or body must be one of thes
 |---|---|---|
 | `{orderNumber}` | A detail the AI asks for (one of the action's inputs). | Anywhere. In the address it's URL-encoded. |
 | `{user.id}`, `{user.email}`, `{user.name}` | The signed-in customer, from your [identity token](/widget/identify-users). | Anywhere. |
-| `{user.plan}` (any attribute) | One of the customer's verified `attributes`. | Anywhere. |
+| `{user.plan}` (any attribute) | One of the customer's verified `attributes`. (No `{company.*}` yet: put company facts in the customer's attributes.) | Anywhere. |
 | `{secrets.NAME}` | Your business's key. | Headers only. |
 | `{user.secrets.NAME}` | The customer's own key, from the `secrets` claim of their identity token. | Headers only. |
 

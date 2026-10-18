@@ -119,7 +119,7 @@ Actions that use `{user.id}`, `{user.email}`, `{user.<attribute>}` or `{user.sec
 |---|---|---|
 | `get_identity` | `reveal` | Whether identity verification is on, and each action that uses `{user.*}`. The secret's start and last 4 characters; the whole secret only with `reveal: true`. |
 | `set_identity` | `turn` (`on`, `rotate`, `off`), `confirm` | `on` creates the identity secret and shows it once (an existing one stays). `rotate` makes a new one: tokens signed with the old one stop working at once. `off` makes everyone anonymous. **`rotate` and `off` need `confirm: true`.** |
-| `check_identity_token` | `token` | Checks a token your server made, exactly as the chat will: what `{user.id}`, `{user.email}`, `{user.name}` and each attribute would be (user secrets by name only), or the reason it's refused (wrong secret, expired, no `sub`…). Nothing is stored. |
+| `check_identity_token` | `token` | Checks a token your server made, exactly as the chat will: what `{user.id}`, `{user.email}`, `{user.name}` and each attribute would be, the company it read (user secrets by name only), or the reason it's refused (wrong secret, expired, no `sub`…). Nothing is stored. |
 
 The resource `jun://guide/identity` gives your AI the claims, signing code for Node, Python, Ruby and PHP, and the page code. See [Set up identity with your AI](/code/mcp#set-up-identity-with-your-ai).
 
