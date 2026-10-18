@@ -31,11 +31,11 @@ The widget is configured in two places. The `<script>` tag on your site carries 
 </ParamField>
 
 <ParamField path="data-consent" type='"required"'>
-  Waits for the visitor's consent. Until your page calls `JunDesk.consent(true)`, the widget stores nothing in the browser, doesn't connect its live socket (so the visitor isn't on your visitor list), and `JunDesk.reportError()` does nothing. The chat can still be opened; it just isn't remembered across pages. `JunDesk.consent(false)` turns it back off. Any other value, or no attribute, means consent isn't needed. See [Consent and privacy](/widget/consent-and-privacy).
+  Waits for the visitor's consent. Until your page calls `JunDesk.consent(true)`, the widget stores nothing in the browser, doesn't connect its live socket (so the visitor isn't on your visitor list), and `JunDesk.reportError()` and `JunDesk.track()` do nothing. The chat can still be opened; it just isn't remembered across pages. `JunDesk.consent(false)` turns it back off. Any other value, or no attribute, means consent isn't needed. See [Consent and privacy](/widget/consent-and-privacy).
 </ParamField>
 
 <ParamField path="data-capture" type='"off"'>
-  Turns off debug capture: no JavaScript errors, failed requests, page visits, rage clicks, dead clicks or "stuck" detection, no "Want a hand?" nudges after something fails, and `JunDesk.reportError()` does nothing. Messages still carry the page address, browser, viewport, language and time zone. Any other value keeps capture on. See [Debug context](/widget/debug-context).
+  Turns off debug capture: no JavaScript errors, failed requests, page visits, rage clicks, dead clicks or "stuck" detection, no "Want a hand?" nudges after something fails, and `JunDesk.reportError()` and `JunDesk.track()` do nothing. Messages still carry the page address, browser, viewport, language and time zone. Any other value keeps capture on. See [Debug context](/widget/debug-context).
 </ParamField>
 
 <ParamField path="data-color" type="#rrggbb">
@@ -74,7 +74,7 @@ These aren't attributes. Change them on the desk and every site with the snippet
 
 ## The JavaScript API
 
-Once the loader has run, `window.JunDesk` has `open()`, `close()`, `toggle()`, `identify(jwt)`, `logout()`, `consent(bool)`, `reportError({ message, code? })`, `registerAction({ … })` and `onWidgetAction(fn)`. It dispatches a `jundesk:ready` event on `window` when the API is there. See the [JavaScript API](/widget/javascript-api).
+Once the loader has run, `window.JunDesk` has `open()`, `close()`, `toggle()`, `identify(jwt)`, `logout()`, `consent(bool)`, `reportError({ message, code? })`, `track(name, props?)`, `registerAction({ … })` and `onWidgetAction(fn)`. It dispatches a `jundesk:ready` event on `window` when the API is there. See the [JavaScript API](/widget/javascript-api).
 
 ## What the loader loads
 

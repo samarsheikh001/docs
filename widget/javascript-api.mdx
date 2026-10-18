@@ -29,7 +29,7 @@ For one-off calls, optional chaining is enough: `window.JunDesk?.open()`. Every 
 | `data-key` | `wk_…` | Required. Your widget key, from **Chat widget → Install**. |
 | `data-user-token` | A JWT | Identifies the signed-in customer on load. Same as calling `identify()`. See [Identify users](/widget/identify-users). |
 | `data-consent` | `required` | Stores nothing and stays off the visitor list until `consent(true)`. See [Consent and privacy](/widget/consent-and-privacy). |
-| `data-capture` | `off` | Turns off error, request, rage-click and stuck capture (and the nudges that depend on them). See [Debug context](/widget/debug-context). |
+| `data-capture` | `off` | Turns off error, request, rage-click and stuck capture, `reportError()` and `track()` (and the nudges that depend on them). See [Debug context](/widget/debug-context). |
 | `data-color` | `#rrggbb` | Overrides the desk's brand colour on this site. |
 | `data-theme` | `light`, `dark` or `auto` | The theme on this site from the first paint, over the desk's. Change it later with `setTheme()`. |
 | `data-page-control` | `off` | Leaves this site out of page control (turned on for all sites on the desk). See [Page control](/widget/page-control). |
@@ -120,6 +120,29 @@ window.JunDesk?.reportError({ message: "Row 42: missing email", code: "import.ro
 ```
 
 Does nothing with `data-capture="off"`, before consent, or without a non-empty `message`.
+
+### `JunDesk.track(name, props?)`
+
+Records something the visitor did in your app, like starting an export or upgrading their plan. It joins the same debug timeline as errors, so when they write "where's my CSV?", the AI and your agents can see they started an export a minute ago.
+
+<ParamField path="name" type="string" required>
+  What happened, like `export_started`. Letters, digits, spaces and `_ . : / -`, up to 60 characters.
+</ParamField>
+
+<ParamField path="props" type="object">
+  Up to 10 details. Keys use letters, digits, `_`, `.` and `-`, up to 40 characters. Values are strings (masked like everything else and cut to 100 characters), finite numbers or booleans. Anything else is dropped.
+</ParamField>
+
+```js
+window.JunDesk?.track("export_started", { format: "csv" });
+```
+
+- The inbox timeline shows the name with its details. The AI sees a line like `In the app: export_started (format: csv)`.
+- It isn't a problem: no ⚠ count, and it never triggers a "Want a hand?" nudge.
+- Like other events, it stays in the tab and goes to the desk only with a message the visitor writes. It's masked again on the desk.
+- Use it for the few actions that explain support questions (export started, plan upgraded, import finished), not as analytics. Don't put personal data in `props`.
+
+Does nothing with `data-capture="off"` or before consent, and never throws.
 
 ### `JunDesk.registerAction(action)`
 

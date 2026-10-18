@@ -36,7 +36,7 @@ onConsentChange((accepted) => window.JunDesk?.consent(accepted));
 | Chat | Works, for this page load | Works, and survives reloads |
 | "Something broke" nudges and page openers | Never shown | Shown, if turned on |
 | Rage clicks, dead clicks, "stuck on a page" | Not recorded | Recorded |
-| `JunDesk.reportError()` | Ignored | Recorded |
+| `JunDesk.reportError()` and `JunDesk.track()` | Ignored | Recorded |
 | JavaScript errors, failed requests, page trail | Kept in memory on the page, sent only with a message the visitor writes | Kept in this tab's `sessionStorage`, so they survive a reload; still sent only with a message the visitor writes |
 
 `JunDesk.consent(false)` closes the live connection (the visitor drops off your **Visitors** list), deletes `jun:session` and `jun:e` from your page's storage, and deletes what the chat frame stored in `localStorage`.
@@ -98,7 +98,7 @@ Everything that leaves the browser is masked by the loader first. The desk then 
 | `password=`, `secret:`, `token=`, `api_key=`, `auth…=`, `session…=`, `cookie=` values | `[redacted]` |
 | 13 to 19 digits in a row, with or without spaces or dashes (card numbers) | `[number]` |
 
-Error messages are cut to 500 characters, stacks to their first five lines, and app error messages from `reportError()` to 300.
+Error messages are cut to 500 characters, stacks to their first five lines, and app error messages from `reportError()` to 300. App events from `track()` keep a name of up to 60 characters and up to 10 properties; string values are masked and cut to 100 characters, and anything that isn't a string, number or boolean is dropped. Don't send personal data in them.
 
 ## Who sees what
 
@@ -111,7 +111,7 @@ Internal notes, tags and topics never reach visitors or the AI's answers.
 
 ## Turning capture off
 
-`data-capture="off"` stops the loader from listening for errors, failed requests, rage clicks, dead clicks and stuck pages, and turns off the "something broke" nudges with them. Page openers, the live visitor list and the chat still work.
+`data-capture="off"` stops the loader from listening for errors, failed requests, rage clicks, dead clicks and stuck pages, makes `reportError()` and `track()` do nothing, and turns off the "something broke" nudges with them. Page openers, the live visitor list and the chat still work.
 
 <CardGroup cols={2}>
   <Card title="Debug context" icon="bug" href="/widget/debug-context">

@@ -20,6 +20,7 @@ With [consent mode](/widget/consent-and-privacy#consent-mode), nothing is stored
 | **Failed request** | A `fetch` or `XMLHttpRequest` that got a 4xx or 5xx, or no response at all; an image, script or stylesheet that failed to load | Method, URL (path and query parameter names only), status (0 for no response), duration |
 | **Navigation** | Each page load, and each page change in a single-page app (`pushState`, `replaceState`, back and forward, hash changes) | The URL, cleaned, and for a page load how it was reached: opened, reloaded, or back/forward |
 | **App error** | Your code calls `JunDesk.reportError()` | Your message (up to 300 characters) and optional code |
+| **App event** | Your code calls `JunDesk.track()` | The event name (up to 60 characters) and up to 10 properties |
 | **Rage click** | The same button, link or input clicked 3+ times within a second and 30px, with nothing on the page changing or scrolling until a second after the last click | A safe description of the element and the click count |
 | **Dead click** | One click on a button or link after which nothing on the page changes, scrolls, submits or navigates for 2.5 seconds | The same safe description as a rage click |
 | **Stuck** | The visitor has spent 3 visible minutes on a page after an error, failed request or rage click there, with no successful form submit since | The page path, the seconds, and the kind of the earlier problem |
@@ -49,6 +50,20 @@ window.JunDesk?.reportError({ message: "Row 42: missing email", code: "import.ro
 - `code` is optional: letters, digits, `_`, `.` and `-`, up to 60 characters. It's for your team. Agents see it in the timeline and in issue drafts; the AI answering visitors never gets it.
 - It does nothing with `data-capture="off"` or before `JunDesk.consent(true)`, and it never throws.
 
+### Record what the visitor did
+
+Some questions only make sense with what the visitor just did in your app: "where's my export?" Record those actions with `track()`:
+
+```js
+window.JunDesk?.track("export_started", { format: "csv" });
+```
+
+- The name is required: letters, digits, spaces and `_ . : / -`, up to 60 characters.
+- Up to 10 properties. Keys use letters, digits, `_`, `.` and `-`, up to 40 characters. Values are strings (masked, cut to 100 characters), finite numbers or booleans; anything else is dropped.
+- The timeline shows the name with its properties. An app event isn't a problem: no ⚠, no nudge, and it doesn't make a page "stuck".
+- Use it for actions that explain support questions (export started, plan upgraded, import finished), not as analytics. Don't put personal data in properties.
+- It does nothing with `data-capture="off"` or before `JunDesk.consent(true)`, and it never throws.
+
 ## Masking
 
 Everything is masked in the browser before it leaves, and again on the desk with the same rules. Query values are removed from every URL, except the campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`), which are masked and kept up to 80 characters. Emails, tokens, keys, password-like values and card-like numbers become placeholders such as `[email]` and `[token]`. Request and response bodies, storage and typed values are never read. [Consent and privacy](/widget/consent-and-privacy#masking-twice) has the full table.
@@ -76,6 +91,7 @@ When a message carries debug context, the AI's prompt includes it as plain lines
 [14:02:11] POST /api/demo/billing → HTTP 500 in 212 ms
 [14:02:15] Clicked button#export "Export CSV" 4 times in quick succession; the page didn't change
 [14:02:40] Reloaded /billing
+[14:03:05] In the app: export_clicked (format: csv)
 ```
 
 The AI is told to:
@@ -121,7 +137,7 @@ Page openers (offering a chat after time on a page, like 30 seconds on `/pricing
 
 ## Try it
 
-**Chat widget → Install → Open demo page** opens a test page with a "Pay invoice" button that fails with a 500, a "Show usage chart" button that throws, and an "Export CSV" button that does nothing however often you click it. Click them, then ask "why can't I pay my invoice?" in the chat.
+**Chat widget → Install → Open demo page** opens a test page with a "Pay invoice" button that fails with a 500, a "Show usage chart" button that throws, and an "Export CSV" button that does nothing however often you click it (it does record an app event, `export_clicked`, with `track()`). Click them, then ask "why can't I pay my invoice?" in the chat.
 
 <CardGroup cols={2}>
   <Card title="Consent and privacy" icon="shield-halved" href="/widget/consent-and-privacy">

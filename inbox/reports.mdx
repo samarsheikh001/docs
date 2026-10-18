@@ -4,7 +4,7 @@ description: What every number on the Dashboard means, how the AI labels convers
 icon: chart-column
 ---
 
-The **Dashboard** (`/dashboard`, or `g` then `d`) reports on your conversations: how many came in, how many the AI resolved alone, how fast your team answers, what customers rate you, what they ask about and where they were when they asked. Every teammate can see it.
+The **Dashboard** (`/dashboard`, or `g` then `d`) reports on your conversations: how many came in, how many the AI resolved alone, how fast your team answers, what customers rate you, what they ask about, where they were when they asked and where they struggled. Every teammate can see it.
 
 ## Periods and days
 
@@ -59,14 +59,12 @@ The share of 👍 among the ratings given in the period: 👍 ÷ (👍 + 👎). 
 
 ## Top topics
 
-The topics customers asked about in the period, most first, with a donut chart. For each topic:
+The topics customers asked about in the period, most first, each with a bar for its share. For each topic:
 
 - the number of conversations and its share of the labelled ones,
 - **AI N%**: of the topic's AI conversations, the share the AI resolved alone (when the AI was on).
 
 Click a topic to open the inbox filtered by it. **Manage** opens the topic settings. The footnote says how many chats aren't labelled yet. See [Topics](#topics) for how labels are made.
-
-With three or more topics, **Topics at a glance** shows your top six on a radar chart: how many chats each brought, and how many of those the AI resolved alone.
 
 ## Pages where chats start
 
@@ -74,9 +72,22 @@ The pages customers were on when they sent their first message, most first (up t
 
 Pages are grouped so the list stays readable: the query string and `#` part are dropped, and parts of the path that look like IDs become `:id`. So `/invoices/123` and `/invoices/456` are both `/invoices/:id`. The footnote counts chats on pages not listed and chats with no page (for example the widget opened outside your site).
 
+## Where visitors struggle
+
+The pages and elements where visitors who chatted ran into trouble in the period, most chats first. Each row has:
+
+| Part | Meaning |
+|---|---|
+| **Kind** | **Rage clicks**, **Clicks that did nothing** (dead clicks) or **Stuck after a problem** ([Debug context](/widget/debug-context#whats-captured) says what counts) |
+| **Element** | For clicks, the element, like `button#export "Export CSV"` |
+| **Page** | The page path, grouped like **Pages where chats start** (`/invoices/:id`) |
+| **Chats** | How many chats had it. A chat counts once per row, however often it happened |
+
+Only visitors who chatted are counted: the widget sends what happened only with the messages a visitor writes, so someone who struggled and left without writing isn't here. The footnote says how many chats had at least one of these.
+
 ## Top handoff reasons
 
-The five most common reasons the AI handed off, with a donut chart. Reasons that differ only in detail are grouped: every AI error counts as **AI error**, every bug the AI flagged as **Bug flagged by the AI**, and the reply cap as **Monthly AI reply cap reached**. Shown while the AI has conversations in the period.
+The five most common reasons the AI handed off, each with a bar for its share. Reasons that differ only in detail are grouped: every AI error counts as **AI error**, every bug the AI flagged as **Bug flagged by the AI**, and the reply cap as **Monthly AI reply cap reached**. Shown while the AI has conversations in the period.
 
 ## Ratings
 
