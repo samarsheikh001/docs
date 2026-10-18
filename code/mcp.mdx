@@ -151,6 +151,32 @@ The pictures come from [Cloudflare Browser Run](https://developers.cloudflare.co
 - An AI client that can't show images still gets the text: what each control does, and the problems.
 </Note>
 
+## Good cards
+
+Cards your AI writes from nothing tend to look like it. So the MCP gives it a way to start well:
+
+- **Support templates.** `widget_templates` lists nine cards made for a support desk, ahead of ChatKit Studio's gallery. Pass `for` with what the card shows and the closest come first.
+- **A design guide.** `jun://guide/widget-design` gives the loop and the rules: one main button in your brand colour, status as a badge, values written the way people read them, every optional field guarded, no fixed colours.
+- **Its own eyes.** After each change, `preview_widget` returns a picture in light and dark and for each named state (empty, overdue, cancelled). Your AI is told to look before it calls a card done.
+
+<Frame caption="Six of the support templates, as preview_widget draws them.">
+  <img src="/images/widgets/support-templates.png" alt="Six cards: an order arriving Thursday with a progress bar and items, invoices with Pay now and View buttons, usage bars for chats, seats and storage, a plan picker with Starter, Pro and Business, a refund form with a reason and details, and a Switch to Pro confirmation showing what changes" />
+</Frame>
+
+| Template | Shows | Its button runs |
+|---|---|---|
+| `account_overview` | The signed-in customer: name, email, plan, status, seats | A link to the account page |
+| `plan_picker` | The customer's plan beside the others, with prices and highlights | `tool:upgrade_plan` with the plan |
+| `order_status` | One order: progress from ordered to delivered, items, total | A tracking link |
+| `order_list` | Recent orders as a list | `tool:order_status` with the order, when one is picked |
+| `invoices` | Recent invoices, amount, date and status | Pay now on open ones, View on the rest |
+| `refund_request` | A form: a reason to choose and details | `tool:request_refund` with the order |
+| `usage_limits` | Usage against limits as bars, when it resets | `tool:upgrade_plan` |
+| `ticket_status` | A ticket or bug report: status, who has it, the latest update | A link to the ticket |
+| `confirm_change` | What a change does (from → to) and what it costs | Confirm runs `tool:apply_change`; Cancel folds it |
+
+The `tool:` names are placeholders: your AI points them at your own actions. The same templates are on the desk, under **Agent → Widgets → Templates**.
+
 ## Long runs
 
 `run_tests` and `test_chat` call the real AI and can take a minute or more. If your client accepts streamed answers (Claude Code, Cursor and Codex do), the desk sends **progress** as it goes (*"PASS refund goes to a person"*, *"AI reply 2 written"*) and a keepalive every 15 seconds, so the call isn't timed out. Clients that only take JSON get the same answer at the end.
@@ -219,7 +245,7 @@ Here's what one request can turn into: *"Let signed-in customers upgrade their p
     `{user.id}` comes from the verified token, never from the chat, so the change can only ever go to the account that's signed in.
   </Step>
   <Step title="The card">
-    `create_widget` makes a plan picker whose buttons run the action (`tool:upgrade_plan` with `{ "plan": "pro" }`), and `preview_widget` shows you a picture of it, light and dark.
+    `widget_templates` with `for: "plan upgrade"` finds the `plan_picker` template, and `create_widget` copies it. Its buttons already run `tool:upgrade_plan` with `{ "plan": "pro" }`; your AI fits the data to your plans, then `preview_widget` shows you a picture of it, light and dark.
   </Step>
   <Step title="The task">
     `create_task` writes the procedure: show the plans card, say exactly what changes (new plan, new price, from when), and only run `@upgrade_plan` after a clear yes. A card button press counts as that yes.

@@ -76,11 +76,11 @@ Widgets are the cards a result is shown as, in [ChatKit's widget format](/ai/wid
 |---|---|---|
 | `list_widgets` | — | Each card, the actions that show it and its buttons. |
 | `get_widget` | `name` | The whole `.widget` file. |
-| `create_widget` | `name`, `fromTemplate`, `title`, `template`, `sample`, `jsonSchema`, `summary`, `states`, `aiFill`, `pageActions`, `dryRun`, `message` | A new card: blank, from your template, or from a gallery template (`fromTemplate: "flight_tracker"`). |
+| `create_widget` | `name`, `fromTemplate`, `title`, `template`, `sample`, `jsonSchema`, `summary`, `states`, `aiFill`, `pageActions`, `dryRun`, `message` | A new card from a template (`fromTemplate: "invoices"`), from your own template and sample, or a blank starter. |
 | `update_widget` | `name` and any field above | Changes only the fields you pass. |
 | `delete_widget` | `name` | Deletes it. |
-| `widget_templates` | — | The gallery: 19 ChatKit Studio templates with their ids. |
-| `get_widget_template` | `id` | One template's file. |
+| `widget_templates` | `for` | Templates to start from: Jun's nine support cards first, then ChatKit Studio's 19. With `for` (what the card shows, like *"the customer's invoices"*), the closest first. |
+| `get_widget_template` | `id` | One template's whole file: template, sample, schema, states and summary. |
 | `preview_widget` | `name`, `file`, `state`, `data`, `theme` (`light` or `dark`) | Renders the card and answers with a **picture** of it as customers see it, an outline of the card, what each control does, problems, and a link to it on the desk. `file` previews an unsaved card; `state` or `data` render other data than the sample. |
 | `widget_from_data` | `name`, `title`, `data`, `websiteAction`, `attachTo`, `dryRun`, `message` | A first card from an example result (what `try_action` returned, or a website action's result shape). `attachTo` makes an action show it. |
 
@@ -145,6 +145,7 @@ Besides tools, the server offers documents your AI can read:
 | URI | What |
 |---|---|
 | `jun://guide/files` | The [file format](/code/files): every file and key. |
+| `jun://guide/widget-design` | Building a good card: the loop (template, real data, picture) and rules for layout, colour, buttons and data. |
 | `jun://guide/chatkit-widgets` | ChatKit Studio's guide for AIs that write widgets. |
 | `jun://guide/jinja` | The filters and tests widget templates can use. |
 | `jun://guide/identity` | Identifying signed-in customers: claims, server code, page code, checking. |
