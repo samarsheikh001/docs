@@ -31,15 +31,9 @@ When a widget shows, the AI is told the customer already sees the result as a ca
 **Agent → Widgets** shows every widget as a live preview, with a search box.
 
 - **My widgets**: your widgets. Each tile says what shows it ("Shown by Lookup order"), or "Nothing shows it yet".
-- **Templates**: **For support**, Jun's own cards for an account, plans, an order, recent orders, invoices, a refund request, usage, a ticket and a change to confirm; then **From ChatKit Studio**, OpenAI's gallery. Open one, give it a name and it's copied into your draft.
+- **Templates**: ChatKit Studio's gallery widgets. Open one, give it a name and it's copied into your draft.
 - **New widget** starts from a simple plan card you can change.
 - The upload button takes a `.widget` file downloaded from ChatKit Studio.
-
-<Frame caption="Six of the support templates.">
-  <img src="/images/widgets/support-templates.png" alt="Six cards: an order arriving Thursday, invoices with Pay now, usage bars, a plan picker, a refund form and a Switch to Pro confirmation" />
-</Frame>
-
-Each support template comes with example data, a schema, named states (like *Delayed* or *No invoices*) and a summary line. Buttons that run something use placeholder actions such as `tool:upgrade_plan`: rename them to your own. Your AI can use them through the MCP too ([Good cards](/code/mcp#good-cards)).
 
 New widgets, like every Agent change, go live only when you [save](/ai/instructions#save-and-go-live). An agent can hold up to 20 widgets.
 
