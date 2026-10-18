@@ -94,13 +94,14 @@ icon: wrench
     - With `data-consent="required"`, a visitor appears only after your page calls `JunDesk.consent(true)`.
     - With Allowed websites set, the site must be on the list.
     - A visitor with no activity for 75 seconds (a closed tab, a sleeping laptop) drops off the list.
+    - Bots and automated browsers (`navigator.webdriver`, including headless test runs) are never listed. Test with an ordinary browser window.
   </Accordion>
 
   <Accordion title="No errors or failed requests show in the conversation">
     - `data-capture="off"` turns capture off.
     - Errors that happen before the loader runs aren't seen. Put the tag in `<head>`, before your own scripts.
-    - Capture is in memory and sent with the visitor's message, so a full page reload before they write clears it.
-    - Bodies, typed values and query values are never captured, by design. See [Debug context](/widget/debug-context).
+    - Capture is kept in the tab and sent with the visitor's message. A reload keeps it, but closing the tab clears it, and events older than 30 minutes are dropped. With consent mode, events from before consent are lost on reload.
+    - Bodies, typed values and query values (other than campaign tags) are never captured, by design. See [Debug context](/widget/debug-context).
   </Accordion>
 </AccordionGroup>
 

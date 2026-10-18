@@ -4,21 +4,24 @@ description: What the widget notices in the visitor's browser, how it's masked, 
 icon: bug
 ---
 
-When a customer writes "I can't pay my invoice", the widget already knows their payment request just failed with a 500. It records errors, failed requests, the pages they visited, rage clicks and "stuck" moments in the browser, masks them, and sends them along with the customer's message. Your agents see them next to the chat, and the AI can say what failed instead of asking which browser they use.
+When a customer writes "I can't pay my invoice", the widget already knows their payment request just failed with a 500. It records errors, failed requests, the pages they visited, rage clicks, dead clicks and "stuck" moments in the browser, masks them, and sends them along with the customer's message. Your agents see them next to the chat, and the AI can say what failed instead of asking which browser they use.
 
 Debug context is on by default. You don't configure anything beyond the [snippet](/widget/install).
 
 ## What's captured
 
-The loader keeps the last 40 events in memory on your page. Nothing is sent while the visitor just browses: the events go to the desk only with a message they write (or, for one event, to word a [nudge](#proactive-nudges)).
+The loader keeps the last 40 events in your page's `sessionStorage` (key `jun:e`), so a reload doesn't clear them. They belong to this tab only and are kept for 30 minutes. Nothing is sent while the visitor just browses: the events go to the desk only with a message they write (or, for one event, to word a [nudge](#proactive-nudges)).
+
+With [consent mode](/widget/consent-and-privacy#consent-mode), nothing is stored before consent: the events stay in memory on the page until then.
 
 | Event | When it's recorded | What's kept |
 |---|---|---|
 | **JavaScript error** | An uncaught error or an unhandled promise rejection | The message, the file and line, the first five lines of the stack |
 | **Failed request** | A `fetch` or `XMLHttpRequest` that got a 4xx or 5xx, or no response at all; an image, script or stylesheet that failed to load | Method, URL (path and query parameter names only), status (0 for no response), duration |
-| **Navigation** | Each page change in a single-page app (`pushState`, `replaceState`, back and forward) | The URL, cleaned |
+| **Navigation** | Each page load, and each page change in a single-page app (`pushState`, `replaceState`, back and forward, hash changes) | The URL, cleaned, and for a page load how it was reached: opened, reloaded, or back/forward |
 | **App error** | Your code calls `JunDesk.reportError()` | Your message (up to 300 characters) and optional code |
 | **Rage click** | The same button, link or input clicked 3+ times within a second and 30px, with nothing on the page changing or scrolling until a second after the last click | A safe description of the element and the click count |
+| **Dead click** | One click on a button or link after which nothing on the page changes, scrolls, submits or navigates for 2.5 seconds | The same safe description as a rage click |
 | **Stuck** | The visitor has spent 3 visible minutes on a page after an error, failed request or rage click there, with no successful form submit since | The page path, the seconds, and the kind of the earlier problem |
 
 Each snapshot also carries the current page (URL and title), the user agent, viewport size, language and time zone.
@@ -29,6 +32,9 @@ Some details on what counts:
 - A successful non-GET request (a 2xx save) or a form `submit` clears the page's problem, so a visitor who recovered isn't "stuck".
 - Time with the tab hidden doesn't count toward "stuck".
 - A triple click that selects text isn't a rage click, and clicks in text fields, selects, canvases, media and the widget itself are ignored.
+- Only changes a visitor could see inside the page's `<body>` count as the page reacting. Browser extensions that rewrite their own hidden frames (password managers, reading tools) don't hide a rage or dead click.
+- A dead click isn't recorded for links that open a new tab, downloads, `mailto:` or `tel:` links, or the clicks of a rage burst. It isn't counted as a problem: no ⚠, no nudge, and it doesn't make a page "stuck".
+- Hash routes (`/#/settings`) are kept in the URL, without their own query values. A plain `#anchor` is dropped.
 
 ### Report your app's own errors
 
@@ -45,7 +51,7 @@ window.JunDesk?.reportError({ message: "Row 42: missing email", code: "import.ro
 
 ## Masking
 
-Everything is masked in the browser before it leaves, and again on the desk with the same rules. Query values are removed from every URL. Emails, tokens, keys, password-like values and card-like numbers become placeholders such as `[email]` and `[token]`. Request and response bodies, storage and typed values are never read. [Consent and privacy](/widget/consent-and-privacy#masking-twice) has the full table.
+Everything is masked in the browser before it leaves, and again on the desk with the same rules. Query values are removed from every URL, except the campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`), which are masked and kept up to 80 characters. Emails, tokens, keys, password-like values and card-like numbers become placeholders such as `[email]` and `[token]`. Request and response bodies, storage and typed values are never read. [Consent and privacy](/widget/consent-and-privacy#masking-twice) has the full table.
 
 ## Where agents see it
 
@@ -54,6 +60,8 @@ Open a conversation in the **Inbox**. The side panel has a **Browser** section:
 - **Page**, **Browser** (like "Chrome 141 on Windows"), **Screen** and **Locale** from the latest message;
 - **What happened**: a timeline of events from the conversation's recent messages (up to 100, newest first, duplicates merged), with a ⚠ count of issues;
 - **Errors only** hides navigation and keeps errors, failed requests and rage clicks.
+
+Page loads read as **Visited /billing**, **Reloaded /billing** or **Went back to /billing**, and a dead click as **Dead click**.
 
 The conversation list shows the same ⚠ count, so you can spot chats where something broke before opening them. The timeline refreshes when the visitor writes or the AI answers.
 
@@ -67,6 +75,7 @@ When a message carries debug context, the AI's prompt includes it as plain lines
 [14:01:52] Visited /billing
 [14:02:11] POST /api/demo/billing → HTTP 500 in 212 ms
 [14:02:15] Clicked button#export "Export CSV" 4 times in quick succession; the page didn't change
+[14:02:40] Reloaded /billing
 ```
 
 The AI is told to:

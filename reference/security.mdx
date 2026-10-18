@@ -75,13 +75,13 @@ With `data-consent="required"`, the widget stores nothing in the browser and doe
 
 ## Debug context
 
-The widget records recent JavaScript errors, failed requests, page visits, rage clicks and "stuck on a page after an error", in memory, and sends them only when the visitor writes to you.
+The widget records recent JavaScript errors, failed requests, page visits, rage clicks, dead clicks and "stuck on a page after an error", masked, in the tab's `sessionStorage` (kept for 30 minutes, not before consent), and sends them only when the visitor writes to you.
 
 It never captures:
 
 - request or response bodies, cookies or storage,
-- what visitors type, or page text (a rage click keeps only the element's tag, id, aria-label, name, role and a button or link label of at most 40 characters),
-- query values (only their names: `?token=…`).
+- what visitors type, or page text (a rage or dead click keeps only the element's tag, id, aria-label, name, role and a button or link label of at most 40 characters),
+- query values (only their names: `?token=…`), except campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`), whose values are masked and kept.
 
 Before anything leaves the browser, emails, JWTs, bearer tokens, `sk_`/`pk_`/`rk_` keys, `password=`/`token=`/`api_key=`-style values and card-like numbers are masked. The desk applies the same masking again on the server, so a modified loader can't slip them through.
 

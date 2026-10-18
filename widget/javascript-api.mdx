@@ -81,7 +81,7 @@ Call it when the customer signs out of your app. Forgets this browser's chat ide
   `true` when the visitor accepts, `false` when they decline or withdraw.
 </ParamField>
 
-Only matters with `data-consent="required"`. `true` lets the widget store its session and visitor token and connect to the visitor list. `false` disconnects and deletes what the chat frame stored. Consent isn't remembered across page loads: call it on every page where your consent tool says yes.
+Only matters with `data-consent="required"`. `true` lets the widget store its session and visitor token and connect to the visitor list. `false` disconnects and deletes what the widget stored: the session (`jun:session`) and debug events (`jun:e`) on your page, and what the chat frame stored. Consent isn't remembered across page loads: call it on every page where your consent tool says yes.
 
 ### `JunDesk.setTheme(theme)`
 

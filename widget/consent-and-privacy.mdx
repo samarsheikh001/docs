@@ -31,15 +31,15 @@ onConsentChange((accepted) => window.JunDesk?.consent(accepted));
 
 | | Before `consent(true)` | After |
 |---|---|---|
-| Browser storage | Nothing. The chat's visitor token is kept in memory only, so a chat started now is lost on reload | Session id in the page's `sessionStorage`; the chat's visitor token in the chat frame's `localStorage` |
+| Browser storage | Nothing. The chat's visitor token is kept in memory only, so a chat started now is lost on reload | The session in the page's `localStorage`; recent debug events in the page's `sessionStorage`; the chat's visitor token in the chat frame's `localStorage` |
 | **Visitors** list | Not shown. No live connection is opened | Shown, with the page they're on |
 | Chat | Works, for this page load | Works, and survives reloads |
 | "Something broke" nudges and page openers | Never shown | Shown, if turned on |
-| Rage clicks, "stuck on a page" | Not recorded | Recorded |
+| Rage clicks, dead clicks, "stuck on a page" | Not recorded | Recorded |
 | `JunDesk.reportError()` | Ignored | Recorded |
-| JavaScript errors, failed requests, page trail | Kept in memory on the page, sent only with a message the visitor writes | Same |
+| JavaScript errors, failed requests, page trail | Kept in memory on the page, sent only with a message the visitor writes | Kept in this tab's `sessionStorage`, so they survive a reload; still sent only with a message the visitor writes |
 
-`JunDesk.consent(false)` closes the live connection (the visitor drops off your **Visitors** list) and deletes what the chat frame stored in `localStorage`.
+`JunDesk.consent(false)` closes the live connection (the visitor drops off your **Visitors** list), deletes `jun:session` and `jun:e` from your page's storage, and deletes what the chat frame stored in `localStorage`.
 
 Without `data-consent="required"`, the widget acts as if consent was given from the start.
 
@@ -53,10 +53,12 @@ Even without consent mode, the widget stores very little, and nothing on the cha
 
 | Where | Key | What | When |
 |---|---|---|---|
-| Your page's `sessionStorage` | `jun:s` | A random session id (96 random bits) | On page load (after consent) |
-| Your page's `sessionStorage` | `jun:t` | When the session started | On page load (after consent) |
+| Your page's `localStorage` | `jun:session` | The visit, shared by the browser's tabs: a random session id (96 random bits), when it started, the last activity, pages viewed, the referrer if it's another site, and the landing page's campaign tags | On page load (after consent) |
+| Your page's `sessionStorage` | `jun:e` | The last 40 masked debug events from this tab, from the last 30 minutes ([Debug context](/widget/debug-context)) | When an event is recorded (after consent) |
 | The chat frame's `localStorage` (your desk's origin) | `jun:visitor:<widget key>` | A random visitor token. The desk keeps only its SHA-256 hash | When the visitor sends their first message |
 | The chat frame's `localStorage` | `jun:ended:<widget key>` | Ids of the last 20 chats the visitor ended with the island's × | When they end one |
+
+A session ends after 30 minutes without a page view or a visible tab, or after 24 hours; the next page load starts a new one. Older versions of the loader used `jun:s` and `jun:t` in `sessionStorage`; they're no longer used.
 
 No cookies. Opening the chat without writing stores nothing in the chat frame. `JunDesk.logout()` replaces the session and forgets the visitor token ([Identify users](/widget/identify-users#signing-out)).
 
@@ -64,9 +66,9 @@ No cookies. Opening the chat without writing stores nothing in the chat frame. `
 
 **While the visitor browses** (the live connection behind the **Visitors** list):
 
-- the page address, with query values removed, and the page title, masked;
+- the page address, with query values removed (campaign tags kept, see below), and the page title, masked;
 - the referrer, cleaned the same way;
-- when the session started, the browser's language and time zone.
+- when the session started, how many pages it has viewed, its campaign tags, the browser's language and time zone.
 
 The desk adds the country, city and a rough location (rounded to 0.1°) from Cloudflare's request data, and the user agent.
 
@@ -79,8 +81,8 @@ The desk adds the country, city and a rough location (rounded to 0.1°) from Clo
 - Request or response bodies, for any request.
 - Cookies, `localStorage`, `sessionStorage` or anything else your page stores.
 - What visitors type into your forms.
-- The text of your page. Rage clicks keep only the element's tag, `id`, `aria-label`, `name` and `role`, and a button's or link's visible label when it's 40 characters or shorter. "Stuck" events keep only the page path.
-- Query string values. URLs keep their path and the names of query parameters (`/search?q=…`), never the values.
+- The text of your page. Rage clicks and dead clicks keep only the element's tag, `id`, `aria-label`, `name` and `role`, and a button's or link's visible label when it's 40 characters or shorter. "Stuck" events keep only the page path.
+- Query string values. URLs keep their path and the names of query parameters (`/search?q=…`), never the values. The one exception is campaign tags: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content` keep their values, masked and cut to 80 characters.
 - Clicks inside the widget itself, or scripted clicks.
 
 ## Masking, twice
@@ -109,7 +111,7 @@ Internal notes, tags and topics never reach visitors or the AI's answers.
 
 ## Turning capture off
 
-`data-capture="off"` stops the loader from listening for errors, failed requests, rage clicks and stuck pages, and turns off the "something broke" nudges with them. Page openers, the live visitor list and the chat still work.
+`data-capture="off"` stops the loader from listening for errors, failed requests, rage clicks, dead clicks and stuck pages, and turns off the "something broke" nudges with them. Page openers, the live visitor list and the chat still work.
 
 <CardGroup cols={2}>
   <Card title="Debug context" icon="bug" href="/widget/debug-context">

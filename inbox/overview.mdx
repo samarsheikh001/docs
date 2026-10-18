@@ -80,7 +80,7 @@ The panel next to the thread has four parts.
 
 **Browser.** The page they were on, their browser and OS, screen size, language and time zone.
 
-**What happened.** A timeline of what the widget recorded in their browser: pages visited, failed requests (method, URL, status, duration), JavaScript errors with stack traces, errors your app reported, rage clicks, and **Stuck** (they stayed on a page after something failed without a successful submit). Tick **Errors only** to hide the rest. Emails, tokens and query values are masked, and request bodies are never captured. See [Debug context](/widget/debug-context).
+**What happened.** A timeline of what the widget recorded in their browser: pages visited and reloaded (**Visited**, **Reloaded**, **Went back to**), failed requests (method, URL, status, duration), JavaScript errors with stack traces, errors your app reported, rage clicks, dead clicks (a click where nothing happened), and **Stuck** (they stayed on a page after something failed without a successful submit). Tick **Errors only** to hide the rest. Emails, tokens and query values (except campaign tags) are masked, and request bodies are never captured. See [Debug context](/widget/debug-context).
 
 If the visitor never wrote from a page with the widget, the panel says there are no browser details.
 

@@ -87,7 +87,7 @@ The AI is also told never to type passwords, card numbers or codes: it asks the 
 
 Normally the widget [never reads page text](/widget/debug-context). Page control changes that on the sites where you turn it on, and only when the AI calls `read_page` during a chat:
 
-- The text is masked in the browser and again on the desk, with the same rules as the debug context: email addresses, card-like numbers, tokens and keys become placeholders. The page address loses its query values.
+- The text is masked in the browser and again on the desk, with the same rules as the debug context: email addresses, card-like numbers, tokens and keys become placeholders. The page address loses its query values (campaign tags excepted).
 - One read is at most 12,000 characters. Longer pages are cut, and the AI can scroll and read again.
 - It can't run JavaScript on your page. It only reads, clicks, types, chooses and scrolls.
 - Reads go into the conversation, so your team sees what the AI saw.

@@ -42,7 +42,7 @@ All of these are created by the Deploy button or by `wrangler deploy`. See [Depl
 
 <Steps>
   <Step title="The loader starts on your page">
-    `widget.js` loads from your desk with `data-key`. It starts capturing debug context in memory, opens a small live connection so you see the visitor on the **Visitors** page, and adds the chat frame (`/widget?key=…`). The Worker serves that frame with a `frame-ancestors` policy built from your **Allowed websites**, so other sites can't embed your chat.
+    `widget.js` loads from your desk with `data-key`. It starts capturing debug context in the tab (its `sessionStorage`, so a reload keeps it), opens a small live connection so you see the visitor on the **Visitors** page, and adds the chat frame (`/widget?key=…`). The Worker serves that frame with a `frame-ancestors` policy built from your **Allowed websites**, so other sites can't embed your chat.
   </Step>
   <Step title="The visitor gets a token">
     The frame asks the Worker for a visitor token. It identifies this browser's anonymous contact. If your page passes a signed identity token, the contact becomes a verified customer instead. See [Identify users](/widget/identify-users).

@@ -6,7 +6,9 @@ icon: users
 
 The **Visitors** page (`/visitors`, or `g` then `v`) shows everyone who has a page with your widget open, live. It updates as people arrive, move between pages and leave. The sidebar shows the number of live visitors next to **Visitors**.
 
-A visitor appears here when the widget's loader is on the page and has connected to your desk. There's no separate tracking script and no third-party analytics: the loader keeps one small live connection per browser session.
+A visitor appears here when the widget's loader is on the page and has connected to your desk. There's no separate tracking script and no third-party analytics: the loader on each page keeps one small live connection to your desk.
+
+A session is one visit from one browser, shared by all its tabs and kept across reloads. It ends after 30 minutes without a page view or a visible tab, or after 24 hours. See [Consent and privacy](/widget/consent-and-privacy#what-the-widget-stores) for what's stored.
 
 ## What the page shows
 
@@ -31,24 +33,26 @@ Locations come from Cloudflare's IP geolocation, rounded to about 10 km. The glo
 When there are visitors, two cards show:
 
 - **Pages they're on:** the pages people have open now, most first.
-- **Where they came from:** the referring site, or **Direct**.
+- **Where they came from:** the `utm_source` campaign tag if the visit's landing page had one, else the referring site, else **Direct**.
 
 ### Everyone on your site
 
-The list has one row per browser session, so a visitor with your site open in three tabs is one row. Verified customers come first, then the rest by how long they've been on the site. Each row shows:
+The list has one row per browser session, so a visitor with your site open in three tabs is one row, even after they reload. Verified customers come first, then the rest by how long they've been on the site. Each row shows:
 
 - **Who.** A signed-in customer's name and email with a ✓ when your site verified them; an anonymous visitor as `Visitor #1234`. **In a chat** marks someone with a conversation going.
 - **Where.** City and country, and their browser and OS.
-- **The page.** Its title and address, and where they came from (**Direct visit** or the referring site).
-- **Time.** How long since their session started, and how many pages they've viewed.
+- **The page.** Its title and address, and where they came from (**Direct visit**, the referring site, or the `utm_source` tag), followed by the campaign (`utm_campaign`) when there is one.
+- **Time.** How long since their session started, and how many pages they've viewed, across reloads and tabs.
 
-Query values in addresses are masked by the loader, so they show as `…`.
+Query values in addresses are masked by the loader, so they show as `…`. Campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) keep their values.
 
 <Note>
 Signed-in customers show who they are only when your site sends an identity token. See [Identify signed-in users](/widget/identify-users).
 </Note>
 
 A visitor disappears from the list when they close the page. A browser that stops answering (a laptop that went to sleep, a dropped connection) is dropped after about 75 seconds.
+
+Bots aren't listed: crawlers, link previews, uptime checks and automated or headless browsers. The loader doesn't open the live connection for them, and the desk refuses it if one tries. Debug capture and nudges still work for them.
 
 If your widget runs in [consent mode](/widget/consent-and-privacy), visitors appear only after they've given consent: before that, the loader opens no live connection.
 
