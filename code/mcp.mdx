@@ -139,6 +139,10 @@ Your AI can **see** what customers will see:
 - **`preview_widget`** draws a card the way the chat does, in light or dark, with its buttons live. It works on saved cards, unsaved files, named states and any data you give it.
 - **`preview_chat`** draws the chat widget on a desktop-sized website: the island, the chat window with its greeting card, or the round button, closed or open, on a light or dark page. Pass unsaved `chat` settings to see a new colour, mode or greeting before saving.
 
+<Frame caption="What preview_widget gives your AI: the card as customers see it, buttons and all.">
+  <img src="/images/cookbook/account-card-starter.png" alt="An account card titled Starter with an Active badge, seats, renewal date, price, an Upgrade to Pro button and a Manage billing button" style={{ maxWidth: "380px" }} />
+</Frame>
+
 The pictures come from [Cloudflare Browser Run](https://developers.cloudflare.com/browser-rendering/): the desk's Worker opens its own public `/shot` page in a headless browser and takes a screenshot. The card or settings travel in the page's address fragment, which never reaches a server or its logs. Nothing is saved.
 
 <Note>

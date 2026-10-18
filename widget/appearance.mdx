@@ -54,12 +54,16 @@ To use a different colour on one site, add `data-color="#0f766e"` to that site's
 
 If your site has its own light / dark switch, let the widget follow it. Put `data-theme="dark"` (or `light`, or `auto` for the visitor's system) on the snippet for the first paint, and call `JunDesk.setTheme("dark")` or `setTheme("light")` whenever your switch changes. `setTheme(null)` goes back to the theme set here. See [JavaScript API](/widget/javascript-api#jundesk-settheme-theme).
 
+<Frame caption="The chat window in the dark theme, on a dark site.">
+  <img src="/images/widget/window-open-dark.png" alt="An open chat window in dark colours titled Acme, with the greeting, suggested questions and a message box" style={{ maxWidth: "380px" }} />
+</Frame>
+
 ## Mode and shape
 
 | Option | What it does | Default and limits |
 |---|---|---|
 | **Mode** | **Island** (a pill at the bottom centre) or **Chat window** (a button in the corner that opens a chat window) | Chat window |
-| **Island colour** | Only with **Island**: **Dark** (near-black, like Dynamic Island) or **Match theme** | Dark |
+| **Island colour** | Only with **Island**: **Auto** (near-black on light pages, light on dark ones), **Dark** (near-black, like Dynamic Island) or **Match theme** | Auto |
 | **Neon border** | Only with **Island**: a slowly turning multi-colour glow | On |
 | **Greeting card** | Only with **Chat window**: a welcome card over the button; off shows just the round button | On |
 | **Button shows** | Only with **Chat window** and the greeting card off: **Company logo** or **"Chat with us"** on the round button | Company logo |

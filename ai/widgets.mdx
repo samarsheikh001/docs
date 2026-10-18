@@ -6,6 +6,13 @@ icon: "table-cells-large"
 
 A widget shows a result to the customer as a card instead of text: an order's status, their plan, a list of invoices, a form to book a call. Its buttons can run your [actions](/ai/actions), run an action on your website, open a link, or tell the AI what was picked.
 
+<Frame caption="The order card from jun init (below), in the chat's light and dark themes.">
+  <img className="block dark:hidden" src="/images/widgets/order-card-light.png" alt="A card titled Order A-1042 with a green delivered badge, ordered 2026-09-02, total $49.00" style={{ maxWidth: "380px" }} />
+  <img className="hidden dark:block" src="/images/widgets/order-card-dark.png" alt="The same order card in dark colours" style={{ maxWidth: "380px" }} />
+</Frame>
+
+For a complete card that shows each signed-in customer their own account, see the [cookbook](/cookbook/account-card).
+
 Widgets are under **Agent → Widgets** (`/agent/widgets`). Each is a file, `widgets/<name>.widget`, in OpenAI's [ChatKit](https://widgets.chatkit.studio) widget format: you can design one in ChatKit Studio, download it and upload it here, or build it on the desk with the widget editor's AI. The desk draws widgets with its own renderer, in your widget's look.
 
 ## When a widget shows

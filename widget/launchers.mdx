@@ -25,6 +25,10 @@ A desk that never picked a mode gets **Chat window** with the greeting card on. 
 
 A button in the corner (the side you set in **Side of the page**) that opens the chat window: about 380×540 in the corner, full screen on phones. **Esc** closes it.
 
+<Frame caption="The chat window, open: your name and reply time, the greeting, your suggested questions and the message box.">
+  <img src="/images/widget/window-open.png" alt="An open chat window titled Acme with the greeting, three suggested questions, Contact the team and Start a new chat buttons, and a message box" style={{ maxWidth: "380px" }} />
+</Frame>
+
 Chat window options, shown only when **Mode** is **Chat window**:
 
 - **Greeting card**: a welcome card over the button. On by default.
@@ -32,6 +36,10 @@ Chat window options, shown only when **Mode** is **Chat window**:
 - **Side of the page**: **Right** (the default) or **Left**.
 
 ### With the greeting card
+
+<Frame caption="The greeting card, before the visitor opens the chat.">
+  <img src="/images/widget/window-card.png" alt="A greeting card titled Acme with the reply time, Hi! How can we help?, Contact the team and Start a new chat buttons, and a message box" style={{ maxWidth: "380px" }} />
+</Frame>
 
 The card sits in the corner and shows:
 
@@ -48,6 +56,10 @@ When a proactive nudge or a teammate's invite arrives, the card shows that line 
 
 A 52px round button in your brand colour. It shows your logo once you've uploaded one (a chat bubble until then). Set **Button shows** to **"Chat with us"** to show the words instead.
 
+<Frame caption='Button shows set to "Chat with us".'>
+  <img src="/images/widget/window-button.png" alt="A purple button reading Chat with us" style={{ maxWidth: "380px" }} />
+</Frame>
+
 On a dark brand colour (one that gets white text), the button uses your [logo for dark backgrounds](/widget/appearance#logos) if you've uploaded one.
 
 This is the lightest setup: the chat frame loads only on the first click. The greeting card and the island draw themselves inside the frame, so they load it right away.
@@ -57,6 +69,10 @@ A red badge on the button counts unread replies from your team (up to "9+"). Nud
 ## Island
 
 A pill at the bottom centre of the page that morphs to fit the moment, then returns to rest. It never touches your page: everything happens inside its own transparent frame, which is clipped so the rest of your page stays clickable.
+
+<Frame caption="The island at rest on a light page, typing out a suggested question, with the neon border. / opens it.">
+  <img src="/images/widget/island-light-page.png" alt="A near-black pill with the Jun mark, the text How does billing work? and a / key hint, with a multi-colour glow" style={{ maxWidth: "520px" }} />
+</Frame>
 
 | Moment | Shape |
 |---|---|
@@ -76,8 +92,15 @@ How it behaves:
 
 Island options, shown only when **Mode** is **Island**:
 
-- **Island colour**: **Dark**, near-black with white text on every page whatever the theme, like Dynamic Island (the default), or **Match theme**, which follows **Theme**.
+- **Island colour**:
+  - **Auto** (the default): near-black on light pages and light on dark ones. The loader reads the colour of your page right behind the island, so it stands out on either.
+  - **Dark**: near-black with white text on every page whatever the theme, like Dynamic Island.
+  - **Match theme**: follows **Theme**.
 - **Neon border**: a slowly turning multi-colour glow around the island. On by default.
+
+<Frame caption="Island colour Auto on a dark page: the island turns light.">
+  <img src="/images/widget/island-dark-page.png" alt="A white pill with the Jun mark and How does billing work? on a dark page, with a multi-colour glow" style={{ maxWidth: "520px" }} />
+</Frame>
 
 The island uses your brand colour and rounding. It always sits at the bottom centre, so there's no side to set. On the dark surface, a near-black brand colour would vanish, so its buttons turn white instead.
 
