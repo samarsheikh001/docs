@@ -19,6 +19,10 @@
         "pages": ["index", "quickstart", "how-it-works", "get-started-checklist"]
       },
       {
+        "group": "Cookbook",
+        "pages": ["cookbook/overview", "cookbook/account-card"]
+      },
+      {
         "group": "Deploy and run",
         "pages": [
           "deploy/cloudflare",

@@ -180,6 +180,10 @@ Until your website sends tokens, test actions that use `{user.*}` with `try_acti
 
 ## Example: a plan upgrade button
 
+<Tip>
+The [cookbook recipe](/cookbook/account-card) builds this end to end, with your app's code, every file and the tests.
+</Tip>
+
 Here's what one request can turn into: *"Let signed-in customers upgrade their plan from the chat. Our billing API is `POST https://api.acme.com/v1/subscriptions` with `{ customer, plan }` and a Bearer key."*
 
 <Steps>

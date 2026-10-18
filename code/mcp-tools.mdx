@@ -90,7 +90,7 @@ Widgets are the cards a result is shown as, in [ChatKit's widget format](/ai/wid
 |---|---|---|
 | `list_tests` | — | Every test case: file, name, the customer's message and what's expected. |
 | `get_tests` | `file` | One tests file. |
-| `add_test_case` | `file` (default `basics`), `name`, `message` or `messages`, `expect`, `intent`, `page`, `actions` | A new case. `expect` is `{ outcome: answer | handoff | escalate | action, tools, criteria, action, widget }`. |
+| `add_test_case` | `file` (default `basics`), `name`, `message` or `messages`, `expect`, `intent`, `page`, `actions` | A new case. `expect` takes `outcome` (`answer`, `handoff`, `escalate` or `action`), `tools`, `criteria`, `action` and `widget`. |
 | `update_test_case` | `file`, `name`, `newName` and any field above | Changes one case. |
 | `delete_test_case` | `file`, `name` | Deletes one case. |
 | `run_tests` | `cases`, `files`, `mockTools`, `replay`, `sample` | Runs the cases with the real AI and reports each one. `files` tests unsaved changes; `mockTools: true` uses each action's `mock:` instead of calling your API; `replay: true` also replays recent real conversations and shows which answers would change. Reports progress while it runs. |
