@@ -54,6 +54,10 @@ The widget is configured in two places. The `<script>` tag on your site carries 
   Says who the signed-in customer is: a short-lived HS256 token your backend signs with the desk's identity secret. Same as calling `JunDesk.identify(token)` once the loader has run. See [Identify users](/widget/identify-users).
 </ParamField>
 
+<ParamField path="data-identify-from" type='"posthog"'>
+  Labels the visitor from PostHog's `identify()`: after consent, the widget reads PostHog's identified user (`distinct_id`, and `name` and `email` from its person properties) as if you had called `JunDesk.identify({ id, name, email })`. Not verified, and a visitor signed in with a token is left alone. See [Identify users](/widget/identify-users#from-posthog).
+</ParamField>
+
 <ParamField path="defer" type="boolean" required>
   Put the tag in `<head>`, before your own scripts, with `defer`. Then the loader runs before your app's code: it sees errors from the start, and `document.modelContext` exists when your code registers page actions. Don't use `async`. See [Install the widget](/widget/install).
 </ParamField>
@@ -74,7 +78,7 @@ These aren't attributes. Change them on the desk and every site with the snippet
 
 ## The JavaScript API
 
-Once the loader has run, `window.JunDesk` has `open()`, `close()`, `toggle()`, `identify(jwt | { name, email })`, `logout()`, `consent(bool)`, `reportError({ message, code? })`, `track(name, props?)`, `registerAction({ … })` and `onWidgetAction(fn)`. It dispatches a `jundesk:ready` event on `window` when the API is there. See the [JavaScript API](/widget/javascript-api).
+Once the loader has run, `window.JunDesk` has `open()`, `close()`, `toggle()`, `identify(jwt | { id, name, email })`, `logout()`, `consent(bool)`, `reportError({ message, code? })`, `track(name, props?)`, `registerAction({ … })` and `onWidgetAction(fn)`. It dispatches a `jundesk:ready` event on `window` when the API is there. See the [JavaScript API](/widget/javascript-api).
 
 ## What the loader loads
 

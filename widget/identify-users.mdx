@@ -16,10 +16,10 @@ Identity only ever comes from a token the desk verifies. Nothing the page's Java
 
 ## Without a token
 
-If you only want agents to see who they're talking to, skip the server part and pass the name and email from the page:
+If you only want agents to see who they're talking to, skip the server part and pass the user's id, name and email from the page:
 
 ```js
-window.JunDesk?.identify({ name: user.name, email: user.email });
+window.JunDesk?.identify({ id: user.id, name: user.name, email: user.email });
 ```
 
 This works like PostHog's `identify`: it labels the visitor, nothing more. Agents see the name and email in the inbox, on **Contacts** and on the **Visitors** list, and the inbox's customer card says **Not verified**, since any visitor could call it with any email from the browser console. Email replies go to that address.
@@ -30,18 +30,35 @@ None of the list above applies. Without a token:
 |---|---|---|
 | Name and email shown to agents | Yes, as not verified | Yes, with a ✓ |
 | Chats follow them to other browsers and devices | No | Yes |
-| Merged into the contact with the same email or id | No, never | Yes, by `sub` ([Merging rules](#merging-rules)) |
+| Shown as one person with other browsers that have the same email or id | Yes, on the desk only, as not verified ([Same person](#same-person-on-several-browsers)) | Yes, merged by `sub` ([Merging rules](#merging-rules)) |
+| Chats from those other browsers shown in the widget | No, never | Yes |
 | Company and attributes | No | Yes |
 | The AI treats them as the signed-in customer | No | Yes |
 | Actions with `{user.*}`, card buttons that run actions | No | Yes |
 
 A few rules:
 
-- A malformed email is dropped. A name is kept to one line of up to 120 characters.
+- A malformed email is dropped. A name is kept to one line of up to 120 characters, an id to 200 characters (a number becomes text).
 - A verified contact keeps the details its token gave. A later call without a token doesn't change them.
-- If the same browser later says a **different** email, it starts a new contact. On a shared computer, one person's chats never show under the next person's name. Still call `JunDesk.logout()` on sign-out.
+- If the same browser later says a **different** email or id, it starts a new contact. On a shared computer, one person's chats never show under the next person's name. Still call `JunDesk.logout()` on sign-out.
 
-To move up to a verified contact later, add the token to the same call: `JunDesk.identify({ name, email, token })`. The token wins, and `name` and `email` then come from its claims.
+### Same person on several browsers
+
+Each browser is its own contact, but contacts that share an email or a user id are linked into **one person** on the desk. That covers emails from `identify()`, from the chat's email ask and from an agent's edit, plus ids from `identify()` and from a verified token's `sub`. The **Contacts** list shows them as one row ("2 browsers") with all their chats. The inbox's customer card and the person's page list every chat and say **Same person: N other browsers, matched by email or user ID (not verified)**.
+
+That's for your team only. Each browser's chat still shows only the chats it started there. The AI doesn't treat the visitor as signed in or reach their other chats. Two verified users are never linked, even with the same email, because your app says they're different people.
+
+### From PostHog
+
+If your app already calls `posthog.identify()`, add `data-identify-from="posthog"` to the script tag and skip the call above:
+
+```html
+<script src="https://your-desk.example.com/widget.js" data-key="wk_..." data-identify-from="posthog" defer></script>
+```
+
+After consent, the widget reads PostHog's identified user (its `distinct_id`, plus `name` and `email` from the person properties you pass to `identify()`) and labels the visitor with them, again whenever `identify()` runs. It's the same label as `identify({ id, name, email })`: not verified. A visitor already signed in with a token is left alone.
+
+To move up to a verified contact later, add the token to the same call: `JunDesk.identify({ id, name, email, token })`. The token wins, and `name` and `email` then come from its claims.
 
 <Tip>
 **Let your AI set it up.** With the desk's [MCP server](/code/mcp#set-up-identity-with-your-ai) connected in the editor where your app's code is open, ask: *"Set up Jun identity verification for our app."* Your AI turns it on (`set_identity`), puts the secret in your server's environment, adds the signing function and the page code from the guide `jun://guide/identity`, and checks a real token with `check_identity_token`.

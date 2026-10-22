@@ -66,7 +66,7 @@ Opens the chat if it's closed, closes it if it's open.
 Tells the desk who the signed-in customer is.
 
 <ParamField path="token" type="string | object | null" required>
-  A short-lived HS256 JWT your backend signed with the desk's identity secret, or an object `{ name, email, token? }`. Without `token`, the object only labels the visitor: agents see the name and email as not verified, with none of what a verified token unlocks ([Without a token](/widget/identify-users#without-a-token)). Passing `null` forgets the identity in the chat; use `logout()` on sign-out instead.
+  A short-lived HS256 JWT your backend signed with the desk's identity secret, or an object `{ id, name, email, token? }`. Without `token`, the object only labels the visitor: agents see the id, name and email as not verified (browsers sharing the email or id show as one person on the desk), with none of what a verified token unlocks ([Without a token](/widget/identify-users#without-a-token)). Passing `null` forgets the identity in the chat; use `logout()` on sign-out instead.
 </ParamField>
 
 The token goes to the desk over the loader's live connection and from the chat frame. If it's rejected, the frame logs `[Jun] identify failed: <reason>` in the console and the visitor stays anonymous.
