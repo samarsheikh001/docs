@@ -39,7 +39,7 @@ When there are visitors, two cards show:
 
 The list has one row per browser session, so a visitor with your site open in three tabs is one row, even after they reload. Verified customers come first, then the rest by how long they've been on the site. Each row shows:
 
-- **Who.** A signed-in customer's name and email with a ✓ when your site verified them; an anonymous visitor as `Visitor #1234`. **In a chat** marks someone with a conversation going.
+- **Who.** A signed-in customer's name and email with a ✓ when your site verified them, without it when the page only [named them](/widget/identify-users#without-a-token); an anonymous visitor as `Visitor #1234`. **In a chat** marks someone with a conversation going.
 - **Where.** City and country, and their browser and OS.
 - **The page.** Its title and address, and where they came from (**Direct visit**, the referring site, or the `utm_source` tag), followed by the campaign (`utm_campaign`) when there is one.
 - **Time.** How long since their session started, and how many pages they've viewed, across reloads and tabs.
@@ -79,7 +79,7 @@ If the visitor answers within 30 minutes, the conversation starts with your mess
 The visitor list is about who is on your site right now. The details of a customer you're talking to live in the conversation's side panel, under **Customer**:
 
 - **Verified customers** (identified by your site): name, email, user ID and the attributes your site sends, like plan or company. They come from your app and can't be edited in the desk.
-- **Anonymous visitors**: press **Edit** to add a name or email when they tell you. The desk validates the email.
+- **Anonymous visitors**: press **Edit** to add a name or email when they tell you. The desk validates the email. A name or email from the page's `identify({ name, email })`, the chat's email ask or an agent shows **Not verified**: anyone could have typed it.
 - **Other conversations (N)** lists the same customer's other chats.
 - **Company**, when your site sends one in the token: the company's name, its id in your app, its attributes and how many of its people have signed in. See [Company](/widget/identify-users#company).
 - **Their team's conversations** lists the latest 10 chats from the company's other people, with who wrote, the status and the date.

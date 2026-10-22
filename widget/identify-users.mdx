@@ -14,6 +14,35 @@ By default every visitor is anonymous. When your app knows who the customer is, 
 
 Identity only ever comes from a token the desk verifies. Nothing the page's JavaScript says about the user is trusted on its own.
 
+## Without a token
+
+If you only want agents to see who they're talking to, skip the server part and pass the name and email from the page:
+
+```js
+window.JunDesk?.identify({ name: user.name, email: user.email });
+```
+
+This works like PostHog's `identify`: it labels the visitor, nothing more. Agents see the name and email in the inbox, on **Contacts** and on the **Visitors** list, and the inbox's customer card says **Not verified**, since any visitor could call it with any email from the browser console. Email replies go to that address.
+
+None of the list above applies. Without a token:
+
+| | Without a token | With a token |
+|---|---|---|
+| Name and email shown to agents | Yes, as not verified | Yes, with a ✓ |
+| Chats follow them to other browsers and devices | No | Yes |
+| Merged into the contact with the same email or id | No, never | Yes, by `sub` ([Merging rules](#merging-rules)) |
+| Company and attributes | No | Yes |
+| The AI treats them as the signed-in customer | No | Yes |
+| Actions with `{user.*}`, card buttons that run actions | No | Yes |
+
+A few rules:
+
+- A malformed email is dropped. A name is kept to one line of up to 120 characters.
+- A verified contact keeps the details its token gave. A later call without a token doesn't change them.
+- If the same browser later says a **different** email, it starts a new contact. On a shared computer, one person's chats never show under the next person's name. Still call `JunDesk.logout()` on sign-out.
+
+To move up to a verified contact later, add the token to the same call: `JunDesk.identify({ name, email, token })`. The token wins, and `name` and `email` then come from its claims.
+
 <Tip>
 **Let your AI set it up.** With the desk's [MCP server](/code/mcp#set-up-identity-with-your-ai) connected in the editor where your app's code is open, ask: *"Set up Jun identity verification for our app."* Your AI turns it on (`set_identity`), puts the secret in your server's environment, adds the signing function and the page code from the guide `jun://guide/identity`, and checks a real token with `check_identity_token`.
 </Tip>
