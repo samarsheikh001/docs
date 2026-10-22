@@ -48,6 +48,8 @@ Each browser is its own contact, but contacts that share an email or a user id a
 
 That's for your team only. Each browser's chat still shows only the chats it started there. The AI doesn't treat the visitor as signed in or reach their other chats. Two verified users are never linked, even with the same email, because your app says they're different people.
 
+When the match is wrong, or misses someone, fix it on the person's page under **Contacts**: the **Same person** card lists each linked browser with **Unlink**, and **Link** finds another contact by name or email. After that, matching by email or user id leaves those contacts where you put them. Linking two signed-in users is refused. On **Visitors**, a person's browsers sit together, tagged **Same person**.
+
 ### From PostHog
 
 If your app already calls `posthog.identify()`, add `data-identify-from="posthog"` to the script tag and skip the call above:
@@ -56,7 +58,7 @@ If your app already calls `posthog.identify()`, add `data-identify-from="posthog
 <script src="https://your-desk.example.com/widget.js" data-key="wk_..." data-identify-from="posthog" defer></script>
 ```
 
-After consent, the widget reads PostHog's identified user (its `distinct_id`, plus `name` and `email` from the person properties you pass to `identify()`) and labels the visitor with them, again whenever `identify()` runs. It's the same label as `identify({ id, name, email })`: not verified. A visitor already signed in with a token is left alone.
+After consent, the widget reads PostHog's identified user (its `distinct_id`, plus `name` and `email` from the person properties you pass to `identify()`) and labels the visitor with them, again whenever `identify()` runs. It's the same label as `identify({ id, name, email })`: not verified. A visitor already signed in with a token is left alone. When your app calls `posthog.reset()` on sign-out, the widget logs the visitor out too, so the next person on that computer starts fresh.
 
 To move up to a verified contact later, add the token to the same call: `JunDesk.identify({ id, name, email, token })`. The token wins, and `name` and `email` then come from its claims.
 
